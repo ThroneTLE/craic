@@ -1,0 +1,64 @@
+<launch>
+  <arg name="target_x" default="0.0"/>
+  <arg name="target_y" default="0.0"/>
+  <arg name="yaw_mode" default="0"/>
+
+  <!-- 默认不优先 down，避免从下方硬撞 -->
+  <arg name="entry_order" default="right,up,left,down"/>
+
+  <node pkg="robot_slam"
+        type="entry_based_single_goal.py"
+        name="entry_based_single_goal"
+        output="screen">
+
+    <param name="target_x" value="$(arg target_x)"/>
+    <param name="target_y" value="$(arg target_y)"/>
+    <param name="yaw_mode" value="$(arg yaw_mode)"/>
+    <param name="entry_order" value="$(arg entry_order)"/>
+
+    <param name="box_length" value="0.36"/>
+    <param name="box_width" value="0.32"/>
+
+    <param name="entry_offset" value="0.35"/>
+    <param name="inside_offset" value="0.10"/>
+
+    <param name="nav_timeout" value="6.0"/>
+    <param name="entry_reached_tolerance" value="0.20"/>
+
+    <param name="direct_entry_timeout" value="5.0"/>
+    <param name="direct_entry_kp" value="0.45"/>
+    <param name="direct_entry_max_v" value="0.04"/>
+    <param name="direct_entry_tolerance" value="0.20"/>
+    <param name="direct_entry_start_max_dist" value="0.35"/>
+
+    <param name="enter_timeout" value="18.0"/>
+    <param name="xy_tolerance" value="0.045"/>
+
+    <param name="kp_x" value="0.75"/>
+    <param name="kp_y" value="0.75"/>
+
+    <param name="max_enter_vx" value="0.070"/>
+    <param name="max_enter_vy" value="0.070"/>
+
+    <param name="slow_dist" value="0.16"/>
+    <param name="precise_dist" value="0.08"/>
+
+    <param name="slow_v" value="0.035"/>
+    <param name="precise_v" value="0.018"/>
+
+    <param name="min_v" value="0.006"/>
+
+    <param name="front_stop_dist" value="0.16"/>
+    <param name="front_slow_dist" value="0.26"/>
+
+    <!-- 加大侧边检测，避免左侧挡板被忽略 -->
+    <param name="side_stop_dist" value="0.16"/>
+
+    <param name="any_stop_dist" value="0.09"/>
+    <param name="max_block_count" value="8"/>
+
+    <param name="scan_topic" value="/scan_filtered"/>
+    <param name="map_frame" value="map"/>
+    <param name="base_frame" value="base_footprint"/>
+  </node>
+</launch>

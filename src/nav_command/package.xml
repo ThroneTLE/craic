@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>nav_command</name>
+  <version>0.0.0</version>
+  <description>Custom navigation command message package</description>
+
+  <maintainer email="jane.doe@example.com">Jane Doe</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <!-- 编译依赖：必须包含 message_generation、std_msgs、geometry_msgs -->
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  
+  <!-- 编译导出依赖 -->
+  <build_export_depend>std_msgs</build_export_depend>
+  <build_export_depend>geometry_msgs</build_export_depend>
+  
+  <!-- 运行依赖：必须包含 message_runtime -->
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  <export>
+  </export>
+</package>

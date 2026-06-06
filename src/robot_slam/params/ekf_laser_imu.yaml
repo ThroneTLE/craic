@@ -1,0 +1,40 @@
+# EKF 融合：激光里程计 + IMU（不使用轮速里程计）
+# 用于轮子打滑场景
+frequency: 30
+sensor_timeout: 0.1
+two_d_mode: true
+print_diagnostics: true
+debug: false
+
+# TF 由 EKF 发布 odom → base_footprint
+publish_tf: true
+publish_acceleration: false
+
+# 坐标帧
+map_frame: map
+odom_frame: odom
+base_link_frame: base_footprint
+world_frame: odom
+
+# ---- 输入1: 激光里程计（来自 laser_scan_matcher） ----
+odom0: /laser_odom
+odom0_config: [true,  true,   false,    # x, y, z（不用z）
+               false, false,  true,     # roll, pitch, yaw
+               false, false,  false,    # vx, vy, vz
+               false, false,  false,    # vroll, vpitch, vyaw
+               false, false,  false]    # ax, ay, az
+odom0_differential: true                # 差分模式：当成速度而非绝对位置，防止静止时微小噪声累计
+odom0_relative: false
+odom0_queue_size: 5
+
+# ---- 输入2: IMU 角速度 + 加速度（来自 imu_filter_madgwick） ----
+imu0: /imu/data
+imu0_config: [false, false, false,     # x, y, z 不用
+              true,  true,  true,      # roll, pitch, yaw
+              false, false, false,     # vx, vy, vz 不用
+              true,  true,  true,      # vroll, vpitch, vyaw 角速度
+              true,  true,  true]      # ax, ay, az 加速度
+imu0_differential: false
+imu0_relative: false
+imu0_remove_gravitational_acceleration: true
+imu0_queue_size: 5

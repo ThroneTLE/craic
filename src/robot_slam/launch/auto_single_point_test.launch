@@ -1,0 +1,151 @@
+<launch>
+  <arg name="target_x" default="2.0"/>
+  <arg name="target_y" default="1.15"/>
+  <arg name="target_yaw" default="90.0"/>
+
+  <node pkg="robot_slam"
+        type="auto_single_point_test.py"
+        name="auto_single_point_test"
+        output="screen">
+
+    <param name="target_x" value="$(arg target_x)"/>
+    <param name="target_y" value="$(arg target_y)"/>
+    <param name="target_yaw" value="$(arg target_yaw)"/>
+
+    <!-- 随机模式：无挡板直达，有挡板切入口 -->
+    <param name="enable_direct_center" value="true"/>
+    <param name="direct_center_timeout" value="4.5"/>
+    <param name="direct_center_tolerance" value="0.07"/>
+
+    <!-- 当前机器人到目标点的直线路径被挡，则跳过 direct center -->
+    <param name="skip_direct_if_path_blocked" value="true"/>
+    <param name="current_path_width" value="0.38"/>
+    <param name="current_path_min_points" type="int" value="4"/>
+
+    <!-- 入口距离 -->
+    <param name="entry_offset" value="0.34"/>
+
+    <!-- 入口识别评分总开关 -->
+    <param name="enable_entry_recognition" value="true"/>
+
+    <!-- 目标点四面条带辅助检测 -->
+    <param name="target_box_half_size" value="0.24"/>
+    <param name="side_detect_width" value="0.12"/>
+    <param name="side_detect_min_points" type="int" value="4"/>
+
+    <!-- 以目标点为圆心，半径 40cm 圆环找开口方向 -->
+    <param name="enable_opening_circle_detect" value="true"/>
+    <param name="opening_detect_radius" value="0.40"/>
+    <param name="opening_ring_width" value="0.10"/>
+    <param name="opening_min_clear_diff" type="int" value="2"/>
+    <param name="opening_best_bonus" value="55.0"/>
+    <param name="opening_not_best_penalty" value="28.0"/>
+    <param name="opening_count_weight" value="11.0"/>
+    <param name="opening_unknown_penalty" value="0.0"/>
+
+    <!-- 入口点到目标点的通道检测 -->
+    <param name="path_corridor_width" value="0.36"/>
+    <param name="path_corridor_min_points" type="int" value="4"/>
+    <param name="path_corridor_ignore_near_start" value="0.06"/>
+    <param name="path_corridor_ignore_near_goal" value="0.08"/>
+
+    <!-- 旧 corridor 参数，保留辅助评分 -->
+    <param name="corridor_width" value="0.32"/>
+    <param name="corridor_min_points" type="int" value="5"/>
+
+    <!-- 半径 40cm 后，识别范围略放大 -->
+    <param name="scan_memory_time" value="0.8"/>
+    <param name="recognition_max_range" value="1.8"/>
+
+    <!-- 最多尝试 3 个入口 -->
+    <param name="max_entries_to_try" type="int" value="3"/>
+
+    <!-- move_base 到入口 -->
+    <param name="nav_timeout" value="12.0"/>
+    <param name="entry_reached_tolerance" value="0.22"/>
+
+    <!-- direct 补偿到入口：这次重点加长时间并加快一点 -->
+    <param name="direct_entry_timeout" value="13.0"/>
+    <param name="direct_entry_kp" value="0.86"/>
+    <param name="direct_entry_max_v" value="0.130"/>
+    <param name="direct_entry_tolerance" value="0.22"/>
+    <param name="direct_entry_start_max_dist" value="1.45"/>
+
+    <param name="direct_block_max_count" type="int" value="4"/>
+    <param name="direct_no_progress_max_count" type="int" value="55"/>
+
+    <!-- 脱困 -->
+    <param name="backoff_time" value="0.7"/>
+    <param name="backoff_speed" value="0.085"/>
+
+    <!-- yaw 对齐 -->
+    <param name="yaw_tolerance" value="0.09"/>
+    <param name="align_timeout" value="10.0"/>
+    <param name="kp_yaw" value="2.00"/>
+    <param name="max_align_wz" value="0.90"/>
+    <param name="align_accept_yaw_error" value="0.30"/>
+
+    <!-- 入框 -->
+    <param name="enter_timeout" value="20.0"/>
+    <param name="xy_tolerance" value="0.06"/>
+
+    <param name="kp_enter" value="1.12"/>
+    <param name="max_enter_v" value="0.120"/>
+    <param name="max_enter_wz" value="0.12"/>
+
+    <!-- 分段降速 -->
+    <param name="slow_dist" value="0.13"/>
+    <param name="precise_dist" value="0.06"/>
+    <param name="slow_v" value="0.070"/>
+    <param name="precise_v" value="0.028"/>
+
+    <param name="min_v" value="0.004"/>
+
+    <!-- 进框深度 -->
+    <param name="park_deep_offset" value="0.10"/>
+
+    <!-- L型挡板停车接受条件 -->
+    <param name="obstacle_park_accept_dist" value="0.16"/>
+    <param name="obstacle_park_front_min" value="0.17"/>
+    <param name="obstacle_park_front_max" value="0.24"/>
+    <param name="obstacle_park_yaw_tolerance" value="0.10"/>
+    <param name="obstacle_park_enter_travel_min" value="0.30"/>
+
+    <!-- 成功后退出 -->
+    <param name="exit_after_success" value="true"/>
+    <param name="exit_distance" value="0.24"/>
+    <param name="exit_speed" value="0.090"/>
+
+    <!-- 雷达安全：渐进式前向减速 + 窄通道降速 -->
+    <param name="front_stop_dist" value="0.17"/>
+    <param name="front_slow_dist" value="0.30"/>
+    <param name="front_slow_v" value="0.034"/>
+    <param name="side_stop_dist" value="0.16"/>
+    <param name="any_stop_dist" value="0.080"/>
+
+    <!-- 渐进式前向减速：从 0.55m 开始线性减速到 0.025m/s，最终在 front_stop_dist 硬停 -->
+    <param name="enable_progressive_front_decel" value="true"/>
+    <param name="front_decel_start_dist" value="0.55"/>
+    <param name="front_decel_min_v" value="0.025"/>
+
+    <!-- 窄通道检测：两侧都检测到障碍时大幅降速，防止撞 L 型挡板 -->
+    <param name="enable_narrow_passage_slow" value="true"/>
+    <param name="narrow_passage_side_dist" value="0.35"/>
+    <param name="narrow_passage_max_v" value="0.045"/>
+    <param name="side_slow_dist" value="0.30"/>
+    <param name="side_slow_max_v" value="0.055"/>
+
+    <param name="max_block_count" type="int" value="2"/>
+
+    <!-- cmd_vel 平滑 -->
+    <param name="enable_cmd_smoothing" value="true"/>
+    <param name="max_acc_x" value="1.00"/>
+    <param name="max_acc_y" value="1.00"/>
+    <param name="max_acc_wz" value="2.30"/>
+
+    <param name="scan_topic" value="/scan_filtered"/>
+    <param name="map_frame" value="map"/>
+    <param name="base_frame" value="base_footprint"/>
+
+  </node>
+</launch>

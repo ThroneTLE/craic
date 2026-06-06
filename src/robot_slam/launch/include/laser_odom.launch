@@ -1,0 +1,22 @@
+<launch>
+  <!-- 激光里程计 + IMU 融合定位（不依赖轮速里程计） -->
+
+  <!-- 1. 激光扫描匹配器：连续激光帧 ICP，输出 /laser_odom -->
+  <node pkg="laser_scan_matcher" type="laser_scan_matcher_node"
+        name="laser_scan_matcher" output="screen">
+    <param name="base_frame" value="base_footprint"/>
+    <param name="fixed_frame" value="odom"/>
+    <param name="use_initial_estimate" value="false"/>
+    <param name="publish_tf" value="false"/>            <!-- EKF 发布 TF -->
+    <param name="max_iterations" value="3"/>
+    <param name="max_angular_correction_deg" value="2.0"/>
+    <param name="max_linear_correction" value="0.10"/>
+    <remap from="scan" to="/scan_filtered"/>
+  </node>
+
+  <!-- 2. EKF 融合：激光里程计 + IMU，输出 /odom + TF odom→base_footprint -->
+  <node pkg="robot_localization" type="ekf_localization_node"
+        name="ekf_laser_imu" output="screen">
+    <rosparam file="$(find robot_slam)/params/ekf_laser_imu.yaml" command="load"/>
+  </node>
+</launch>

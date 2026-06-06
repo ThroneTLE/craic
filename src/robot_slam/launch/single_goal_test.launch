@@ -1,0 +1,36 @@
+<launch>
+  <!-- 单点目标，先改这里测试 -->
+  <arg name="goal_x" default="1.087"/>
+  <arg name="goal_y" default="-0.907"/>
+  <arg name="goal_yaw" default="0.0"/>
+
+  <node pkg="robot_slam"
+        type="single_goal_test.py"
+        name="single_goal_test"
+        output="screen">
+
+    <param name="goal_x" value="$(arg goal_x)"/>
+    <param name="goal_y" value="$(arg goal_y)"/>
+    <param name="goal_yaw" value="$(arg goal_yaw)"/>
+
+    <!-- move_base 阶段 -->
+    <param name="nav_timeout" value="60.0"/>
+
+    <!-- 精修阶段 -->
+    <param name="enable_fine_adjust" value="true"/>
+    <param name="xy_tolerance" value="0.025"/>
+    <param name="yaw_tolerance" value="0.05"/>
+
+    <param name="max_fine_vx" value="0.05"/>
+    <param name="max_fine_vy" value="0.05"/>
+    <param name="max_fine_wz" value="0.18"/>
+
+    <param name="kp_xy" value="0.6"/>
+    <param name="kp_yaw" value="1.0"/>
+
+    <param name="fine_timeout" value="8.0"/>
+
+    <param name="map_frame" value="map"/>
+    <param name="base_frame" value="base_footprint"/>
+  </node>
+</launch>

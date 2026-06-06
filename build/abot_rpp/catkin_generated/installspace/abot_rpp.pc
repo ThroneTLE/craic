@@ -1,0 +1,8 @@
+prefix=/home/abot/craic/install
+
+Name: abot_rpp
+Description: Description of abot_rpp
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -labot_rpp
+Requires: base_local_planner costmap_2d nav_core pluginlib roscpp tf2_ros

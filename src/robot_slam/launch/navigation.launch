@@ -1,0 +1,29 @@
+<launch>
+  <param name="use_sim_time" value="false" />
+
+  <arg name="map_name" default="my_lab.yaml" />
+  <arg name="localization" default="amcl" />  <!-- amcl | cartographer -->
+
+  <!-- 1. 加载静态地图（AMCL 用） -->
+  <node name="map_server"
+        pkg="map_server"
+        type="map_server"
+        args="$(find robot_slam)/maps/$(arg map_name)"
+        output="screen"
+        unless="$(eval arg('localization') == 'cartographer')" />
+
+  <!-- 2. AMCL 定位 -->
+  <include file="$(find robot_slam)/launch/include/amcl.launch.xml"
+           unless="$(eval arg('localization') == 'cartographer')">
+    <arg name="scan_topic" value="/scan_filtered"/>
+    <arg name="use_map_topic" value="false"/>
+  </include>
+
+  <!-- 2b. Cartographer 纯定位 -->
+  <include file="$(find robot_slam)/launch/carto_localization.launch"
+           if="$(eval arg('localization') == 'cartographer')" />
+
+  <!-- 3. move_base 导航 -->
+  <include file="$(find robot_slam)/launch/include/move_base.launch.xml" />
+
+</launch>

@@ -1,0 +1,15 @@
+<launch>
+  <!-- 底盘驱动（含IMU） -->
+  <include file="$(find abot_bringup)/launch/robot_with_imu.launch"/>
+
+  <!-- 导航 -->
+  <include file="$(find robot_slam)/launch/navigation.launch"/>
+
+  <!-- 纯跑点：顺序跑 1~13 号点 -->
+  <node name="test_point_runner" pkg="robot_slam" type="test_point.py" output="screen">
+   <!--                                                                        0           1          2             3           4           5             6           7            8              9           10            11             12            13        14       15       16  -->
+    <param name="goalListX" value="   0.5,      1.10,   1.10,      1.10,   1.60,     1.60,    1.60,    2.10,     2.10,      2.10 ,     0.50,      1.60,       3.00,       1.60,     2.65,   0.97,   0.20"/>
+    <param name="goalListY" value="   -0.3,     1.20,   1.70,      2.20,    1.20,    1.70,     2.20,   1.20,    1.70,       2.20,      1.60,      3.00,       1.55,       0.45,    1.60,    -0.88,  3.13"/>
+    <param name="goalListYaw" value="   0,        90 ,       90,        90,       90,         90,         90,       90,       90,          90,          180 ,        90,          0,            -90,     180,    -180,      -3"/>
+  </node>
+</launch>

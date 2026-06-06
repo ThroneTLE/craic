@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /home/abot -name \"API_KEY.py\" -type f 2>/dev/null)",
+      "Read(//home/abot/**)",
+      "Bash(sudo apt install -y ros-melodic-laser-scan-matcher ros-melodic-robot-localization)",
+      "Bash(chmod +x /home/abot/craic/src/abot_base/abot_bringup/scripts/slip_detector.py)",
+      "Bash(python2 -c ' *)",
+      "Bash(chmod +x /home/abot/craic/src/robot_slam/scripts/auto_parking_pd.py)"
+    ]
+  }
+}

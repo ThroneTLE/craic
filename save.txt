@@ -1,0 +1,3 @@
+rosservice call /finish_trajectory 0
+rosservice call /write_state "{filename: '${HOME}/my_lab.pbstream'}"
+

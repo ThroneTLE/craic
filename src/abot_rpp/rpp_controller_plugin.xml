@@ -1,0 +1,7 @@
+<library path="lib/libabot_rpp">
+  <class name="abot_rpp/RPPController"
+         type="abot_rpp::RPPController"
+         base_class_type="nav_core::BaseLocalPlanner">
+    <description>Regulated Pure Pursuit local planner for abot</description>
+  </class>
+</library>

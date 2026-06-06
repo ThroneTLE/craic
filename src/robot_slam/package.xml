@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>robot_slam</name>
+  <version>0.0.0</version>
+  <description>The robot_slam package</description>
+
+  <maintainer email="jane.doe@example.com">Jane Doe</maintainer>
+  <license>TODO</license>
+
+  <!-- 依赖声明区域 -->
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <!-- 1. 新增 geometry_msgs 的 build_depend -->
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>  <!-- 新增 -->
+  <build_depend>message_generation</build_depend>
+
+  <!-- 2. 新增 geometry_msgs 的 build_export_depend -->
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <build_export_depend>geometry_msgs</build_export_depend>  <!-- 新增 -->
+
+  <!-- 3. 新增 geometry_msgs 的 exec_depend -->
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>  <!-- 新增 -->
+  <exec_depend>message_runtime</exec_depend>
+
+  <export>
+  </export>
+</package>

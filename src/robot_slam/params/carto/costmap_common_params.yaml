@@ -1,0 +1,27 @@
+obstacle_range: 3.0
+raytrace_range: 3.5
+
+# 加大后的安全 footprint
+# 机器人实体 36cm x 31cm，但左前/右前轮、外壳、螺丝需要留余量
+# x 前方 0.205m，后方 0.190m
+# y 左右 0.180m
+footprint: [[0.205, 0.18], [0.205, -0.18], [-0.19, -0.18], [-0.19, 0.18]]
+
+# move_base 阶段要防止轮子贴障碍
+# 目标框最终入框不靠 move_base 完成，所以这里可以稍微保守
+inflation_radius: 0.15
+cost_scaling_factor: 4.0
+
+map_type: costmap
+
+observation_sources: scan
+
+scan:
+  sensor_frame: laser_link
+  data_type: LaserScan
+  topic: /scan_filtered
+  marking: true
+  clearing: true
+  expected_update_rate: 0.0
+  obstacle_range: 3.0
+  raytrace_range: 3.5

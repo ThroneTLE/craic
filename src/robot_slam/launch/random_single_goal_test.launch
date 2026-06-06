@@ -1,0 +1,52 @@
+<launch>
+  <!-- 目标框中心点 -->
+  <arg name="target_x" default="1.037"/>
+  <arg name="target_y" default="-0.957"/>
+  <arg name="target_yaw" default="0.0"/>
+
+  <node pkg="robot_slam"
+        type="random_single_goal_test.py"
+        name="random_single_goal_test"
+        output="screen">
+
+    <param name="target_x" value="$(arg target_x)"/>
+    <param name="target_y" value="$(arg target_y)"/>
+    <param name="target_yaw" value="$(arg target_yaw)"/>
+
+    <!-- 候选入口点：少一点，快一点 -->
+    <param name="candidate_count" value="8"/>
+    <param name="min_radius" value="0.40"/>
+    <param name="max_radius" value="0.60"/>
+
+    <!-- 每个入口最多等 8 秒，避免评估太慢 -->
+    <param name="nav_timeout" value="8.0"/>
+
+    <!-- 到入口后进入 COMMIT 模式，不再绕圈 -->
+    <param name="enable_safe_enter" value="true"/>
+    <param name="safe_enter_timeout" value="18.0"/>
+
+    <param name="xy_tolerance" value="0.04"/>
+    <param name="yaw_tolerance" value="0.12"/>
+
+    <param name="kp_xy" value="0.35"/>
+    <param name="kp_yaw" value="0.60"/>
+
+    <!-- 入框阶段必须慢 -->
+    <param name="max_enter_vx" value="0.018"/>
+    <param name="max_enter_vy" value="0.018"/>
+    <param name="max_enter_wz" value="0.06"/>
+
+    <!-- 安全阈值 -->
+    <param name="front_stop_dist" value="0.16"/>
+    <param name="front_slow_dist" value="0.26"/>
+    <param name="side_stop_dist" value="0.12"/>
+
+    <!-- commit 模式下只小幅后退，不重新绕圈 -->
+    <param name="backup_speed" value="-0.025"/>
+    <param name="backup_time" value="0.25"/>
+
+    <param name="scan_topic" value="/scan_filtered"/>
+    <param name="map_frame" value="map"/>
+    <param name="base_frame" value="base_footprint"/>
+  </node>
+</launch>

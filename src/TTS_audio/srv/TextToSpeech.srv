@@ -1,0 +1,4 @@
+string text  # 输入的文本
+---
+bool success  # 服务是否成功
+string message  # 返回的消息

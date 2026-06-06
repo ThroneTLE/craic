@@ -1,0 +1,2 @@
+abot_rpp
+-DCATKIN_DEVEL_PREFIX=/home/abot/craic/devel -DCMAKE_INSTALL_PREFIX=/home/abot/craic/install -DCATKIN_WHITELIST_PACKAGES=abot_rpp -G Unix Makefiles

@@ -1,0 +1,30 @@
+RPPController:
+  # --- 控制器基础 ---
+  control_frequency: 20.0
+  odom_frame: "odom"
+  map_frame: "map"
+  goal_dist_tolerance: 0.15
+  rotate_tolerance: 0.05
+  max_linear_velocity: 0.6
+  min_linear_velocity: 0.02
+  max_linear_velocity_increment: 0.3
+  max_angular_velocity: 1.0
+  min_angular_velocity: 0.01
+  max_angular_velocity_increment: 0.5
+
+  # --- RPP 前瞻参数 ---
+  lookahead_time: 0.6
+  min_lookahead_dist: 0.25
+  max_lookahead_dist: 1.2
+
+  # --- 曲率约束 ---
+  regulated_min_radius: 0.3
+
+  # --- 障碍物约束 ---
+  inflation_cost_factor: 3.0
+  scaling_dist: 0.6
+  scaling_gain: 1.0
+
+  # --- 接近目标降速 ---
+  approach_dist: 0.8
+  approach_min_v: 0.05
