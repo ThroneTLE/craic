@@ -116,6 +116,7 @@ class navigation_demo:
         self.detect_yaw_max_vel = rospy.get_param("~detect_yaw_max_vel", 0.45)
         self.detect_yaw_stable_count = int(rospy.get_param("~detect_yaw_stable_count", 4))
         self.detect_photo_settle_time = rospy.get_param("~detect_photo_settle_time", 0.25)
+        self.detect_capture_wait = rospy.get_param("~detect_capture_wait", 0.5)
     
     def scan_callback(self, msg):
         """存储最新的激光雷达数据"""
@@ -425,7 +426,7 @@ class navigation_demo:
         try:
             # 设置参数：启动检测
             rospy.set_param('/detect', 1)
-            rospy.sleep(0.5)
+            rospy.sleep(self.detect_capture_wait)
             # 调用服务并获取识别结果
             response = self.fruit_detection_service()
             rospy.loginfo("视觉大模型识别结果: %s" % response.message)
@@ -650,7 +651,7 @@ class navigation_demo:
             if 1 <= task_id <= 9:
                 # 导航到线索对应的任务点 (5s 超时)
                 nav_start_time = rospy.Time.now()
-                nav_ok = self.goto(goals[task_id], timeout=5)
+                nav_ok = self.goto(goals[task_id], timeout=2)
                 rospy.loginfo("[TASK_TIME][NAV_TO_TASK] idx=%d task_id=%d dt=%.2fs ok=%s",
                               idx + 1, task_id,
                               (rospy.Time.now() - nav_start_time).to_sec(),

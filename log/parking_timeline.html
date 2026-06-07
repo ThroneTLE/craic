@@ -1,0 +1,1798 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>泊车耗时可视化</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #d9e2ec;
+      --soft: #eef2f7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.45;
+    }
+    header {
+      padding: 28px 32px 18px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0; }
+    h2 { margin: 0; font-size: 20px; letter-spacing: 0; }
+    h3 { margin: 20px 0 10px; font-size: 15px; color: #334155; letter-spacing: 0; }
+    .sub { color: var(--muted); font-size: 14px; }
+    main { padding: 24px 32px 48px; max-width: 1440px; margin: 0 auto; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .metric-label { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+    .metric-value { font-size: 20px; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); gap: 18px; align-items: start; }
+    .panel, .task-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 9px 8px; border-bottom: 1px solid var(--soft); text-align: left; vertical-align: middle; }
+    th { color: #475569; font-weight: 700; background: #f8fafc; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .stacked-bar {
+      height: 14px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      min-width: 180px;
+    }
+    .bar-seg { height: 100%; min-width: 2px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; color: #475569; font-size: 12px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+    .task-head { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 12px; }
+    .total-time { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .phase-timeline { display: grid; gap: 7px; }
+    .phase-row {
+      display: grid;
+      grid-template-columns: 170px minmax(220px, 1fr) 135px minmax(180px, 1.1fr);
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .phase-name { color: #334155; font-weight: 600; }
+    .phase-track {
+      height: 22px;
+      position: relative;
+      background: #edf2f7;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .phase-block {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-radius: 3px;
+      min-width: 2px;
+    }
+    .phase-block.bad { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.28), rgba(255,255,255,.28) 6px, transparent 6px, transparent 12px); }
+    .phase-meta { display: flex; align-items: center; justify-content: flex-end; gap: 7px; font-variant-numeric: tabular-nums; }
+    .phase-detail { color: var(--muted); overflow-wrap: anywhere; }
+    .badge { padding: 2px 6px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid transparent; }
+    .badge.ok { color: #047857; background: #d1fae5; border-color: #a7f3d0; }
+    .badge.bad { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
+    .badge.warn { color: #92400e; background: #fef3c7; border-color: #fde68a; }
+    .badge.muted { color: #475569; background: #e2e8f0; border-color: #cbd5e1; }
+    .badge.neutral { color: #334155; background: #f1f5f9; border-color: #e2e8f0; }
+    .notes { margin: 0; padding-left: 0; list-style: none; font-size: 12px; color: #334155; display: grid; gap: 5px; }
+    .note-level { display: inline-block; width: 42px; font-weight: 800; }
+    .note-level.warn { color: #b45309; }
+    .note-level.info { color: #0369a1; }
+    .line { color: #94a3b8; margin-right: 6px; }
+    details { margin-top: 18px; }
+    pre {
+      background: #0f172a;
+      color: #dbeafe;
+      border-radius: 8px;
+      padding: 12px;
+      overflow: auto;
+      font-size: 12px;
+    }
+    @media (max-width: 980px) {
+      main { padding: 18px; }
+      .grid { grid-template-columns: 1fr; }
+      .phase-row { grid-template-columns: 1fr; gap: 4px; }
+      .phase-meta { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>泊车耗时与逻辑切换可视化</h1>
+    <div class="sub">来源：log/log.txt · 任务数：4 · 任务总耗时：199.32s</div>
+  </header>
+  <main>
+    <section class="metrics">
+      <div class="metric"><div class="metric-label">最慢任务</div><div class="metric-value">task 8: 64.27s</div></div><div class="metric"><div class="metric-label">泊车阶段累计最大</div><div class="metric-value">Phase 2: PID 到中心: 56.35s</div></div><div class="metric"><div class="metric-label">任务级累计最大</div><div class="metric-value">泊车 run(): 134.92s</div></div>
+      <div class="metric"><div class="metric-label">任务总耗时</div><div class="metric-value">199.32s</div></div>
+    </section>
+
+    <section class="panel">
+      <h2>任务总览</h2>
+      <table>
+        <thead><tr><th>idx</th><th>task_id</th><th>入口</th><th>总耗时</th><th>任务级耗时占比</th></tr></thead>
+        <tbody><tr><td>1</td><td>1</td><td>right</td><td class="num">39.75s</td><td><div class="stacked-bar"><div class="bar-seg" style="width:12.579%;background:#64748b" title="move_base 到任务点 5.00s"></div><div class="bar-seg" style="width:2.516%;background:#94a3b8" title="泊车前固定等待 1.00s"></div><div class="bar-seg" style="width:2.667%;background:#0ea5e9" title="泊车对象初始化 1.06s"></div><div class="bar-seg" style="width:59.346%;background:#f59e0b" title="泊车 run() 23.59s"></div><div class="bar-seg" style="width:1.258%;background:#cbd5e1" title="泊车后固定等待 0.50s"></div><div class="bar-seg" style="width:8.352%;background:#22c55e" title="TTS 播报 3.32s"></div><div class="bar-seg" style="width:13.233%;background:#475569" title="逃逸 5.26s"></div></div></td></tr><tr><td>2</td><td>7</td><td>down</td><td class="num">52.21s</td><td><div class="stacked-bar"><div class="bar-seg" style="width:9.577%;background:#64748b" title="move_base 到任务点 5.00s"></div><div class="bar-seg" style="width:1.915%;background:#94a3b8" title="泊车前固定等待 1.00s"></div><div class="bar-seg" style="width:2.069%;background:#0ea5e9" title="泊车对象初始化 1.08s"></div><div class="bar-seg" style="width:68.971%;background:#f59e0b" title="泊车 run() 36.01s"></div><div class="bar-seg" style="width:0.958%;background:#cbd5e1" title="泊车后固定等待 0.50s"></div><div class="bar-seg" style="width:6.378%;background:#22c55e" title="TTS 播报 3.33s"></div><div class="bar-seg" style="width:10.056%;background:#475569" title="逃逸 5.25s"></div></div></td></tr><tr><td>3</td><td>8</td><td>up</td><td class="num">64.27s</td><td><div class="stacked-bar"><div class="bar-seg" style="width:7.795%;background:#64748b" title="move_base 到任务点 5.01s"></div><div class="bar-seg" style="width:1.556%;background:#94a3b8" title="泊车前固定等待 1.00s"></div><div class="bar-seg" style="width:1.649%;background:#0ea5e9" title="泊车对象初始化 1.06s"></div><div class="bar-seg" style="width:75.276%;background:#f59e0b" title="泊车 run() 48.38s"></div><div class="bar-seg" style="width:0.778%;background:#cbd5e1" title="泊车后固定等待 0.50s"></div><div class="bar-seg" style="width:4.761%;background:#22c55e" title="TTS 播报 3.06s"></div><div class="bar-seg" style="width:8.169%;background:#475569" title="逃逸 5.25s"></div></div></td></tr><tr><td>4</td><td>9</td><td>left</td><td class="num">43.09s</td><td><div class="stacked-bar"><div class="bar-seg" style="width:11.627%;background:#64748b" title="move_base 到任务点 5.01s"></div><div class="bar-seg" style="width:2.321%;background:#94a3b8" title="泊车前固定等待 1.00s"></div><div class="bar-seg" style="width:2.460%;background:#0ea5e9" title="泊车对象初始化 1.06s"></div><div class="bar-seg" style="width:62.520%;background:#f59e0b" title="泊车 run() 26.94s"></div><div class="bar-seg" style="width:1.160%;background:#cbd5e1" title="泊车后固定等待 0.50s"></div><div class="bar-seg" style="width:7.658%;background:#22c55e" title="TTS 播报 3.30s"></div><div class="bar-seg" style="width:12.184%;background:#475569" title="逃逸 5.25s"></div></div></td></tr></tbody>
+      </table>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:#64748b"></span>move_base 到任务点</span><span class="legend-item"><span class="swatch" style="background:#94a3b8"></span>泊车前固定等待</span><span class="legend-item"><span class="swatch" style="background:#0ea5e9"></span>泊车对象初始化</span><span class="legend-item"><span class="swatch" style="background:#f59e0b"></span>泊车 run()</span><span class="legend-item"><span class="swatch" style="background:#cbd5e1"></span>泊车后固定等待</span><span class="legend-item"><span class="swatch" style="background:#22c55e"></span>TTS 播报</span><span class="legend-item"><span class="swatch" style="background:#475569"></span>逃逸</span>
+      </div>
+    </section>
+
+    <div class="grid">
+      <div>
+        <section class="task-card"><div class="task-head"><h2>任务 1/4 | task_id=1 | 入口=right | 目标=(1.190, 1.160, 89.1)</h2><div class="total-time">39.75s</div></div><div class="stacked-bar"><div class="bar-seg" style="width:12.579%;background:#64748b" title="move_base 到任务点 5.00s"></div><div class="bar-seg" style="width:2.516%;background:#94a3b8" title="泊车前固定等待 1.00s"></div><div class="bar-seg" style="width:2.667%;background:#0ea5e9" title="泊车对象初始化 1.06s"></div><div class="bar-seg" style="width:59.346%;background:#f59e0b" title="泊车 run() 23.59s"></div><div class="bar-seg" style="width:1.258%;background:#cbd5e1" title="泊车后固定等待 0.50s"></div><div class="bar-seg" style="width:8.352%;background:#22c55e" title="TTS 播报 3.32s"></div><div class="bar-seg" style="width:13.233%;background:#475569" title="逃逸 5.26s"></div></div><table><thead><tr><th>任务级阶段</th><th>耗时</th><th>占任务</th><th>状态/补充</th></tr></thead><tbody><tr><td>move_base 到任务点</td><td class="num">5.00s</td><td class="num">12.6%</td><td>ok=False</td></tr><tr><td>泊车前固定等待</td><td class="num">1.00s</td><td class="num">2.5%</td><td></td></tr><tr><td>泊车对象初始化</td><td class="num">1.06s</td><td class="num">2.7%</td><td></td></tr><tr><td>泊车 run()</td><td class="num">23.59s</td><td class="num">59.3%</td><td>parking_done=True best_entry=right</td></tr><tr><td>泊车后固定等待</td><td class="num">0.50s</td><td class="num">1.3%</td><td></td></tr><tr><td>TTS 播报</td><td class="num">3.32s</td><td class="num">8.4%</td><td>ok=True</td></tr><tr><td>逃逸</td><td class="num">5.26s</td><td class="num">13.2%</td><td></td></tr></tbody></table><h3>泊车逻辑切换时间线</h3><div class="phase-timeline"><div class="phase-row"><div class="phase-name">Phase 0: 直达中心</div><div class="phase-track"><div class="phase-block bad" style="left:0.000%;width:16.835%;background:#ef4444" title="Phase 0: 直达中心 5.50s FAIL"></div></div><div class="phase-meta"><span>5.50s</span><span class="badge bad">FAIL</span></div><div class="phase-detail">next=entry_based</div></div><div class="phase-row"><div class="phase-name">入口识别/选择</div><div class="phase-track"><div class="phase-block ok" style="left:16.835%;width:0.400%;background:#14b8a6" title="入口识别/选择 0.02s OK"></div></div><div class="phase-meta"><span>0.02s</span><span class="badge ok">OK</span></div><div class="phase-detail">best=right score=-59.617 entry=(1.530, 1.160)</div></div><div class="phase-row"><div class="phase-name">Phase 1A: move_base 到入口</div><div class="phase-track"><div class="phase-block ok" style="left:16.896%;width:5.081%;background:#3b82f6" title="Phase 1A: move_base 到入口 1.66s OK"></div></div><div class="phase-meta"><span>1.66s</span><span class="badge ok">OK</span></div><div class="phase-detail">entry=right</div></div><div class="phase-row"><div class="phase-name">Phase 1B: PID 到入口</div><div class="phase-track"><div class="phase-block muted" style="left:22.008%;width:0.100%;background:#6366f1" title="Phase 1B: PID 到入口 0.00s SKIP"></div></div><div class="phase-meta"><span>0.00s</span><span class="badge muted">SKIP</span></div><div class="phase-detail">phase1a_ok=true</div></div><div class="phase-row"><div class="phase-name">Phase 2: PID 到中心</div><div class="phase-track"><div class="phase-block warn" style="left:22.008%;width:48.362%;background:#f59e0b" title="Phase 2: PID 到中心 15.80s TIMEOUT_ACCEPT"></div></div><div class="phase-meta"><span>15.80s</span><span class="badge warn">TIMEOUT_ACCEPT</span></div><div class="phase-detail">target=(1.190, 1.160)</div></div><div class="phase-row"><div class="phase-name">中心 PID yaw 对齐</div><div class="phase-track"><div class="phase-block warn" style="left:22.039%;width:13.009%;background:#f97316" title="中心 PID yaw 对齐 4.25s TIMEOUT_ACCEPT"></div></div><div class="phase-meta"><span>4.25s</span><span class="badge warn">TIMEOUT_ACCEPT</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">中心 PID 平移</div><div class="phase-track"><div class="phase-block bad" style="left:35.047%;width:34.558%;background:#ea580c" title="中心 PID 平移 11.29s FAIL"></div></div><div class="phase-meta"><span>11.29s</span><span class="badge bad">FAIL</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">Phase 3: 激光精调</div><div class="phase-track"><div class="phase-block ok" style="left:70.370%;width:1.071%;background:#10b981" title="Phase 3: 激光精调 0.35s OK"></div></div><div class="phase-meta"><span>0.35s</span><span class="badge ok">OK</span></div><div class="phase-detail">laser=0.208 target=0.20 err=0.008</div></div><div class="phase-row"><div class="phase-name">Phase 4: 逃逸</div><div class="phase-track"><div class="phase-block bad" style="left:83.900%;width:16.070%;background:#64748b" title="Phase 4: 逃逸 5.25s TIMEOUT"></div></div><div class="phase-meta"><span>5.25s</span><span class="badge bad">TIMEOUT</span></div><div class="phase-detail">elapsed=5.00</div></div></div><h3>关键日志</h3><ul class="notes"><li><span class="note-level info">INFO</span> <span class="line">L5</span> [Navi] 前往目标点: [1.19, 1.16, 89.1] (timeout=5s)</li><li><span class="note-level warn">WARN</span> <span class="line">L20</span> Phase 0: cancelled by timer. dist=0.503</li><li><span class="note-level warn">WARN</span> <span class="line">L24</span> Opening circle: confident=True ring=35 left=21 right=0 up=0 down=14 best=right,up</li><li><span class="note-level warn">WARN</span> <span class="line">L25</span> Open sides: right, blocked: left,up,down</li><li><span class="note-level info">INFO</span> <span class="line">L26</span> Best entry: right score=-59.617 entry=(1.530, 1.160)</li><li><span class="note-level warn">WARN</span> <span class="line">L30</span> Phase 1a: near entry (dist=0.147) after 1.2s. Accept.</li><li><span class="note-level warn">WARN</span> <span class="line">L38</span> pid_align_yaw timeout. Accept current yaw.</li><li><span class="note-level warn">WARN</span> <span class="line">L43</span> pid_translate timeout.</li><li><span class="note-level warn">WARN</span> <span class="line">L46</span> Phase 2 PID to center timeout. Accept current position.</li><li><span class="note-level warn">WARN</span> <span class="line">L60</span> escape: timeout 5.0s</li></ul></section><section class="task-card"><div class="task-head"><h2>任务 2/4 | task_id=7 | 入口=down | 目标=(2.000, 1.150, 88.8)</h2><div class="total-time">52.21s</div></div><div class="stacked-bar"><div class="bar-seg" style="width:9.577%;background:#64748b" title="move_base 到任务点 5.00s"></div><div class="bar-seg" style="width:1.915%;background:#94a3b8" title="泊车前固定等待 1.00s"></div><div class="bar-seg" style="width:2.069%;background:#0ea5e9" title="泊车对象初始化 1.08s"></div><div class="bar-seg" style="width:68.971%;background:#f59e0b" title="泊车 run() 36.01s"></div><div class="bar-seg" style="width:0.958%;background:#cbd5e1" title="泊车后固定等待 0.50s"></div><div class="bar-seg" style="width:6.378%;background:#22c55e" title="TTS 播报 3.33s"></div><div class="bar-seg" style="width:10.056%;background:#475569" title="逃逸 5.25s"></div></div><table><thead><tr><th>任务级阶段</th><th>耗时</th><th>占任务</th><th>状态/补充</th></tr></thead><tbody><tr><td>move_base 到任务点</td><td class="num">5.00s</td><td class="num">9.6%</td><td>ok=False</td></tr><tr><td>泊车前固定等待</td><td class="num">1.00s</td><td class="num">1.9%</td><td></td></tr><tr><td>泊车对象初始化</td><td class="num">1.08s</td><td class="num">2.1%</td><td></td></tr><tr><td>泊车 run()</td><td class="num">36.01s</td><td class="num">69.0%</td><td>parking_done=True best_entry=down</td></tr><tr><td>泊车后固定等待</td><td class="num">0.50s</td><td class="num">1.0%</td><td></td></tr><tr><td>TTS 播报</td><td class="num">3.33s</td><td class="num">6.4%</td><td>ok=True</td></tr><tr><td>逃逸</td><td class="num">5.25s</td><td class="num">10.1%</td><td></td></tr></tbody></table><h3>泊车逻辑切换时间线</h3><div class="phase-timeline"><div class="phase-row"><div class="phase-name">Phase 0: 直达中心</div><div class="phase-track"><div class="phase-block bad" style="left:0.000%;width:12.195%;background:#ef4444" title="Phase 0: 直达中心 5.50s FAIL"></div></div><div class="phase-meta"><span>5.50s</span><span class="badge bad">FAIL</span></div><div class="phase-detail">next=entry_based</div></div><div class="phase-row"><div class="phase-name">入口识别/选择</div><div class="phase-track"><div class="phase-block ok" style="left:12.195%;width:0.400%;background:#14b8a6" title="入口识别/选择 0.03s OK"></div></div><div class="phase-meta"><span>0.03s</span><span class="badge ok">OK</span></div><div class="phase-detail">best=down score=-21.731 entry=(2.000, 0.810)</div></div><div class="phase-row"><div class="phase-name">Phase 1A: move_base 到入口</div><div class="phase-track"><div class="phase-block ok" style="left:12.262%;width:13.769%;background:#3b82f6" title="Phase 1A: move_base 到入口 6.21s OK"></div></div><div class="phase-meta"><span>6.21s</span><span class="badge ok">OK</span></div><div class="phase-detail">entry=down</div></div><div class="phase-row"><div class="phase-name">Phase 1B: PID 到入口</div><div class="phase-track"><div class="phase-block muted" style="left:26.031%;width:0.100%;background:#6366f1" title="Phase 1B: PID 到入口 0.00s SKIP"></div></div><div class="phase-meta"><span>0.00s</span><span class="badge muted">SKIP</span></div><div class="phase-detail">phase1a_ok=true</div></div><div class="phase-row"><div class="phase-name">Phase 2: PID 到中心</div><div class="phase-track"><div class="phase-block warn" style="left:26.053%;width:34.945%;background:#f59e0b" title="Phase 2: PID 到中心 15.76s TIMEOUT_ACCEPT"></div></div><div class="phase-meta"><span>15.76s</span><span class="badge warn">TIMEOUT_ACCEPT</span></div><div class="phase-detail">target=(2.000, 1.150)</div></div><div class="phase-row"><div class="phase-name">中心 PID yaw 对齐</div><div class="phase-track"><div class="phase-block warn" style="left:26.053%;width:9.424%;background:#f97316" title="中心 PID yaw 对齐 4.25s TIMEOUT_ACCEPT"></div></div><div class="phase-meta"><span>4.25s</span><span class="badge warn">TIMEOUT_ACCEPT</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">中心 PID 平移</div><div class="phase-track"><div class="phase-block bad" style="left:35.499%;width:24.945%;background:#ea580c" title="中心 PID 平移 11.25s FAIL"></div></div><div class="phase-meta"><span>11.25s</span><span class="badge bad">FAIL</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">Phase 3: 激光精调</div><div class="phase-track"><div class="phase-block bad" style="left:60.998%;width:18.293%;background:#10b981" title="Phase 3: 激光精调 8.25s TIMEOUT"></div></div><div class="phase-meta"><span>8.25s</span><span class="badge bad">TIMEOUT</span></div><div class="phase-detail">elapsed=8.00</div></div><div class="phase-row"><div class="phase-name">Phase 4: 逃逸</div><div class="phase-track"><div class="phase-block bad" style="left:88.359%;width:11.641%;background:#64748b" title="Phase 4: 逃逸 5.25s TIMEOUT"></div></div><div class="phase-meta"><span>5.25s</span><span class="badge bad">TIMEOUT</span></div><div class="phase-detail">elapsed=5.00</div></div></div><h3>关键日志</h3><ul class="notes"><li><span class="note-level info">INFO</span> <span class="line">L66</span> [Navi] 前往目标点: [2.0, 1.15, 88.8] (timeout=5s)</li><li><span class="note-level warn">WARN</span> <span class="line">L81</span> Phase 0: cancelled by timer. dist=0.332</li><li><span class="note-level warn">WARN</span> <span class="line">L85</span> Opening circle: confident=True ring=48 left=1 right=0 up=47 down=0 best=left,right,down</li><li><span class="note-level warn">WARN</span> <span class="line">L86</span> Open sides: , blocked: left,right,up,down</li><li><span class="note-level info">INFO</span> <span class="line">L87</span> Best entry: down score=-21.731 entry=(2.000, 0.810)</li><li><span class="note-level warn">WARN</span> <span class="line">L91</span> Phase 1a: near entry (dist=0.125) after 5.8s. Accept.</li><li><span class="note-level warn">WARN</span> <span class="line">L99</span> pid_align_yaw timeout. Accept current yaw.</li><li><span class="note-level warn">WARN</span> <span class="line">L104</span> pid_translate timeout.</li><li><span class="note-level warn">WARN</span> <span class="line">L107</span> Phase 2 PID to center timeout. Accept current position.</li><li><span class="note-level warn">WARN</span> <span class="line">L111</span> Phase 3: timeout 8.0s</li><li><span class="note-level warn">WARN</span> <span class="line">L121</span> escape: timeout 5.0s</li></ul></section><section class="task-card"><div class="task-head"><h2>任务 3/4 | task_id=8 | 入口=up | 目标=(2.000, 1.550, 88.8)</h2><div class="total-time">64.27s</div></div><div class="stacked-bar"><div class="bar-seg" style="width:7.795%;background:#64748b" title="move_base 到任务点 5.01s"></div><div class="bar-seg" style="width:1.556%;background:#94a3b8" title="泊车前固定等待 1.00s"></div><div class="bar-seg" style="width:1.649%;background:#0ea5e9" title="泊车对象初始化 1.06s"></div><div class="bar-seg" style="width:75.276%;background:#f59e0b" title="泊车 run() 48.38s"></div><div class="bar-seg" style="width:0.778%;background:#cbd5e1" title="泊车后固定等待 0.50s"></div><div class="bar-seg" style="width:4.761%;background:#22c55e" title="TTS 播报 3.06s"></div><div class="bar-seg" style="width:8.169%;background:#475569" title="逃逸 5.25s"></div></div><table><thead><tr><th>任务级阶段</th><th>耗时</th><th>占任务</th><th>状态/补充</th></tr></thead><tbody><tr><td>move_base 到任务点</td><td class="num">5.01s</td><td class="num">7.8%</td><td>ok=False</td></tr><tr><td>泊车前固定等待</td><td class="num">1.00s</td><td class="num">1.6%</td><td></td></tr><tr><td>泊车对象初始化</td><td class="num">1.06s</td><td class="num">1.6%</td><td></td></tr><tr><td>泊车 run()</td><td class="num">48.38s</td><td class="num">75.3%</td><td>parking_done=True best_entry=up</td></tr><tr><td>泊车后固定等待</td><td class="num">0.50s</td><td class="num">0.8%</td><td></td></tr><tr><td>TTS 播报</td><td class="num">3.06s</td><td class="num">4.8%</td><td>ok=True</td></tr><tr><td>逃逸</td><td class="num">5.25s</td><td class="num">8.2%</td><td></td></tr></tbody></table><h3>泊车逻辑切换时间线</h3><div class="phase-timeline"><div class="phase-row"><div class="phase-name">Phase 0: 直达中心</div><div class="phase-track"><div class="phase-block bad" style="left:0.000%;width:9.582%;background:#ef4444" title="Phase 0: 直达中心 5.48s FAIL"></div></div><div class="phase-meta"><span>5.48s</span><span class="badge bad">FAIL</span></div><div class="phase-detail">next=entry_based</div></div><div class="phase-row"><div class="phase-name">入口识别/选择</div><div class="phase-track"><div class="phase-block ok" style="left:9.600%;width:0.400%;background:#14b8a6" title="入口识别/选择 0.02s OK"></div></div><div class="phase-meta"><span>0.02s</span><span class="badge ok">OK</span></div><div class="phase-detail">best=up score=-58.821 entry=(2.000, 1.890)</div></div><div class="phase-row"><div class="phase-name">Phase 1A: move_base 到入口</div><div class="phase-track"><div class="phase-block bad" style="left:9.635%;width:14.898%;background:#3b82f6" title="Phase 1A: move_base 到入口 8.52s FAIL"></div></div><div class="phase-meta"><span>8.52s</span><span class="badge bad">FAIL</span></div><div class="phase-detail">entry=up</div></div><div class="phase-row"><div class="phase-name">Phase 1B: PID 到入口</div><div class="phase-track"><div class="phase-block ok" style="left:24.532%;width:23.623%;background:#6366f1" title="Phase 1B: PID 到入口 13.51s OK"></div></div><div class="phase-meta"><span>13.51s</span><span class="badge ok">OK</span></div><div class="phase-detail">entry=up</div></div><div class="phase-row"><div class="phase-name">入口 PID yaw 对齐</div><div class="phase-track"><div class="phase-block warn" style="left:24.550%;width:7.431%;background:#a855f7" title="入口 PID yaw 对齐 4.25s TIMEOUT_ACCEPT"></div></div><div class="phase-meta"><span>4.25s</span><span class="badge warn">TIMEOUT_ACCEPT</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">入口 PID 平移</div><div class="phase-track"><div class="phase-block ok" style="left:31.981%;width:15.755%;background:#8b5cf6" title="入口 PID 平移 9.01s OK"></div></div><div class="phase-meta"><span>9.01s</span><span class="badge ok">OK</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">Phase 2: PID 到中心</div><div class="phase-track"><div class="phase-block warn" style="left:48.155%;width:21.560%;background:#f59e0b" title="Phase 2: PID 到中心 12.33s TIMEOUT_ACCEPT"></div></div><div class="phase-meta"><span>12.33s</span><span class="badge warn">TIMEOUT_ACCEPT</span></div><div class="phase-detail">target=(2.000, 1.550)</div></div><div class="phase-row"><div class="phase-name">中心 PID yaw 对齐</div><div class="phase-track"><div class="phase-block ok" style="left:48.173%;width:1.294%;background:#f97316" title="中心 PID yaw 对齐 0.74s OK"></div></div><div class="phase-meta"><span>0.74s</span><span class="badge ok">OK</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">中心 PID 平移</div><div class="phase-track"><div class="phase-block bad" style="left:49.467%;width:19.811%;background:#ea580c" title="中心 PID 平移 11.33s FAIL"></div></div><div class="phase-meta"><span>11.33s</span><span class="badge bad">FAIL</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">Phase 3: 激光精调</div><div class="phase-track"><div class="phase-block bad" style="left:69.715%;width:14.443%;background:#10b981" title="Phase 3: 激光精调 8.26s TIMEOUT"></div></div><div class="phase-meta"><span>8.26s</span><span class="badge bad">TIMEOUT</span></div><div class="phase-detail">elapsed=8.00</div></div><div class="phase-row"><div class="phase-name">Phase 4: 逃逸</div><div class="phase-track"><div class="phase-block bad" style="left:90.820%;width:9.180%;background:#64748b" title="Phase 4: 逃逸 5.25s TIMEOUT"></div></div><div class="phase-meta"><span>5.25s</span><span class="badge bad">TIMEOUT</span></div><div class="phase-detail">elapsed=5.00</div></div></div><h3>关键日志</h3><ul class="notes"><li><span class="note-level info">INFO</span> <span class="line">L127</span> [Navi] 前往目标点: [2.0, 1.55, 88.8] (timeout=5s)</li><li><span class="note-level warn">WARN</span> <span class="line">L142</span> Phase 0: cancelled by timer. dist=0.837</li><li><span class="note-level warn">WARN</span> <span class="line">L146</span> Opening circle: confident=True ring=11 left=6 right=0 up=0 down=5 best=right,up</li><li><span class="note-level warn">WARN</span> <span class="line">L147</span> Open sides: up, blocked: left,right,down</li><li><span class="note-level info">INFO</span> <span class="line">L148</span> Best entry: up score=-58.821 entry=(2.000, 1.890)</li><li><span class="note-level warn">WARN</span> <span class="line">L153</span> Phase 1a: cancelled by timer. dist=0.191</li><li><span class="note-level warn">WARN</span> <span class="line">L161</span> pid_align_yaw timeout. Accept current yaw.</li><li><span class="note-level warn">WARN</span> <span class="line">L179</span> pid_translate timeout.</li><li><span class="note-level warn">WARN</span> <span class="line">L182</span> Phase 2 PID to center timeout. Accept current position.</li><li><span class="note-level warn">WARN</span> <span class="line">L186</span> Phase 3: timeout 8.0s</li><li><span class="note-level warn">WARN</span> <span class="line">L196</span> escape: timeout 5.0s</li></ul></section><section class="task-card"><div class="task-head"><h2>任务 4/4 | task_id=9 | 入口=left | 目标=(1.990, 1.960, 90.9)</h2><div class="total-time">43.09s</div></div><div class="stacked-bar"><div class="bar-seg" style="width:11.627%;background:#64748b" title="move_base 到任务点 5.01s"></div><div class="bar-seg" style="width:2.321%;background:#94a3b8" title="泊车前固定等待 1.00s"></div><div class="bar-seg" style="width:2.460%;background:#0ea5e9" title="泊车对象初始化 1.06s"></div><div class="bar-seg" style="width:62.520%;background:#f59e0b" title="泊车 run() 26.94s"></div><div class="bar-seg" style="width:1.160%;background:#cbd5e1" title="泊车后固定等待 0.50s"></div><div class="bar-seg" style="width:7.658%;background:#22c55e" title="TTS 播报 3.30s"></div><div class="bar-seg" style="width:12.184%;background:#475569" title="逃逸 5.25s"></div></div><table><thead><tr><th>任务级阶段</th><th>耗时</th><th>占任务</th><th>状态/补充</th></tr></thead><tbody><tr><td>move_base 到任务点</td><td class="num">5.01s</td><td class="num">11.6%</td><td>ok=False</td></tr><tr><td>泊车前固定等待</td><td class="num">1.00s</td><td class="num">2.3%</td><td></td></tr><tr><td>泊车对象初始化</td><td class="num">1.06s</td><td class="num">2.5%</td><td></td></tr><tr><td>泊车 run()</td><td class="num">26.94s</td><td class="num">62.5%</td><td>parking_done=True best_entry=left</td></tr><tr><td>泊车后固定等待</td><td class="num">0.50s</td><td class="num">1.2%</td><td></td></tr><tr><td>TTS 播报</td><td class="num">3.30s</td><td class="num">7.7%</td><td>ok=True</td></tr><tr><td>逃逸</td><td class="num">5.25s</td><td class="num">12.2%</td><td></td></tr></tbody></table><h3>泊车逻辑切换时间线</h3><div class="phase-timeline"><div class="phase-row"><div class="phase-name">Phase 0: 直达中心</div><div class="phase-track"><div class="phase-block bad" style="left:0.000%;width:15.250%;background:#ef4444" title="Phase 0: 直达中心 5.49s FAIL"></div></div><div class="phase-meta"><span>5.49s</span><span class="badge bad">FAIL</span></div><div class="phase-detail">next=entry_based</div></div><div class="phase-row"><div class="phase-name">入口识别/选择</div><div class="phase-track"><div class="phase-block ok" style="left:15.278%;width:0.400%;background:#14b8a6" title="入口识别/选择 0.01s OK"></div></div><div class="phase-meta"><span>0.01s</span><span class="badge ok">OK</span></div><div class="phase-detail">best=left score=-59.874 entry=(1.650, 1.960)</div></div><div class="phase-row"><div class="phase-name">Phase 1A: move_base 到入口</div><div class="phase-track"><div class="phase-block ok" style="left:15.306%;width:1.250%;background:#3b82f6" title="Phase 1A: move_base 到入口 0.45s OK"></div></div><div class="phase-meta"><span>0.45s</span><span class="badge ok">OK</span></div><div class="phase-detail">entry=left</div></div><div class="phase-row"><div class="phase-name">Phase 1B: PID 到入口</div><div class="phase-track"><div class="phase-block muted" style="left:16.583%;width:0.100%;background:#6366f1" title="Phase 1B: PID 到入口 0.00s SKIP"></div></div><div class="phase-meta"><span>0.00s</span><span class="badge muted">SKIP</span></div><div class="phase-detail">phase1a_ok=true</div></div><div class="phase-row"><div class="phase-name">Phase 2: PID 到中心</div><div class="phase-track"><div class="phase-block ok" style="left:16.583%;width:34.611%;background:#f59e0b" title="Phase 2: PID 到中心 12.46s OK"></div></div><div class="phase-meta"><span>12.46s</span><span class="badge ok">OK</span></div><div class="phase-detail">target=(1.990, 1.960)</div></div><div class="phase-row"><div class="phase-name">中心 PID yaw 对齐</div><div class="phase-track"><div class="phase-block warn" style="left:16.611%;width:11.861%;background:#f97316" title="中心 PID yaw 对齐 4.27s TIMEOUT_ACCEPT"></div></div><div class="phase-meta"><span>4.27s</span><span class="badge warn">TIMEOUT_ACCEPT</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">中心 PID 平移</div><div class="phase-track"><div class="phase-block ok" style="left:28.500%;width:22.028%;background:#ea580c" title="中心 PID 平移 7.93s OK"></div></div><div class="phase-meta"><span>7.93s</span><span class="badge ok">OK</span></div><div class="phase-detail"></div></div><div class="phase-row"><div class="phase-name">Phase 3: 激光精调</div><div class="phase-track"><div class="phase-block bad" style="left:51.222%;width:22.917%;background:#10b981" title="Phase 3: 激光精调 8.25s TIMEOUT"></div></div><div class="phase-meta"><span>8.25s</span><span class="badge bad">TIMEOUT</span></div><div class="phase-detail">elapsed=8.00</div></div><div class="phase-row"><div class="phase-name">Phase 4: 逃逸</div><div class="phase-track"><div class="phase-block bad" style="left:85.417%;width:14.583%;background:#64748b" title="Phase 4: 逃逸 5.25s TIMEOUT"></div></div><div class="phase-meta"><span>5.25s</span><span class="badge bad">TIMEOUT</span></div><div class="phase-detail">elapsed=5.00</div></div></div><h3>关键日志</h3><ul class="notes"><li><span class="note-level info">INFO</span> <span class="line">L202</span> [Navi] 前往目标点: [1.99, 1.96, 90.9] (timeout=5s)</li><li><span class="note-level warn">WARN</span> <span class="line">L217</span> Phase 0: cancelled by timer. dist=0.210</li><li><span class="note-level warn">WARN</span> <span class="line">L221</span> Opening circle: confident=True ring=16 left=0 right=0 up=0 down=16 best=left,right,up</li><li><span class="note-level warn">WARN</span> <span class="line">L222</span> Open sides: left,up, blocked: right,down</li><li><span class="note-level info">INFO</span> <span class="line">L223</span> Best entry: left score=-59.874 entry=(1.650, 1.960)</li><li><span class="note-level warn">WARN</span> <span class="line">L227</span> Phase 1a: near entry (dist=0.128) after 0.0s. Accept.</li><li><span class="note-level warn">WARN</span> <span class="line">L235</span> pid_align_yaw timeout. Accept current yaw.</li><li><span class="note-level info">INFO</span> <span class="line">L243</span> SUCCESS: parked at target center via entry left.</li><li><span class="note-level warn">WARN</span> <span class="line">L247</span> Phase 3: timeout 8.0s</li><li><span class="note-level warn">WARN</span> <span class="line">L257</span> escape: timeout 5.0s</li><li><span class="note-level info">INFO</span> <span class="line">L262</span> [Navi] 前往目标点: [0.35, 3.05, -3.13] (timeout=60s)</li></ul></section>
+      </div>
+      <aside>
+        <section class="panel">
+          <h2>泊车阶段累计</h2>
+          <table><thead><tr><th>阶段</th><th>累计</th><th>占比</th></tr></thead><tbody><tr><td>Phase 2: PID 到中心</td><td class="num">56.35s</td><td class="num">25.2%</td></tr><tr><td>中心 PID 平移</td><td class="num">41.80s</td><td class="num">18.7%</td></tr><tr><td>Phase 3: 激光精调</td><td class="num">25.11s</td><td class="num">11.2%</td></tr><tr><td>Phase 0: 直达中心</td><td class="num">21.97s</td><td class="num">9.8%</td></tr><tr><td>Phase 4: 逃逸</td><td class="num">21.00s</td><td class="num">9.4%</td></tr><tr><td>Phase 1A: move_base 到入口</td><td class="num">16.84s</td><td class="num">7.5%</td></tr><tr><td>Phase 1B: PID 到入口</td><td class="num">13.51s</td><td class="num">6.0%</td></tr><tr><td>中心 PID yaw 对齐</td><td class="num">13.51s</td><td class="num">6.0%</td></tr><tr><td>入口 PID 平移</td><td class="num">9.01s</td><td class="num">4.0%</td></tr><tr><td>入口 PID yaw 对齐</td><td class="num">4.25s</td><td class="num">1.9%</td></tr><tr><td>入口识别/选择</td><td class="num">0.08s</td><td class="num">0.0%</td></tr></tbody></table>
+        </section>
+        <section class="panel">
+          <h2>任务级累计</h2>
+          <table><thead><tr><th>阶段</th><th>累计</th><th>占比</th></tr></thead><tbody><tr><td>泊车 run()</td><td class="num">134.92s</td><td class="num">67.7%</td></tr><tr><td>逃逸</td><td class="num">21.01s</td><td class="num">10.5%</td></tr><tr><td>move_base 到任务点</td><td class="num">20.02s</td><td class="num">10.0%</td></tr><tr><td>TTS 播报</td><td class="num">13.01s</td><td class="num">6.5%</td></tr><tr><td>泊车对象初始化</td><td class="num">4.26s</td><td class="num">2.1%</td></tr><tr><td>泊车前固定等待</td><td class="num">4.00s</td><td class="num">2.0%</td></tr><tr><td>泊车后固定等待</td><td class="num">2.00s</td><td class="num">1.0%</td></tr></tbody></table>
+        </section>
+      </aside>
+    </div>
+
+    <details>
+      <summary>解析后的 JSON 数据</summary>
+      <pre>{
+  &quot;tasks&quot;: [
+    {
+      &quot;idx&quot;: 1,
+      &quot;count&quot;: 4,
+      &quot;task_id&quot;: &quot;1&quot;,
+      &quot;start_ts&quot;: 1780856259.7603,
+      &quot;end_ts&quot;: 1780856299.511175,
+      &quot;total_dt&quot;: 39.75,
+      &quot;segments&quot;: [
+        {
+          &quot;name&quot;: &quot;NAV_TO_TASK&quot;,
+          &quot;label&quot;: &quot;move_base 到任务点&quot;,
+          &quot;dt&quot;: 5.0,
+          &quot;ts&quot;: 1780856264.766746,
+          &quot;rest&quot;: &quot;ok=False&quot;,
+          &quot;status&quot;: {
+            &quot;ok&quot;: &quot;False&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;PRE_PARK_WAIT&quot;,
+          &quot;label&quot;: &quot;泊车前固定等待&quot;,
+          &quot;dt&quot;: 1.0,
+          &quot;ts&quot;: 1780856265.770989,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;PARK_INIT&quot;,
+          &quot;label&quot;: &quot;泊车对象初始化&quot;,
+          &quot;dt&quot;: 1.06,
+          &quot;ts&quot;: 1780856266.840999,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;PARK_RUN&quot;,
+          &quot;label&quot;: &quot;泊车 run()&quot;,
+          &quot;dt&quot;: 23.59,
+          &quot;ts&quot;: 1780856290.42968,
+          &quot;rest&quot;: &quot;parking_done=True best_entry=right&quot;,
+          &quot;status&quot;: {
+            &quot;parking_done&quot;: &quot;True&quot;,
+            &quot;best_entry&quot;: &quot;right&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;POST_PARK_WAIT&quot;,
+          &quot;label&quot;: &quot;泊车后固定等待&quot;,
+          &quot;dt&quot;: 0.5,
+          &quot;ts&quot;: 1780856290.931873,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;TTS&quot;,
+          &quot;label&quot;: &quot;TTS 播报&quot;,
+          &quot;dt&quot;: 3.32,
+          &quot;ts&quot;: 1780856294.252457,
+          &quot;rest&quot;: &quot;ok=True&quot;,
+          &quot;status&quot;: {
+            &quot;ok&quot;: &quot;True&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;ESCAPE&quot;,
+          &quot;label&quot;: &quot;逃逸&quot;,
+          &quot;dt&quot;: 5.26,
+          &quot;ts&quot;: 1780856299.508977,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        }
+      ],
+      &quot;park_events&quot;: [
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;RUN&quot;,
+          &quot;label&quot;: &quot;泊车总流程&quot;,
+          &quot;ts&quot;: 1780856266.842373,
+          &quot;offset&quot;: 0.0,
+          &quot;detail&quot;: &quot;target=(1.190, 1.160, 89.1deg)&quot;,
+          &quot;line_no&quot;: 16,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856266.842373]: [PARK][RUN][START][+0.00s] target=(1.190, 1.160, 89.1deg)&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE0_DIRECT_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 0: 直达中心&quot;,
+          &quot;ts&quot;: 1780856266.843683,
+          &quot;offset&quot;: 0.0,
+          &quot;detail&quot;: &quot;timeout=5.0s tolerance=0.100&quot;,
+          &quot;line_no&quot;: 17,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856266.843683]: [PARK][PHASE0_DIRECT_CENTER][START][+0.00s] timeout=5.0s tolerance=0.100&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE0_DIRECT_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 0: 直达中心&quot;,
+          &quot;ts&quot;: 1780856272.338961,
+          &quot;offset&quot;: 5.5,
+          &quot;detail&quot;: &quot;next=entry_based&quot;,
+          &quot;line_no&quot;: 21,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856272.338961]: [PARK][PHASE0_DIRECT_CENTER][FAIL][dt=5.50s][+5.50s] next=entry_based&quot;,
+          &quot;dt&quot;: 5.5,
+          &quot;status&quot;: &quot;FAIL&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;ENTRY_SELECT&quot;,
+          &quot;label&quot;: &quot;入口识别/选择&quot;,
+          &quot;ts&quot;: 1780856272.344029,
+          &quot;offset&quot;: 5.5,
+          &quot;detail&quot;: &quot;recognition=True&quot;,
+          &quot;line_no&quot;: 23,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856272.344029]: [PARK][ENTRY_SELECT][START][+5.50s] recognition=True&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;ENTRY_SELECT&quot;,
+          &quot;label&quot;: &quot;入口识别/选择&quot;,
+          &quot;ts&quot;: 1780856272.362301,
+          &quot;offset&quot;: 5.52,
+          &quot;detail&quot;: &quot;best=right score=-59.617 entry=(1.530, 1.160)&quot;,
+          &quot;line_no&quot;: 27,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856272.362301]: [PARK][ENTRY_SELECT][OK][dt=0.02s][+5.52s] best=right score=-59.617 entry=(1.530, 1.160)&quot;,
+          &quot;dt&quot;: 0.02,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE1A_MOVE_BASE_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1A: move_base 到入口&quot;,
+          &quot;ts&quot;: 1780856272.363913,
+          &quot;offset&quot;: 5.52,
+          &quot;detail&quot;: &quot;entry=right timeout=8.0s tolerance=0.150&quot;,
+          &quot;line_no&quot;: 28,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856272.363913]: [PARK][PHASE1A_MOVE_BASE_ENTRY][START][+5.52s] entry=right timeout=8.0s tolerance=0.150&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE1A_MOVE_BASE_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1A: move_base 到入口&quot;,
+          &quot;ts&quot;: 1780856274.028198,
+          &quot;offset&quot;: 7.19,
+          &quot;detail&quot;: &quot;entry=right&quot;,
+          &quot;line_no&quot;: 31,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856274.028198]: [PARK][PHASE1A_MOVE_BASE_ENTRY][OK][dt=1.66s][+7.19s] entry=right&quot;,
+          &quot;dt&quot;: 1.66,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;skip&quot;,
+          &quot;phase&quot;: &quot;PHASE1B_PID_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1B: PID 到入口&quot;,
+          &quot;ts&quot;: 1780856274.029954,
+          &quot;offset&quot;: 7.19,
+          &quot;detail&quot;: &quot;phase1a_ok=true&quot;,
+          &quot;line_no&quot;: 32,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856274.029954]: [PARK][PHASE1B_PID_ENTRY][SKIP][+7.19s] phase1a_ok=true&quot;,
+          &quot;dt&quot;: 0.0,
+          &quot;status&quot;: &quot;SKIP&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE2_PID_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 2: PID 到中心&quot;,
+          &quot;ts&quot;: 1780856274.031541,
+          &quot;offset&quot;: 7.19,
+          &quot;detail&quot;: &quot;timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;line_no&quot;: 33,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856274.031541]: [PARK][PHASE2_PID_CENTER][START][+7.19s] timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;中心 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856274.040915,
+          &quot;offset&quot;: 7.2,
+          &quot;detail&quot;: &quot;target_yaw=1.555 timeout=4.0s&quot;,
+          &quot;line_no&quot;: 36,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856274.040915]: [PARK][PID_CENTER_ALIGN_YAW][START][+7.20s] target_yaw=1.555 timeout=4.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;中心 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856278.289032,
+          &quot;offset&quot;: 11.45,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 39,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856278.289032]: [PARK][PID_CENTER_ALIGN_YAW][TIMEOUT_ACCEPT][dt=4.25s][+11.45s]&quot;,
+          &quot;dt&quot;: 4.25,
+          &quot;status&quot;: &quot;TIMEOUT_ACCEPT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;中心 PID 平移&quot;,
+          &quot;ts&quot;: 1780856278.292737,
+          &quot;offset&quot;: 11.45,
+          &quot;detail&quot;: &quot;target=(1.190, 1.160) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;line_no&quot;: 41,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856278.292737]: [PARK][PID_CENTER_TRANSLATE][START][+11.45s] target=(1.190, 1.160) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;中心 PID 平移&quot;,
+          &quot;ts&quot;: 1780856289.587271,
+          &quot;offset&quot;: 22.74,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 44,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856289.587271]: [PARK][PID_CENTER_TRANSLATE][FAIL][dt=11.29s][+22.74s]&quot;,
+          &quot;dt&quot;: 11.29,
+          &quot;status&quot;: &quot;FAIL&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE2_PID_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 2: PID 到中心&quot;,
+          &quot;ts&quot;: 1780856289.832789,
+          &quot;offset&quot;: 22.99,
+          &quot;detail&quot;: &quot;target=(1.190, 1.160)&quot;,
+          &quot;line_no&quot;: 45,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856289.832789]: [PARK][PHASE2_PID_CENTER][TIMEOUT_ACCEPT][dt=15.80s][+22.99s] target=(1.190, 1.160)&quot;,
+          &quot;dt&quot;: 15.8,
+          &quot;status&quot;: &quot;TIMEOUT_ACCEPT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE3_FINE_TUNE&quot;,
+          &quot;label&quot;: &quot;Phase 3: 激光精调&quot;,
+          &quot;ts&quot;: 1780856289.834939,
+          &quot;offset&quot;: 22.99,
+          &quot;detail&quot;: &quot;timeout=8.0s tolerance=0.030 max_v=0.030&quot;,
+          &quot;line_no&quot;: 47,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856289.834939]: [PARK][PHASE3_FINE_TUNE][START][+22.99s] timeout=8.0s tolerance=0.030 max_v=0.030&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE3_FINE_TUNE&quot;,
+          &quot;label&quot;: &quot;Phase 3: 激光精调&quot;,
+          &quot;ts&quot;: 1780856290.184529,
+          &quot;offset&quot;: 23.34,
+          &quot;detail&quot;: &quot;laser=0.208 target=0.20 err=0.008&quot;,
+          &quot;line_no&quot;: 52,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856290.184529]: [PARK][PHASE3_FINE_TUNE][OK][dt=0.35s][+23.34s] laser=0.208 target=0.20 err=0.008&quot;,
+          &quot;dt&quot;: 0.35,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;RUN&quot;,
+          &quot;label&quot;: &quot;泊车总流程&quot;,
+          &quot;ts&quot;: 1780856290.428028,
+          &quot;offset&quot;: 23.59,
+          &quot;detail&quot;: &quot;finished_by=entry_based&quot;,
+          &quot;line_no&quot;: 53,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856290.428028]: [PARK][RUN][OK][dt=23.59s][+23.59s] finished_by=entry_based&quot;,
+          &quot;dt&quot;: 23.59,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE4_ESCAPE&quot;,
+          &quot;label&quot;: &quot;Phase 4: 逃逸&quot;,
+          &quot;ts&quot;: 1780856294.253661,
+          &quot;offset&quot;: 27.41,
+          &quot;detail&quot;: &quot;entry=right distance=0.350 speed=0.100 timeout=5.0s&quot;,
+          &quot;line_no&quot;: 58,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856294.253661]: [PARK][PHASE4_ESCAPE][START][+27.41s] entry=right distance=0.350 speed=0.100 timeout=5.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE4_ESCAPE&quot;,
+          &quot;label&quot;: &quot;Phase 4: 逃逸&quot;,
+          &quot;ts&quot;: 1780856299.507428,
+          &quot;offset&quot;: 32.67,
+          &quot;detail&quot;: &quot;elapsed=5.00&quot;,
+          &quot;line_no&quot;: 62,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856299.507428]: [PARK][PHASE4_ESCAPE][TIMEOUT][dt=5.25s][+32.67s] elapsed=5.00&quot;,
+          &quot;dt&quot;: 5.25,
+          &quot;status&quot;: &quot;TIMEOUT&quot;
+        }
+      ],
+      &quot;notes&quot;: [
+        {
+          &quot;ts&quot;: 1780856259.761991,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;[Navi] 前往目标点: [1.19, 1.16, 89.1] (timeout=5s)&quot;,
+          &quot;line_no&quot;: 5
+        },
+        {
+          &quot;ts&quot;: 1780856271.888708,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 0: cancelled by timer. dist=0.503&quot;,
+          &quot;line_no&quot;: 20
+        },
+        {
+          &quot;ts&quot;: 1780856272.348571,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Opening circle: confident=True ring=35 left=21 right=0 up=0 down=14 best=right,up&quot;,
+          &quot;line_no&quot;: 24
+        },
+        {
+          &quot;ts&quot;: 1780856272.353527,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Open sides: right, blocked: left,up,down&quot;,
+          &quot;line_no&quot;: 25
+        },
+        {
+          &quot;ts&quot;: 1780856272.360371,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;Best entry: right score=-59.617 entry=(1.530, 1.160)&quot;,
+          &quot;line_no&quot;: 26
+        },
+        {
+          &quot;ts&quot;: 1780856273.584001,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 1a: near entry (dist=0.147) after 1.2s. Accept.&quot;,
+          &quot;line_no&quot;: 30
+        },
+        {
+          &quot;ts&quot;: 1780856278.044209,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;pid_align_yaw timeout. Accept current yaw.&quot;,
+          &quot;line_no&quot;: 38
+        },
+        {
+          &quot;ts&quot;: 1780856289.341704,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;pid_translate timeout.&quot;,
+          &quot;line_no&quot;: 43
+        },
+        {
+          &quot;ts&quot;: 1780856289.833967,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 2 PID to center timeout. Accept current position.&quot;,
+          &quot;line_no&quot;: 46
+        },
+        {
+          &quot;ts&quot;: 1780856299.256279,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;escape: timeout 5.0s&quot;,
+          &quot;line_no&quot;: 60
+        }
+      ],
+      &quot;target&quot;: &quot;1.190, 1.160, 89.1&quot;,
+      &quot;best_entry&quot;: &quot;right&quot;,
+      &quot;raw&quot;: [],
+      &quot;skipped&quot;: false
+    },
+    {
+      &quot;idx&quot;: 2,
+      &quot;count&quot;: 4,
+      &quot;task_id&quot;: &quot;7&quot;,
+      &quot;start_ts&quot;: 1780856299.514175,
+      &quot;end_ts&quot;: 1780856351.721399,
+      &quot;total_dt&quot;: 52.21,
+      &quot;segments&quot;: [
+        {
+          &quot;name&quot;: &quot;NAV_TO_TASK&quot;,
+          &quot;label&quot;: &quot;move_base 到任务点&quot;,
+          &quot;dt&quot;: 5.0,
+          &quot;ts&quot;: 1780856304.523073,
+          &quot;rest&quot;: &quot;ok=False&quot;,
+          &quot;status&quot;: {
+            &quot;ok&quot;: &quot;False&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;PRE_PARK_WAIT&quot;,
+          &quot;label&quot;: &quot;泊车前固定等待&quot;,
+          &quot;dt&quot;: 1.0,
+          &quot;ts&quot;: 1780856305.526587,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;PARK_INIT&quot;,
+          &quot;label&quot;: &quot;泊车对象初始化&quot;,
+          &quot;dt&quot;: 1.08,
+          &quot;ts&quot;: 1780856306.614789,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;PARK_RUN&quot;,
+          &quot;label&quot;: &quot;泊车 run()&quot;,
+          &quot;dt&quot;: 36.01,
+          &quot;ts&quot;: 1780856342.625798,
+          &quot;rest&quot;: &quot;parking_done=True best_entry=down&quot;,
+          &quot;status&quot;: {
+            &quot;parking_done&quot;: &quot;True&quot;,
+            &quot;best_entry&quot;: &quot;down&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;POST_PARK_WAIT&quot;,
+          &quot;label&quot;: &quot;泊车后固定等待&quot;,
+          &quot;dt&quot;: 0.5,
+          &quot;ts&quot;: 1780856343.12765,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;TTS&quot;,
+          &quot;label&quot;: &quot;TTS 播报&quot;,
+          &quot;dt&quot;: 3.33,
+          &quot;ts&quot;: 1780856346.458407,
+          &quot;rest&quot;: &quot;ok=True&quot;,
+          &quot;status&quot;: {
+            &quot;ok&quot;: &quot;True&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;ESCAPE&quot;,
+          &quot;label&quot;: &quot;逃逸&quot;,
+          &quot;dt&quot;: 5.25,
+          &quot;ts&quot;: 1780856351.715484,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        }
+      ],
+      &quot;park_events&quot;: [
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;RUN&quot;,
+          &quot;label&quot;: &quot;泊车总流程&quot;,
+          &quot;ts&quot;: 1780856306.615958,
+          &quot;offset&quot;: 0.0,
+          &quot;detail&quot;: &quot;target=(2.000, 1.150, 88.8deg)&quot;,
+          &quot;line_no&quot;: 77,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856306.615958]: [PARK][RUN][START][+0.00s] target=(2.000, 1.150, 88.8deg)&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE0_DIRECT_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 0: 直达中心&quot;,
+          &quot;ts&quot;: 1780856306.617461,
+          &quot;offset&quot;: 0.0,
+          &quot;detail&quot;: &quot;timeout=5.0s tolerance=0.100&quot;,
+          &quot;line_no&quot;: 78,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856306.617461]: [PARK][PHASE0_DIRECT_CENTER][START][+0.00s] timeout=5.0s tolerance=0.100&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE0_DIRECT_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 0: 直达中心&quot;,
+          &quot;ts&quot;: 1780856312.112953,
+          &quot;offset&quot;: 5.5,
+          &quot;detail&quot;: &quot;next=entry_based&quot;,
+          &quot;line_no&quot;: 82,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856312.112953]: [PARK][PHASE0_DIRECT_CENTER][FAIL][dt=5.50s][+5.50s] next=entry_based&quot;,
+          &quot;dt&quot;: 5.5,
+          &quot;status&quot;: &quot;FAIL&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;ENTRY_SELECT&quot;,
+          &quot;label&quot;: &quot;入口识别/选择&quot;,
+          &quot;ts&quot;: 1780856312.116986,
+          &quot;offset&quot;: 5.5,
+          &quot;detail&quot;: &quot;recognition=True&quot;,
+          &quot;line_no&quot;: 84,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856312.116986]: [PARK][ENTRY_SELECT][START][+5.50s] recognition=True&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;ENTRY_SELECT&quot;,
+          &quot;label&quot;: &quot;入口识别/选择&quot;,
+          &quot;ts&quot;: 1780856312.147167,
+          &quot;offset&quot;: 5.53,
+          &quot;detail&quot;: &quot;best=down score=-21.731 entry=(2.000, 0.810)&quot;,
+          &quot;line_no&quot;: 88,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856312.147167]: [PARK][ENTRY_SELECT][OK][dt=0.03s][+5.53s] best=down score=-21.731 entry=(2.000, 0.810)&quot;,
+          &quot;dt&quot;: 0.03,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE1A_MOVE_BASE_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1A: move_base 到入口&quot;,
+          &quot;ts&quot;: 1780856312.149951,
+          &quot;offset&quot;: 5.53,
+          &quot;detail&quot;: &quot;entry=down timeout=8.0s tolerance=0.150&quot;,
+          &quot;line_no&quot;: 89,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856312.149951]: [PARK][PHASE1A_MOVE_BASE_ENTRY][START][+5.53s] entry=down timeout=8.0s tolerance=0.150&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE1A_MOVE_BASE_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1A: move_base 到入口&quot;,
+          &quot;ts&quot;: 1780856318.358332,
+          &quot;offset&quot;: 11.74,
+          &quot;detail&quot;: &quot;entry=down&quot;,
+          &quot;line_no&quot;: 92,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856318.358332]: [PARK][PHASE1A_MOVE_BASE_ENTRY][OK][dt=6.21s][+11.74s] entry=down&quot;,
+          &quot;dt&quot;: 6.21,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;skip&quot;,
+          &quot;phase&quot;: &quot;PHASE1B_PID_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1B: PID 到入口&quot;,
+          &quot;ts&quot;: 1780856318.359983,
+          &quot;offset&quot;: 11.74,
+          &quot;detail&quot;: &quot;phase1a_ok=true&quot;,
+          &quot;line_no&quot;: 93,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856318.359983]: [PARK][PHASE1B_PID_ENTRY][SKIP][+11.74s] phase1a_ok=true&quot;,
+          &quot;dt&quot;: 0.0,
+          &quot;status&quot;: &quot;SKIP&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE2_PID_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 2: PID 到中心&quot;,
+          &quot;ts&quot;: 1780856318.361312,
+          &quot;offset&quot;: 11.75,
+          &quot;detail&quot;: &quot;timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;line_no&quot;: 94,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856318.361312]: [PARK][PHASE2_PID_CENTER][START][+11.75s] timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;中心 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856318.36881,
+          &quot;offset&quot;: 11.75,
+          &quot;detail&quot;: &quot;target_yaw=1.550 timeout=4.0s&quot;,
+          &quot;line_no&quot;: 97,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856318.368810]: [PARK][PID_CENTER_ALIGN_YAW][START][+11.75s] target_yaw=1.550 timeout=4.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;中心 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856322.621772,
+          &quot;offset&quot;: 16.01,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 100,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856322.621772]: [PARK][PID_CENTER_ALIGN_YAW][TIMEOUT_ACCEPT][dt=4.25s][+16.01s]&quot;,
+          &quot;dt&quot;: 4.25,
+          &quot;status&quot;: &quot;TIMEOUT_ACCEPT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;中心 PID 平移&quot;,
+          &quot;ts&quot;: 1780856322.62449,
+          &quot;offset&quot;: 16.01,
+          &quot;detail&quot;: &quot;target=(2.000, 1.150) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;line_no&quot;: 102,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856322.624490]: [PARK][PID_CENTER_TRANSLATE][START][+16.01s] target=(2.000, 1.150) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;中心 PID 平移&quot;,
+          &quot;ts&quot;: 1780856333.878804,
+          &quot;offset&quot;: 27.26,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 105,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856333.878804]: [PARK][PID_CENTER_TRANSLATE][FAIL][dt=11.25s][+27.26s]&quot;,
+          &quot;dt&quot;: 11.25,
+          &quot;status&quot;: &quot;FAIL&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE2_PID_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 2: PID 到中心&quot;,
+          &quot;ts&quot;: 1780856334.12408,
+          &quot;offset&quot;: 27.51,
+          &quot;detail&quot;: &quot;target=(2.000, 1.150)&quot;,
+          &quot;line_no&quot;: 106,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856334.124080]: [PARK][PHASE2_PID_CENTER][TIMEOUT_ACCEPT][dt=15.76s][+27.51s] target=(2.000, 1.150)&quot;,
+          &quot;dt&quot;: 15.76,
+          &quot;status&quot;: &quot;TIMEOUT_ACCEPT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE3_FINE_TUNE&quot;,
+          &quot;label&quot;: &quot;Phase 3: 激光精调&quot;,
+          &quot;ts&quot;: 1780856334.127657,
+          &quot;offset&quot;: 27.51,
+          &quot;detail&quot;: &quot;timeout=8.0s tolerance=0.030 max_v=0.030&quot;,
+          &quot;line_no&quot;: 108,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856334.127657]: [PARK][PHASE3_FINE_TUNE][START][+27.51s] timeout=8.0s tolerance=0.030 max_v=0.030&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE3_FINE_TUNE&quot;,
+          &quot;label&quot;: &quot;Phase 3: 激光精调&quot;,
+          &quot;ts&quot;: 1780856342.37947,
+          &quot;offset&quot;: 35.76,
+          &quot;detail&quot;: &quot;elapsed=8.00&quot;,
+          &quot;line_no&quot;: 113,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856342.379470]: [PARK][PHASE3_FINE_TUNE][TIMEOUT][dt=8.25s][+35.76s] elapsed=8.00&quot;,
+          &quot;dt&quot;: 8.25,
+          &quot;status&quot;: &quot;TIMEOUT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;RUN&quot;,
+          &quot;label&quot;: &quot;泊车总流程&quot;,
+          &quot;ts&quot;: 1780856342.62423,
+          &quot;offset&quot;: 36.01,
+          &quot;detail&quot;: &quot;finished_by=entry_based&quot;,
+          &quot;line_no&quot;: 114,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856342.624230]: [PARK][RUN][OK][dt=36.01s][+36.01s] finished_by=entry_based&quot;,
+          &quot;dt&quot;: 36.01,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE4_ESCAPE&quot;,
+          &quot;label&quot;: &quot;Phase 4: 逃逸&quot;,
+          &quot;ts&quot;: 1780856346.463448,
+          &quot;offset&quot;: 39.85,
+          &quot;detail&quot;: &quot;entry=down distance=0.350 speed=0.100 timeout=5.0s&quot;,
+          &quot;line_no&quot;: 119,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856346.463448]: [PARK][PHASE4_ESCAPE][START][+39.85s] entry=down distance=0.350 speed=0.100 timeout=5.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE4_ESCAPE&quot;,
+          &quot;label&quot;: &quot;Phase 4: 逃逸&quot;,
+          &quot;ts&quot;: 1780856351.714451,
+          &quot;offset&quot;: 45.1,
+          &quot;detail&quot;: &quot;elapsed=5.00&quot;,
+          &quot;line_no&quot;: 123,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856351.714451]: [PARK][PHASE4_ESCAPE][TIMEOUT][dt=5.25s][+45.10s] elapsed=5.00&quot;,
+          &quot;dt&quot;: 5.25,
+          &quot;status&quot;: &quot;TIMEOUT&quot;
+        }
+      ],
+      &quot;notes&quot;: [
+        {
+          &quot;ts&quot;: 1780856299.518209,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;[Navi] 前往目标点: [2.0, 1.15, 88.8] (timeout=5s)&quot;,
+          &quot;line_no&quot;: 66
+        },
+        {
+          &quot;ts&quot;: 1780856311.666544,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 0: cancelled by timer. dist=0.332&quot;,
+          &quot;line_no&quot;: 81
+        },
+        {
+          &quot;ts&quot;: 1780856312.125411,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Opening circle: confident=True ring=48 left=1 right=0 up=47 down=0 best=left,right,down&quot;,
+          &quot;line_no&quot;: 85
+        },
+        {
+          &quot;ts&quot;: 1780856312.128633,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Open sides: , blocked: left,right,up,down&quot;,
+          &quot;line_no&quot;: 86
+        },
+        {
+          &quot;ts&quot;: 1780856312.142962,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;Best entry: down score=-21.731 entry=(2.000, 0.810)&quot;,
+          &quot;line_no&quot;: 87
+        },
+        {
+          &quot;ts&quot;: 1780856317.91456,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 1a: near entry (dist=0.125) after 5.8s. Accept.&quot;,
+          &quot;line_no&quot;: 91
+        },
+        {
+          &quot;ts&quot;: 1780856322.376045,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;pid_align_yaw timeout. Accept current yaw.&quot;,
+          &quot;line_no&quot;: 99
+        },
+        {
+          &quot;ts&quot;: 1780856333.628828,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;pid_translate timeout.&quot;,
+          &quot;line_no&quot;: 104
+        },
+        {
+          &quot;ts&quot;: 1780856334.126174,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 2 PID to center timeout. Accept current position.&quot;,
+          &quot;line_no&quot;: 107
+        },
+        {
+          &quot;ts&quot;: 1780856342.133129,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 3: timeout 8.0s&quot;,
+          &quot;line_no&quot;: 111
+        },
+        {
+          &quot;ts&quot;: 1780856351.467407,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;escape: timeout 5.0s&quot;,
+          &quot;line_no&quot;: 121
+        }
+      ],
+      &quot;target&quot;: &quot;2.000, 1.150, 88.8&quot;,
+      &quot;best_entry&quot;: &quot;down&quot;,
+      &quot;raw&quot;: [],
+      &quot;skipped&quot;: false
+    },
+    {
+      &quot;idx&quot;: 3,
+      &quot;count&quot;: 4,
+      &quot;task_id&quot;: &quot;8&quot;,
+      &quot;start_ts&quot;: 1780856351.723687,
+      &quot;end_ts&quot;: 1780856415.991978,
+      &quot;total_dt&quot;: 64.27,
+      &quot;segments&quot;: [
+        {
+          &quot;name&quot;: &quot;NAV_TO_TASK&quot;,
+          &quot;label&quot;: &quot;move_base 到任务点&quot;,
+          &quot;dt&quot;: 5.01,
+          &quot;ts&quot;: 1780856356.730735,
+          &quot;rest&quot;: &quot;ok=False&quot;,
+          &quot;status&quot;: {
+            &quot;ok&quot;: &quot;False&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;PRE_PARK_WAIT&quot;,
+          &quot;label&quot;: &quot;泊车前固定等待&quot;,
+          &quot;dt&quot;: 1.0,
+          &quot;ts&quot;: 1780856357.733176,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;PARK_INIT&quot;,
+          &quot;label&quot;: &quot;泊车对象初始化&quot;,
+          &quot;dt&quot;: 1.06,
+          &quot;ts&quot;: 1780856358.79917,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;PARK_RUN&quot;,
+          &quot;label&quot;: &quot;泊车 run()&quot;,
+          &quot;dt&quot;: 48.38,
+          &quot;ts&quot;: 1780856407.177022,
+          &quot;rest&quot;: &quot;parking_done=True best_entry=up&quot;,
+          &quot;status&quot;: {
+            &quot;parking_done&quot;: &quot;True&quot;,
+            &quot;best_entry&quot;: &quot;up&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;POST_PARK_WAIT&quot;,
+          &quot;label&quot;: &quot;泊车后固定等待&quot;,
+          &quot;dt&quot;: 0.5,
+          &quot;ts&quot;: 1780856407.678755,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;TTS&quot;,
+          &quot;label&quot;: &quot;TTS 播报&quot;,
+          &quot;dt&quot;: 3.06,
+          &quot;ts&quot;: 1780856410.737089,
+          &quot;rest&quot;: &quot;ok=True&quot;,
+          &quot;status&quot;: {
+            &quot;ok&quot;: &quot;True&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;ESCAPE&quot;,
+          &quot;label&quot;: &quot;逃逸&quot;,
+          &quot;dt&quot;: 5.25,
+          &quot;ts&quot;: 1780856415.989355,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        }
+      ],
+      &quot;park_events&quot;: [
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;RUN&quot;,
+          &quot;label&quot;: &quot;泊车总流程&quot;,
+          &quot;ts&quot;: 1780856358.800401,
+          &quot;offset&quot;: 0.0,
+          &quot;detail&quot;: &quot;target=(2.000, 1.550, 88.8deg)&quot;,
+          &quot;line_no&quot;: 138,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856358.800401]: [PARK][RUN][START][+0.00s] target=(2.000, 1.550, 88.8deg)&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE0_DIRECT_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 0: 直达中心&quot;,
+          &quot;ts&quot;: 1780856358.802081,
+          &quot;offset&quot;: 0.0,
+          &quot;detail&quot;: &quot;timeout=5.0s tolerance=0.100&quot;,
+          &quot;line_no&quot;: 139,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856358.802081]: [PARK][PHASE0_DIRECT_CENTER][START][+0.00s] timeout=5.0s tolerance=0.100&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE0_DIRECT_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 0: 直达中心&quot;,
+          &quot;ts&quot;: 1780856364.282337,
+          &quot;offset&quot;: 5.48,
+          &quot;detail&quot;: &quot;next=entry_based&quot;,
+          &quot;line_no&quot;: 143,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856364.282337]: [PARK][PHASE0_DIRECT_CENTER][FAIL][dt=5.48s][+5.48s] next=entry_based&quot;,
+          &quot;dt&quot;: 5.48,
+          &quot;status&quot;: &quot;FAIL&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;ENTRY_SELECT&quot;,
+          &quot;label&quot;: &quot;入口识别/选择&quot;,
+          &quot;ts&quot;: 1780856364.286329,
+          &quot;offset&quot;: 5.49,
+          &quot;detail&quot;: &quot;recognition=True&quot;,
+          &quot;line_no&quot;: 145,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856364.286329]: [PARK][ENTRY_SELECT][START][+5.49s] recognition=True&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;ENTRY_SELECT&quot;,
+          &quot;label&quot;: &quot;入口识别/选择&quot;,
+          &quot;ts&quot;: 1780856364.304937,
+          &quot;offset&quot;: 5.5,
+          &quot;detail&quot;: &quot;best=up score=-58.821 entry=(2.000, 1.890)&quot;,
+          &quot;line_no&quot;: 149,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856364.304937]: [PARK][ENTRY_SELECT][OK][dt=0.02s][+5.50s] best=up score=-58.821 entry=(2.000, 1.890)&quot;,
+          &quot;dt&quot;: 0.02,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE1A_MOVE_BASE_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1A: move_base 到入口&quot;,
+          &quot;ts&quot;: 1780856364.306861,
+          &quot;offset&quot;: 5.51,
+          &quot;detail&quot;: &quot;entry=up timeout=8.0s tolerance=0.150&quot;,
+          &quot;line_no&quot;: 150,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856364.306861]: [PARK][PHASE1A_MOVE_BASE_ENTRY][START][+5.51s] entry=up timeout=8.0s tolerance=0.150&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE1A_MOVE_BASE_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1A: move_base 到入口&quot;,
+          &quot;ts&quot;: 1780856372.828644,
+          &quot;offset&quot;: 14.03,
+          &quot;detail&quot;: &quot;entry=up&quot;,
+          &quot;line_no&quot;: 154,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856372.828644]: [PARK][PHASE1A_MOVE_BASE_ENTRY][FAIL][dt=8.52s][+14.03s] entry=up&quot;,
+          &quot;dt&quot;: 8.52,
+          &quot;status&quot;: &quot;FAIL&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE1B_PID_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1B: PID 到入口&quot;,
+          &quot;ts&quot;: 1780856372.830926,
+          &quot;offset&quot;: 14.03,
+          &quot;detail&quot;: &quot;entry=up timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;line_no&quot;: 156,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856372.830926]: [PARK][PHASE1B_PID_ENTRY][START][+14.03s] entry=up timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_ENTRY_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;入口 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856372.837057,
+          &quot;offset&quot;: 14.04,
+          &quot;detail&quot;: &quot;target_yaw=1.550 timeout=4.0s&quot;,
+          &quot;line_no&quot;: 159,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856372.837057]: [PARK][PID_ENTRY_ALIGN_YAW][START][+14.04s] target_yaw=1.550 timeout=4.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_ENTRY_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;入口 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856377.084597,
+          &quot;offset&quot;: 18.28,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 162,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856377.084597]: [PARK][PID_ENTRY_ALIGN_YAW][TIMEOUT_ACCEPT][dt=4.25s][+18.28s]&quot;,
+          &quot;dt&quot;: 4.25,
+          &quot;status&quot;: &quot;TIMEOUT_ACCEPT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_ENTRY_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;入口 PID 平移&quot;,
+          &quot;ts&quot;: 1780856377.087298,
+          &quot;offset&quot;: 18.29,
+          &quot;detail&quot;: &quot;target=(2.000, 1.890) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;line_no&quot;: 164,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856377.087298]: [PARK][PID_ENTRY_TRANSLATE][START][+18.29s] target=(2.000, 1.890) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_ENTRY_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;入口 PID 平移&quot;,
+          &quot;ts&quot;: 1780856386.098748,
+          &quot;offset&quot;: 27.3,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 167,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856386.098748]: [PARK][PID_ENTRY_TRANSLATE][OK][dt=9.01s][+27.30s]&quot;,
+          &quot;dt&quot;: 9.01,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE1B_PID_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1B: PID 到入口&quot;,
+          &quot;ts&quot;: 1780856386.342415,
+          &quot;offset&quot;: 27.54,
+          &quot;detail&quot;: &quot;entry=up&quot;,
+          &quot;line_no&quot;: 168,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856386.342415]: [PARK][PHASE1B_PID_ENTRY][OK][dt=13.51s][+27.54s] entry=up&quot;,
+          &quot;dt&quot;: 13.51,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE2_PID_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 2: PID 到中心&quot;,
+          &quot;ts&quot;: 1780856386.34407,
+          &quot;offset&quot;: 27.54,
+          &quot;detail&quot;: &quot;timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;line_no&quot;: 169,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856386.344070]: [PARK][PHASE2_PID_CENTER][START][+27.54s] timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;中心 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856386.348241,
+          &quot;offset&quot;: 27.55,
+          &quot;detail&quot;: &quot;target_yaw=1.550 timeout=4.0s&quot;,
+          &quot;line_no&quot;: 172,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856386.348241]: [PARK][PID_CENTER_ALIGN_YAW][START][+27.55s] target_yaw=1.550 timeout=4.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;中心 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856387.085891,
+          &quot;offset&quot;: 28.29,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 175,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856387.085891]: [PARK][PID_CENTER_ALIGN_YAW][OK][dt=0.74s][+28.29s]&quot;,
+          &quot;dt&quot;: 0.74,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;中心 PID 平移&quot;,
+          &quot;ts&quot;: 1780856387.091866,
+          &quot;offset&quot;: 28.29,
+          &quot;detail&quot;: &quot;target=(2.000, 1.550) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;line_no&quot;: 177,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856387.091866]: [PARK][PID_CENTER_TRANSLATE][START][+28.29s] target=(2.000, 1.550) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;中心 PID 平移&quot;,
+          &quot;ts&quot;: 1780856398.421368,
+          &quot;offset&quot;: 39.62,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 180,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856398.421368]: [PARK][PID_CENTER_TRANSLATE][FAIL][dt=11.33s][+39.62s]&quot;,
+          &quot;dt&quot;: 11.33,
+          &quot;status&quot;: &quot;FAIL&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE2_PID_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 2: PID 到中心&quot;,
+          &quot;ts&quot;: 1780856398.669816,
+          &quot;offset&quot;: 39.87,
+          &quot;detail&quot;: &quot;target=(2.000, 1.550)&quot;,
+          &quot;line_no&quot;: 181,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856398.669816]: [PARK][PHASE2_PID_CENTER][TIMEOUT_ACCEPT][dt=12.33s][+39.87s] target=(2.000, 1.550)&quot;,
+          &quot;dt&quot;: 12.33,
+          &quot;status&quot;: &quot;TIMEOUT_ACCEPT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE3_FINE_TUNE&quot;,
+          &quot;label&quot;: &quot;Phase 3: 激光精调&quot;,
+          &quot;ts&quot;: 1780856398.672321,
+          &quot;offset&quot;: 39.87,
+          &quot;detail&quot;: &quot;timeout=8.0s tolerance=0.030 max_v=0.030&quot;,
+          &quot;line_no&quot;: 183,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856398.672321]: [PARK][PHASE3_FINE_TUNE][START][+39.87s] timeout=8.0s tolerance=0.030 max_v=0.030&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE3_FINE_TUNE&quot;,
+          &quot;label&quot;: &quot;Phase 3: 激光精调&quot;,
+          &quot;ts&quot;: 1780856406.931202,
+          &quot;offset&quot;: 48.13,
+          &quot;detail&quot;: &quot;elapsed=8.00&quot;,
+          &quot;line_no&quot;: 188,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856406.931202]: [PARK][PHASE3_FINE_TUNE][TIMEOUT][dt=8.26s][+48.13s] elapsed=8.00&quot;,
+          &quot;dt&quot;: 8.26,
+          &quot;status&quot;: &quot;TIMEOUT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;RUN&quot;,
+          &quot;label&quot;: &quot;泊车总流程&quot;,
+          &quot;ts&quot;: 1780856407.175293,
+          &quot;offset&quot;: 48.37,
+          &quot;detail&quot;: &quot;finished_by=entry_based&quot;,
+          &quot;line_no&quot;: 189,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856407.175293]: [PARK][RUN][OK][dt=48.37s][+48.37s] finished_by=entry_based&quot;,
+          &quot;dt&quot;: 48.37,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE4_ESCAPE&quot;,
+          &quot;label&quot;: &quot;Phase 4: 逃逸&quot;,
+          &quot;ts&quot;: 1780856410.738615,
+          &quot;offset&quot;: 51.94,
+          &quot;detail&quot;: &quot;entry=up distance=0.350 speed=0.100 timeout=5.0s&quot;,
+          &quot;line_no&quot;: 194,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856410.738615]: [PARK][PHASE4_ESCAPE][START][+51.94s] entry=up distance=0.350 speed=0.100 timeout=5.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE4_ESCAPE&quot;,
+          &quot;label&quot;: &quot;Phase 4: 逃逸&quot;,
+          &quot;ts&quot;: 1780856415.987729,
+          &quot;offset&quot;: 57.19,
+          &quot;detail&quot;: &quot;elapsed=5.00&quot;,
+          &quot;line_no&quot;: 198,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856415.987729]: [PARK][PHASE4_ESCAPE][TIMEOUT][dt=5.25s][+57.19s] elapsed=5.00&quot;,
+          &quot;dt&quot;: 5.25,
+          &quot;status&quot;: &quot;TIMEOUT&quot;
+        }
+      ],
+      &quot;notes&quot;: [
+        {
+          &quot;ts&quot;: 1780856351.725118,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;[Navi] 前往目标点: [2.0, 1.55, 88.8] (timeout=5s)&quot;,
+          &quot;line_no&quot;: 127
+        },
+        {
+          &quot;ts&quot;: 1780856363.836159,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 0: cancelled by timer. dist=0.837&quot;,
+          &quot;line_no&quot;: 142
+        },
+        {
+          &quot;ts&quot;: 1780856364.29081,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Opening circle: confident=True ring=11 left=6 right=0 up=0 down=5 best=right,up&quot;,
+          &quot;line_no&quot;: 146
+        },
+        {
+          &quot;ts&quot;: 1780856364.292761,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Open sides: up, blocked: left,right,down&quot;,
+          &quot;line_no&quot;: 147
+        },
+        {
+          &quot;ts&quot;: 1780856364.301245,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;Best entry: up score=-58.821 entry=(2.000, 1.890)&quot;,
+          &quot;line_no&quot;: 148
+        },
+        {
+          &quot;ts&quot;: 1780856372.384655,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 1a: cancelled by timer. dist=0.191&quot;,
+          &quot;line_no&quot;: 153
+        },
+        {
+          &quot;ts&quot;: 1780856376.840987,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;pid_align_yaw timeout. Accept current yaw.&quot;,
+          &quot;line_no&quot;: 161
+        },
+        {
+          &quot;ts&quot;: 1780856398.176111,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;pid_translate timeout.&quot;,
+          &quot;line_no&quot;: 179
+        },
+        {
+          &quot;ts&quot;: 1780856398.671154,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 2 PID to center timeout. Accept current position.&quot;,
+          &quot;line_no&quot;: 182
+        },
+        {
+          &quot;ts&quot;: 1780856406.680496,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 3: timeout 8.0s&quot;,
+          &quot;line_no&quot;: 186
+        },
+        {
+          &quot;ts&quot;: 1780856415.741447,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;escape: timeout 5.0s&quot;,
+          &quot;line_no&quot;: 196
+        }
+      ],
+      &quot;target&quot;: &quot;2.000, 1.550, 88.8&quot;,
+      &quot;best_entry&quot;: &quot;up&quot;,
+      &quot;raw&quot;: [],
+      &quot;skipped&quot;: false
+    },
+    {
+      &quot;idx&quot;: 4,
+      &quot;count&quot;: 4,
+      &quot;task_id&quot;: &quot;9&quot;,
+      &quot;start_ts&quot;: 1780856415.993524,
+      &quot;end_ts&quot;: 1780856459.08094,
+      &quot;total_dt&quot;: 43.09,
+      &quot;segments&quot;: [
+        {
+          &quot;name&quot;: &quot;NAV_TO_TASK&quot;,
+          &quot;label&quot;: &quot;move_base 到任务点&quot;,
+          &quot;dt&quot;: 5.01,
+          &quot;ts&quot;: 1780856421.001679,
+          &quot;rest&quot;: &quot;ok=False&quot;,
+          &quot;status&quot;: {
+            &quot;ok&quot;: &quot;False&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;PRE_PARK_WAIT&quot;,
+          &quot;label&quot;: &quot;泊车前固定等待&quot;,
+          &quot;dt&quot;: 1.0,
+          &quot;ts&quot;: 1780856422.006674,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;PARK_INIT&quot;,
+          &quot;label&quot;: &quot;泊车对象初始化&quot;,
+          &quot;dt&quot;: 1.06,
+          &quot;ts&quot;: 1780856423.077897,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;PARK_RUN&quot;,
+          &quot;label&quot;: &quot;泊车 run()&quot;,
+          &quot;dt&quot;: 26.94,
+          &quot;ts&quot;: 1780856450.018253,
+          &quot;rest&quot;: &quot;parking_done=True best_entry=left&quot;,
+          &quot;status&quot;: {
+            &quot;parking_done&quot;: &quot;True&quot;,
+            &quot;best_entry&quot;: &quot;left&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;POST_PARK_WAIT&quot;,
+          &quot;label&quot;: &quot;泊车后固定等待&quot;,
+          &quot;dt&quot;: 0.5,
+          &quot;ts&quot;: 1780856450.519998,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        },
+        {
+          &quot;name&quot;: &quot;TTS&quot;,
+          &quot;label&quot;: &quot;TTS 播报&quot;,
+          &quot;dt&quot;: 3.3,
+          &quot;ts&quot;: 1780856453.825912,
+          &quot;rest&quot;: &quot;ok=True&quot;,
+          &quot;status&quot;: {
+            &quot;ok&quot;: &quot;True&quot;
+          }
+        },
+        {
+          &quot;name&quot;: &quot;ESCAPE&quot;,
+          &quot;label&quot;: &quot;逃逸&quot;,
+          &quot;dt&quot;: 5.25,
+          &quot;ts&quot;: 1780856459.078489,
+          &quot;rest&quot;: &quot;&quot;,
+          &quot;status&quot;: {}
+        }
+      ],
+      &quot;park_events&quot;: [
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;RUN&quot;,
+          &quot;label&quot;: &quot;泊车总流程&quot;,
+          &quot;ts&quot;: 1780856423.079333,
+          &quot;offset&quot;: 0.0,
+          &quot;detail&quot;: &quot;target=(1.990, 1.960, 90.9deg)&quot;,
+          &quot;line_no&quot;: 213,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856423.079333]: [PARK][RUN][START][+0.00s] target=(1.990, 1.960, 90.9deg)&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE0_DIRECT_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 0: 直达中心&quot;,
+          &quot;ts&quot;: 1780856423.080602,
+          &quot;offset&quot;: 0.0,
+          &quot;detail&quot;: &quot;timeout=5.0s tolerance=0.100&quot;,
+          &quot;line_no&quot;: 214,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856423.080602]: [PARK][PHASE0_DIRECT_CENTER][START][+0.00s] timeout=5.0s tolerance=0.100&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE0_DIRECT_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 0: 直达中心&quot;,
+          &quot;ts&quot;: 1780856428.570665,
+          &quot;offset&quot;: 5.49,
+          &quot;detail&quot;: &quot;next=entry_based&quot;,
+          &quot;line_no&quot;: 218,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856428.570665]: [PARK][PHASE0_DIRECT_CENTER][FAIL][dt=5.49s][+5.49s] next=entry_based&quot;,
+          &quot;dt&quot;: 5.49,
+          &quot;status&quot;: &quot;FAIL&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;ENTRY_SELECT&quot;,
+          &quot;label&quot;: &quot;入口识别/选择&quot;,
+          &quot;ts&quot;: 1780856428.578808,
+          &quot;offset&quot;: 5.5,
+          &quot;detail&quot;: &quot;recognition=True&quot;,
+          &quot;line_no&quot;: 220,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856428.578808]: [PARK][ENTRY_SELECT][START][+5.50s] recognition=True&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;ENTRY_SELECT&quot;,
+          &quot;label&quot;: &quot;入口识别/选择&quot;,
+          &quot;ts&quot;: 1780856428.591071,
+          &quot;offset&quot;: 5.51,
+          &quot;detail&quot;: &quot;best=left score=-59.874 entry=(1.650, 1.960)&quot;,
+          &quot;line_no&quot;: 224,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856428.591071]: [PARK][ENTRY_SELECT][OK][dt=0.01s][+5.51s] best=left score=-59.874 entry=(1.650, 1.960)&quot;,
+          &quot;dt&quot;: 0.01,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE1A_MOVE_BASE_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1A: move_base 到入口&quot;,
+          &quot;ts&quot;: 1780856428.592376,
+          &quot;offset&quot;: 5.51,
+          &quot;detail&quot;: &quot;entry=left timeout=8.0s tolerance=0.150&quot;,
+          &quot;line_no&quot;: 225,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856428.592376]: [PARK][PHASE1A_MOVE_BASE_ENTRY][START][+5.51s] entry=left timeout=8.0s tolerance=0.150&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE1A_MOVE_BASE_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1A: move_base 到入口&quot;,
+          &quot;ts&quot;: 1780856429.047156,
+          &quot;offset&quot;: 5.97,
+          &quot;detail&quot;: &quot;entry=left&quot;,
+          &quot;line_no&quot;: 228,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856429.047156]: [PARK][PHASE1A_MOVE_BASE_ENTRY][OK][dt=0.45s][+5.97s] entry=left&quot;,
+          &quot;dt&quot;: 0.45,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;skip&quot;,
+          &quot;phase&quot;: &quot;PHASE1B_PID_ENTRY&quot;,
+          &quot;label&quot;: &quot;Phase 1B: PID 到入口&quot;,
+          &quot;ts&quot;: 1780856429.048984,
+          &quot;offset&quot;: 5.97,
+          &quot;detail&quot;: &quot;phase1a_ok=true&quot;,
+          &quot;line_no&quot;: 229,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856429.048984]: [PARK][PHASE1B_PID_ENTRY][SKIP][+5.97s] phase1a_ok=true&quot;,
+          &quot;dt&quot;: 0.0,
+          &quot;status&quot;: &quot;SKIP&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE2_PID_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 2: PID 到中心&quot;,
+          &quot;ts&quot;: 1780856429.050505,
+          &quot;offset&quot;: 5.97,
+          &quot;detail&quot;: &quot;timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;line_no&quot;: 230,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856429.050505]: [PARK][PHASE2_PID_CENTER][START][+5.97s] timeout=11.0s max_v=0.150 max_wz=0.600&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;中心 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856429.063575,
+          &quot;offset&quot;: 5.98,
+          &quot;detail&quot;: &quot;target_yaw=1.587 timeout=4.0s&quot;,
+          &quot;line_no&quot;: 233,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856429.063575]: [PARK][PID_CENTER_ALIGN_YAW][START][+5.98s] target_yaw=1.587 timeout=4.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_ALIGN_YAW&quot;,
+          &quot;label&quot;: &quot;中心 PID yaw 对齐&quot;,
+          &quot;ts&quot;: 1780856433.332266,
+          &quot;offset&quot;: 10.25,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 236,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856433.332266]: [PARK][PID_CENTER_ALIGN_YAW][TIMEOUT_ACCEPT][dt=4.27s][+10.25s]&quot;,
+          &quot;dt&quot;: 4.27,
+          &quot;status&quot;: &quot;TIMEOUT_ACCEPT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;中心 PID 平移&quot;,
+          &quot;ts&quot;: 1780856433.33714,
+          &quot;offset&quot;: 10.26,
+          &quot;detail&quot;: &quot;target=(1.990, 1.960) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;line_no&quot;: 238,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856433.337140]: [PARK][PID_CENTER_TRANSLATE][START][+10.26s] target=(1.990, 1.960) timeout=11.0s pos_tol=0.020&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PID_CENTER_TRANSLATE&quot;,
+          &quot;label&quot;: &quot;中心 PID 平移&quot;,
+          &quot;ts&quot;: 1780856441.266488,
+          &quot;offset&quot;: 18.19,
+          &quot;detail&quot;: &quot;&quot;,
+          &quot;line_no&quot;: 241,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856441.266488]: [PARK][PID_CENTER_TRANSLATE][OK][dt=7.93s][+18.19s]&quot;,
+          &quot;dt&quot;: 7.93,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE2_PID_CENTER&quot;,
+          &quot;label&quot;: &quot;Phase 2: PID 到中心&quot;,
+          &quot;ts&quot;: 1780856441.51119,
+          &quot;offset&quot;: 18.43,
+          &quot;detail&quot;: &quot;target=(1.990, 1.960)&quot;,
+          &quot;line_no&quot;: 242,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856441.511190]: [PARK][PHASE2_PID_CENTER][OK][dt=12.46s][+18.43s] target=(1.990, 1.960)&quot;,
+          &quot;dt&quot;: 12.46,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE3_FINE_TUNE&quot;,
+          &quot;label&quot;: &quot;Phase 3: 激光精调&quot;,
+          &quot;ts&quot;: 1780856441.516493,
+          &quot;offset&quot;: 18.44,
+          &quot;detail&quot;: &quot;timeout=8.0s tolerance=0.030 max_v=0.030&quot;,
+          &quot;line_no&quot;: 244,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856441.516493]: [PARK][PHASE3_FINE_TUNE][START][+18.44s] timeout=8.0s tolerance=0.030 max_v=0.030&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE3_FINE_TUNE&quot;,
+          &quot;label&quot;: &quot;Phase 3: 激光精调&quot;,
+          &quot;ts&quot;: 1780856449.771409,
+          &quot;offset&quot;: 26.69,
+          &quot;detail&quot;: &quot;elapsed=8.00&quot;,
+          &quot;line_no&quot;: 249,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856449.771409]: [PARK][PHASE3_FINE_TUNE][TIMEOUT][dt=8.25s][+26.69s] elapsed=8.00&quot;,
+          &quot;dt&quot;: 8.25,
+          &quot;status&quot;: &quot;TIMEOUT&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;RUN&quot;,
+          &quot;label&quot;: &quot;泊车总流程&quot;,
+          &quot;ts&quot;: 1780856450.016583,
+          &quot;offset&quot;: 26.94,
+          &quot;detail&quot;: &quot;finished_by=entry_based&quot;,
+          &quot;line_no&quot;: 250,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856450.016583]: [PARK][RUN][OK][dt=26.94s][+26.94s] finished_by=entry_based&quot;,
+          &quot;dt&quot;: 26.94,
+          &quot;status&quot;: &quot;OK&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;start&quot;,
+          &quot;phase&quot;: &quot;PHASE4_ESCAPE&quot;,
+          &quot;label&quot;: &quot;Phase 4: 逃逸&quot;,
+          &quot;ts&quot;: 1780856453.827328,
+          &quot;offset&quot;: 30.75,
+          &quot;detail&quot;: &quot;entry=left distance=0.350 speed=0.100 timeout=5.0s&quot;,
+          &quot;line_no&quot;: 255,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856453.827328]: [PARK][PHASE4_ESCAPE][START][+30.75s] entry=left distance=0.350 speed=0.100 timeout=5.0s&quot;,
+          &quot;status&quot;: &quot;START&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;end&quot;,
+          &quot;phase&quot;: &quot;PHASE4_ESCAPE&quot;,
+          &quot;label&quot;: &quot;Phase 4: 逃逸&quot;,
+          &quot;ts&quot;: 1780856459.076776,
+          &quot;offset&quot;: 36.0,
+          &quot;detail&quot;: &quot;elapsed=5.00&quot;,
+          &quot;line_no&quot;: 259,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;raw&quot;: &quot;[INFO] [1780856459.076776]: [PARK][PHASE4_ESCAPE][TIMEOUT][dt=5.25s][+36.00s] elapsed=5.00&quot;,
+          &quot;dt&quot;: 5.25,
+          &quot;status&quot;: &quot;TIMEOUT&quot;
+        }
+      ],
+      &quot;notes&quot;: [
+        {
+          &quot;ts&quot;: 1780856415.994944,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;[Navi] 前往目标点: [1.99, 1.96, 90.9] (timeout=5s)&quot;,
+          &quot;line_no&quot;: 202
+        },
+        {
+          &quot;ts&quot;: 1780856428.120371,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 0: cancelled by timer. dist=0.210&quot;,
+          &quot;line_no&quot;: 217
+        },
+        {
+          &quot;ts&quot;: 1780856428.585277,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Opening circle: confident=True ring=16 left=0 right=0 up=0 down=16 best=left,right,up&quot;,
+          &quot;line_no&quot;: 221
+        },
+        {
+          &quot;ts&quot;: 1780856428.586872,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Open sides: left,up, blocked: right,down&quot;,
+          &quot;line_no&quot;: 222
+        },
+        {
+          &quot;ts&quot;: 1780856428.589692,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;Best entry: left score=-59.874 entry=(1.650, 1.960)&quot;,
+          &quot;line_no&quot;: 223
+        },
+        {
+          &quot;ts&quot;: 1780856428.600305,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 1a: near entry (dist=0.128) after 0.0s. Accept.&quot;,
+          &quot;line_no&quot;: 227
+        },
+        {
+          &quot;ts&quot;: 1780856433.067107,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;pid_align_yaw timeout. Accept current yaw.&quot;,
+          &quot;line_no&quot;: 235
+        },
+        {
+          &quot;ts&quot;: 1780856441.514107,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;SUCCESS: parked at target center via entry left.&quot;,
+          &quot;line_no&quot;: 243
+        },
+        {
+          &quot;ts&quot;: 1780856449.524222,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;Phase 3: timeout 8.0s&quot;,
+          &quot;line_no&quot;: 247
+        },
+        {
+          &quot;ts&quot;: 1780856458.831064,
+          &quot;level&quot;: &quot;WARN&quot;,
+          &quot;msg&quot;: &quot;escape: timeout 5.0s&quot;,
+          &quot;line_no&quot;: 257
+        },
+        {
+          &quot;ts&quot;: 1780856459.083123,
+          &quot;level&quot;: &quot;INFO&quot;,
+          &quot;msg&quot;: &quot;[Navi] 前往目标点: [0.35, 3.05, -3.13] (timeout=60s)&quot;,
+          &quot;line_no&quot;: 262
+        }
+      ],
+      &quot;target&quot;: &quot;1.990, 1.960, 90.9&quot;,
+      &quot;best_entry&quot;: &quot;left&quot;,
+      &quot;raw&quot;: [],
+      &quot;skipped&quot;: false
+    }
+  ],
+  &quot;summary&quot;: {
+    &quot;total_task_time&quot;: 199.32000000000002,
+    &quot;segment_totals&quot;: {
+      &quot;NAV_TO_TASK&quot;: 20.02,
+      &quot;PRE_PARK_WAIT&quot;: 4.0,
+      &quot;PARK_INIT&quot;: 4.26,
+      &quot;PARK_RUN&quot;: 134.92,
+      &quot;POST_PARK_WAIT&quot;: 2.0,
+      &quot;TTS&quot;: 13.010000000000002,
+      &quot;ESCAPE&quot;: 21.009999999999998
+    },
+    &quot;phase_totals&quot;: {
+      &quot;PHASE0_DIRECT_CENTER&quot;: 21.97,
+      &quot;ENTRY_SELECT&quot;: 0.08,
+      &quot;PHASE1A_MOVE_BASE_ENTRY&quot;: 16.84,
+      &quot;PHASE1B_PID_ENTRY&quot;: 13.51,
+      &quot;PID_CENTER_ALIGN_YAW&quot;: 13.51,
+      &quot;PID_CENTER_TRANSLATE&quot;: 41.8,
+      &quot;PHASE2_PID_CENTER&quot;: 56.35,
+      &quot;PHASE3_FINE_TUNE&quot;: 25.11,
+      &quot;PHASE4_ESCAPE&quot;: 21.0,
+      &quot;PID_ENTRY_ALIGN_YAW&quot;: 4.25,
+      &quot;PID_ENTRY_TRANSLATE&quot;: 9.01
+    },
+    &quot;statuses&quot;: {
+      &quot;FAIL&quot;: 8,
+      &quot;OK&quot;: 13,
+      &quot;SKIP&quot;: 3,
+      &quot;TIMEOUT_ACCEPT&quot;: 7,
+      &quot;TIMEOUT&quot;: 7
+    }
+  }
+}</pre>
+    </details>
+  </main>
+</body>
+</html>

@@ -29,8 +29,9 @@
       <param name="detect_yaw_kp" value="4.2"/>
       <param name="detect_yaw_min_vel" value="0.30"/>
       <param name="detect_yaw_max_vel" value="5.0"/>
-      <param name="detect_yaw_stable_count" value="4"/>
-      <param name="detect_photo_settle_time" value="0.25"/>
+      <param name="detect_yaw_stable_count" value="1"/>
+      <param name="detect_photo_settle_time" value="0.05"/>
+      <param name="detect_capture_wait" value="0.1"/>
 
   </node>
 </launch>
