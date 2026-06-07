@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="robot_slam"
+        type="board_localizer.py"
+        name="board_localizer"
+        output="screen">
+    <rosparam file="$(find robot_slam)/params/board_localizer.yaml" command="load"/>
+  </node>
+</launch>

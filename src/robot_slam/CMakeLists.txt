@@ -10,6 +10,7 @@ project(robot_slam)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  sensor_msgs
   std_msgs
   actionlib_msgs
   geometry_msgs
@@ -17,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf2_ros
   tf_conversions
+  visualization_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -67,7 +69,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 # 4. 声明运行依赖
  catkin_package(
-  CATKIN_DEPENDS std_msgs geometry_msgs message_runtime
+  CATKIN_DEPENDS std_msgs sensor_msgs geometry_msgs visualization_msgs message_runtime
  ) 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -121,7 +123,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES robot_slam
-  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs tf visualization_msgs
 #  DEPENDS system_lib
 )
 

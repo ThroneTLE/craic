@@ -1,0 +1,27 @@
+map_frame: map
+base_frame: base_footprint
+scan_topic: /scan_filtered
+enabled: true
+
+# CRAIC field model: 9x9 grid, 39 cm spacing.
+# Defaults are inferred from the existing goalList centers in multi_goal.launch:
+# x=1.19/1.60/2.00 and y=1.16/1.55/1.96 are the central 3x3 cell centers.
+grid_origin_x: -0.18
+grid_origin_y: -0.20
+grid_cell_size: 0.39
+grid_cols: 9
+grid_rows: 9
+grid_internal_only: true
+
+# Scan accumulation and snapping.
+max_scan_range: 2.2
+min_scan_range: 0.10
+max_snap_dist: 0.07
+min_points_per_line: 8
+memory_time: 18.0
+
+# Runtime correction. Keep small; AMCL remains the global pose authority.
+max_match_dist: 0.10
+min_match_points: 8
+max_correction: 0.12
+publish_rate: 10.0

@@ -6,10 +6,11 @@ import rospy
 import tf
 import actionlib
 
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from sensor_msgs.msg import LaserScan
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from actionlib_msgs.msg import GoalStatus
+from std_msgs.msg import Bool
 
 
 def normalize_angle(a):
@@ -173,12 +174,24 @@ class AutoSinglePointTest:
         # =====================================================
         self.map_frame = rospy.get_param("map_frame", "map")
         self.base_frame = rospy.get_param("base_frame", "base_footprint")
+        self.use_board_corrected_pose = rospy.get_param("use_board_corrected_pose", True)
+        self.board_pose_topic = rospy.get_param("board_pose_topic", "/board_localizer/corrected_pose")
+        self.board_valid_topic = rospy.get_param("board_valid_topic", "/board_localizer/valid")
+        self.board_pose_timeout = rospy.get_param("board_pose_timeout", 0.5)
+        self.require_board_corrected_pose = rospy.get_param("require_board_corrected_pose", True)
+        self.latest_board_pose = None
+        self.latest_board_pose_stamp = rospy.Time(0)
+        self.board_pose_valid = False
 
         # =====================================================
         # ROS 接口
         # =====================================================
         self.latest_scan = None
         self.scan_sub = rospy.Subscriber(self.scan_topic, LaserScan, self.scan_cb, queue_size=1)
+        self.board_pose_sub = rospy.Subscriber(self.board_pose_topic, PoseWithCovarianceStamped,
+                                               self.board_pose_cb, queue_size=1)
+        self.board_valid_sub = rospy.Subscriber(self.board_valid_topic, Bool,
+                                                self.board_valid_cb, queue_size=1)
         self.cmd_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
         self.tf_listener = tf.TransformListener()
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -197,6 +210,15 @@ class AutoSinglePointTest:
     # =========================================================
     def scan_cb(self, msg):
         self.latest_scan = msg
+
+    def board_valid_cb(self, msg):
+        self.board_pose_valid = bool(msg.data)
+
+    def board_pose_cb(self, msg):
+        q = msg.pose.pose.orientation
+        _, _, yaw = tf.transformations.euler_from_quaternion([q.x, q.y, q.z, q.w])
+        self.latest_board_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y, yaw)
+        self.latest_board_pose_stamp = msg.header.stamp
 
     # =========================================================
     # 主流程
@@ -469,7 +491,7 @@ class AutoSinglePointTest:
                 self.stop_robot()
                 return False
 
-            pose = self.lookup_robot_pose()
+            pose = self.lookup_robot_pose(prefer_board=True)
             if pose is None:
                 self.stop_robot()
                 rate.sleep()
@@ -521,7 +543,7 @@ class AutoSinglePointTest:
                 self.stop_robot()
                 return False
 
-            pose = self.lookup_robot_pose()
+            pose = self.lookup_robot_pose(prefer_board=True)
             if pose is None:
                 self.stop_robot()
                 rate.sleep()
@@ -705,7 +727,7 @@ class AutoSinglePointTest:
         escape_axis_x = -entry["axis_x"]
         escape_axis_y = -entry["axis_y"]
 
-        start_pose = self.lookup_robot_pose()
+        start_pose = self.lookup_robot_pose(prefer_board=True)
         if start_pose is None:
             rospy.logwarn("escape: no start pose, skip.")
             return
@@ -720,7 +742,7 @@ class AutoSinglePointTest:
                 rospy.logwarn("escape: timeout %.1fs", elapsed)
                 break
 
-            pose = self.lookup_robot_pose()
+            pose = self.lookup_robot_pose(prefer_board=True)
             if pose is None:
                 self.stop_robot()
                 rate.sleep()
@@ -992,7 +1014,15 @@ class AutoSinglePointTest:
         cmd.angular.z = 0.0
         return cmd
 
-    def lookup_robot_pose(self):
+    def lookup_robot_pose(self, prefer_board=False):
+        if prefer_board and self.use_board_corrected_pose and self.board_pose_valid and self.latest_board_pose:
+            age = (rospy.Time.now() - self.latest_board_pose_stamp).to_sec()
+            if age <= self.board_pose_timeout:
+                return self.latest_board_pose
+        if prefer_board and self.use_board_corrected_pose and self.require_board_corrected_pose:
+            rospy.logwarn_throttle(1.0, "board corrected pose unavailable; parking controller holds position")
+            return None
+
         try:
             self.tf_listener.waitForTransform(self.map_frame, self.base_frame,
                                               rospy.Time(0), rospy.Duration(0.5))
@@ -1003,8 +1033,8 @@ class AutoSinglePointTest:
             rospy.logwarn_throttle(1.0, "TF lookup failed: %s", str(e))
             return None
 
-    def distance_to_point(self, x, y):
-        pose = self.lookup_robot_pose()
+    def distance_to_point(self, x, y, prefer_board=False):
+        pose = self.lookup_robot_pose(prefer_board=prefer_board)
         if pose is None:
             return None
         return math.sqrt((x - pose[0]) ** 2 + (y - pose[1]) ** 2)
