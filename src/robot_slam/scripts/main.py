@@ -251,12 +251,12 @@ class navigation_demo:
             return "无"
 
     # ---------------- 机器人终点动作(2/4) ----------------
-    def end24(self):
-        """终点动作：后退+小幅右移"""
+    def start24(self):
+        """起点动作，冲出障碍区：左上方直线斜移"""
         global time_val
         msg = Twist()
-        msg.linear.x = -0.25    # X轴：后退
-        msg.linear.y = 0.1     # Y轴：右移
+        msg.linear.x = 0.25    # X轴：前进
+        msg.linear.y = 0.1     # Y轴：左移
         msg.angular.z = 0.0    # 无旋转
         # 持续发布速度指令1.3秒
         while time_val <= 13:
@@ -341,33 +341,30 @@ class navigation_demo:
         pass
 
     # ---------------- 核心：导航到目标点 ----------------
-    def goto(self, p):
+    def goto(self, p, timeout=60):
         """
         功能：导航到指定坐标
         :param p: [x, y, 朝向角度]
+        :param timeout: 超时秒数，默认60
         """
-        rospy.loginfo("[Navi] 前往目标点: %s" % p)
-        # 构造导航目标消息
+        rospy.loginfo("[Navi] 前往目标点: %s (timeout=%ds)" % (p, timeout))
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = 'map'
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose.position.x = p[0]
         goal.target_pose.pose.position.y = p[1]
-        # 姿态转换
         q = quaternion_from_euler(0.0, 0.0, p[2] / 180.0 * pi)
         goal.target_pose.pose.orientation.x = q[0]
         goal.target_pose.pose.orientation.y = q[1]
         goal.target_pose.pose.orientation.z = q[2]
         goal.target_pose.pose.orientation.w = q[3]
-        # 发送导航目标并绑定回调
+
         self.move_base.send_goal(goal, self._done_cb, self._active_cb, self._feedback_cb)
-        # 等待导航结果(超时60秒)
-        result = self.move_base.wait_for_result(rospy.Duration(60))
+        result = self.move_base.wait_for_result(rospy.Duration(timeout))
         if not result:
             self.move_base.cancel_goal()
             rospy.loginfo("导航超时，取消目标")
         else:
-            # 判断是否成功到达
             if self.move_base.get_state() == GoalStatus.SUCCEEDED:
                 rospy.loginfo("到达目标点 %s 成功! " % p)
         return True
@@ -435,8 +432,8 @@ class navigation_demo:
         # 遍历所有线索
         for idx, task_id in enumerate(task_numbers):
             if 1 <= task_id <= 9:
-                # 导航到线索对应的任务点
-                self.goto(goals[task_id])
+                # 导航到线索对应的任务点 (5s 超时)
+                self.goto(goals[task_id], timeout=5)
                 rospy.sleep(1)
                 # 启动精密停车
                 target = goals[task_id]
@@ -448,6 +445,8 @@ class navigation_demo:
                 raw_id = TASK_TO_VLM.get(task_id, task_id)
                 tts_text = u"已到达任务点%d号" % raw_id
                 self.tts_client(tts_text)
+                # 播报完毕，逃逸离开挡板区域
+                parking.escape()
             else:
                 rospy.logwarn("任务编号%s无效，跳过" % task_id)
 
@@ -530,6 +529,8 @@ if __name__ == "__main__":
 
     # 7. 播报离线音频并开始任务
     os.system('ffplay -nodisp -autoexit -loglevel quiet /home/abot/craic/src/robot_slam/resources/startGame.wav')
+    # navi.adjust_position(side_target=2.352, back_target=0.600) 
+    navi.start24()
     navi.execute_mission()
 
     # 8. 保持节点运行

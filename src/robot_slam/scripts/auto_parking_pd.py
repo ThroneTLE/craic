@@ -63,11 +63,10 @@ class AutoSinglePointTest:
         # Phase 0: move_base 直达目标中心
         # =====================================================
         self.enable_direct_center = rospy.get_param("enable_direct_center", True)
-        self.direct_center_timeout = rospy.get_param("direct_center_timeout", 5.0)
+        self.direct_center_timeout = 5.0          # 硬编码，不读 param server
         self.direct_center_tolerance = rospy.get_param("direct_center_tolerance", 0.10)
-        # 抽搐检测：5s 内机器人净位移 < 此值 → 判定原地抽搐
-        self.direct_center_oscillation_window = rospy.get_param("direct_center_oscillation_window", 5.0)
-        self.direct_center_oscillation_min_displacement = rospy.get_param("direct_center_oscillation_min_displacement", 0.3)
+        self.direct_center_oscillation_window = 3.0
+        self.direct_center_oscillation_min_displacement = 0.2
 
         # =====================================================
         # 入口参数
@@ -102,7 +101,7 @@ class AutoSinglePointTest:
         # =====================================================
         # Phase 1a: move_base 到入口
         # =====================================================
-        self.entry_nav_timeout = rospy.get_param("entry_nav_timeout", 5.0)
+        self.entry_nav_timeout = 8.0          # 硬编码
         self.entry_nav_tolerance = rospy.get_param("entry_nav_tolerance", 0.15)
 
         # =====================================================
@@ -115,21 +114,33 @@ class AutoSinglePointTest:
         self.pid_max_v = rospy.get_param("pid_max_v", 0.15)
         self.pid_max_wz = rospy.get_param("pid_max_wz", 0.6)
         self.pid_yaw_align_timeout = rospy.get_param("pid_yaw_align_timeout", 4.0)
-        self.pid_translate_timeout = rospy.get_param("pid_translate_timeout", 6.0)
-        self.pos_tolerance = rospy.get_param("pos_tolerance", 0.05)
+        self.pid_translate_timeout = rospy.get_param("pid_translate_timeout", 11.0)
+        self.pos_tolerance = rospy.get_param("pos_tolerance", 0.02)
         self.yaw_tolerance = rospy.get_param("yaw_tolerance", 0.05)
 
         # =====================================================
         # Phase 3: 激光挡板精调
         # =====================================================
         self.fine_tune_enabled = rospy.get_param("fine_tune_enabled", True)
-        self.fine_tune_timeout = rospy.get_param("fine_tune_timeout", 4.0)
+        self.fine_tune_timeout = rospy.get_param("fine_tune_timeout", 8.0)
         self.fine_tune_front_back_target = rospy.get_param("fine_tune_front_back_target", 0.24)
         self.fine_tune_side_target = rospy.get_param("fine_tune_side_target", 0.20)
         self.fine_tune_tolerance = rospy.get_param("fine_tune_tolerance", 0.03)
         self.fine_tune_kp = rospy.get_param("fine_tune_kp", 0.3)
         self.fine_tune_kd = rospy.get_param("fine_tune_kd", 0.1)
         self.fine_tune_max_v = rospy.get_param("fine_tune_max_v", 0.03)
+
+        # =====================================================
+        # Phase 4: 逃逸
+        # =====================================================
+        self.escape_enabled = rospy.get_param("escape_enabled", True)
+        self.escape_distance = rospy.get_param("escape_distance", 0.35)
+        self.escape_speed = rospy.get_param("escape_speed", 0.10)
+        self.escape_timeout = rospy.get_param("escape_timeout", 5.0)
+
+        # 运行时状态
+        self.best_entry = None
+        self.parking_done = False
 
         # =====================================================
         # 雷达安全
@@ -206,6 +217,7 @@ class AutoSinglePointTest:
         else:
             entries = self.sort_entries_by_robot_position(entries)
         best_entry = entries[0]
+        self.best_entry = best_entry  # 保存，供 escape() 使用
 
         rospy.loginfo("Best entry: %s score=%.3f entry=(%.3f, %.3f)",
                        best_entry["name"], best_entry.get("score", -1),
@@ -240,6 +252,7 @@ class AutoSinglePointTest:
             self.precision_fine_tune()
 
         self.stop_robot()
+        self.parking_done = True
 
     # =========================================================
     # Phase 0: move_base 直达目标中心 (轮询 + 抽搐检测)
@@ -262,38 +275,54 @@ class AutoSinglePointTest:
 
         self.move_base.send_goal(goal)
 
-        poll_interval = 0.3
+        # Timer 硬中断：3s 到立刻 cancel，不受主循环影响
+        cancelled = [False]
+
+        def hard_cancel(event):
+            rospy.logwarn("Phase 0: TIMER CANCEL fired")
+            self.move_base.cancel_goal()
+            cancelled[0] = True
+
+        timer = rospy.Timer(rospy.Duration(self.direct_center_timeout), hard_cancel, oneshot=True)
+
+        poll_interval = 0.1
         start_time = rospy.Time.now()
-        pose_history = []  # [(timestamp, x, y), ...]
+        pose_history = []
+        dist = None
 
         while not rospy.is_shutdown():
+            if cancelled[0]:
+                rospy.logwarn("Phase 0: cancelled by timer. dist=%.3f", dist if dist else -1)
+                self.stop_robot()
+                rospy.sleep(0.2)
+                timer.shutdown()
+                return False
+
             elapsed = (rospy.Time.now() - start_time).to_sec()
 
             state = self.move_base.get_state()
             if state == GoalStatus.SUCCEEDED:
                 rospy.loginfo("Phase 0: move_base SUCCEEDED in %.1fs", elapsed)
+                timer.shutdown()
                 return True
 
-            # 记录当前位置
             pose = self.lookup_robot_pose()
             if pose is not None:
                 now = rospy.Time.now()
                 pose_history.append((now, pose[0], pose[1]))
-                # 清理超过时间窗口的旧记录
                 pose_history = [(t, px, py) for t, px, py in pose_history
                                 if (now - t).to_sec() <= self.direct_center_oscillation_window]
 
-                # 检查是否够近
                 dist = math.sqrt((self.target_x - pose[0]) ** 2 + (self.target_y - pose[1]) ** 2)
-                if dist < self.direct_center_tolerance:
-                    rospy.logwarn("Phase 0: close enough (dist=%.3f < %.3f). Accept.",
-                                  dist, self.direct_center_tolerance)
+                yaw_err = abs(normalize_angle(self.target_yaw - pose[2]))
+                if dist < self.direct_center_tolerance and yaw_err < self.yaw_tolerance:
+                    rospy.logwarn("Phase 0: close enough (dist=%.3f yaw_err=%.3f). Accept.", dist, yaw_err)
                     self.move_base.cancel_goal()
                     self.stop_robot()
                     rospy.sleep(0.2)
+                    timer.shutdown()
                     return True
 
-                # 抽搐检测：时间窗口内净位移太小
                 if len(pose_history) >= 2:
                     window_dt = (pose_history[-1][0] - pose_history[0][0]).to_sec()
                     if window_dt >= self.direct_center_oscillation_window:
@@ -301,19 +330,20 @@ class AutoSinglePointTest:
                         dy = pose_history[-1][2] - pose_history[0][2]
                         displacement = math.sqrt(dx * dx + dy * dy)
                         if displacement < self.direct_center_oscillation_min_displacement:
-                            rospy.logwarn(
-                                "Phase 0: oscillation detected (displacement=%.3fm < %.3fm over %.1fs). Cancel.",
-                                displacement, self.direct_center_oscillation_min_displacement, window_dt)
+                            rospy.logwarn("Phase 0: oscillation (disp=%.3fm < %.2fm). Cancel.",
+                                          displacement, self.direct_center_oscillation_min_displacement)
                             self.move_base.cancel_goal()
                             self.stop_robot()
                             rospy.sleep(0.2)
+                            timer.shutdown()
                             return False
 
             if elapsed > self.direct_center_timeout:
-                rospy.logwarn("Phase 0: timeout %.1fs. dist=%.3f", elapsed, dist if dist else -1)
+                rospy.logwarn("Phase 0: timeout %.1fs", elapsed)
                 self.move_base.cancel_goal()
                 self.stop_robot()
                 rospy.sleep(0.2)
+                timer.shutdown()
                 return False
 
             rospy.sleep(poll_interval)
@@ -345,31 +375,74 @@ class AutoSinglePointTest:
 
         self.move_base.send_goal(goal)
 
-        poll_interval = 0.3
+        # Timer 硬中断
+        cancelled = [False]
+
+        def hard_cancel(event):
+            rospy.logwarn("Phase 1a: TIMER CANCEL fired")
+            self.move_base.cancel_goal()
+            cancelled[0] = True
+
+        timer = rospy.Timer(rospy.Duration(self.entry_nav_timeout), hard_cancel, oneshot=True)
+
+        poll_interval = 0.1
         start_time = rospy.Time.now()
+        pose_history = []
+        dist = None
 
         while not rospy.is_shutdown():
+            if cancelled[0]:
+                rospy.logwarn("Phase 1a: cancelled by timer. dist=%.3f", dist if dist else -1)
+                self.stop_robot()
+                rospy.sleep(0.2)
+                timer.shutdown()
+                return False
+
             elapsed = (rospy.Time.now() - start_time).to_sec()
 
             state = self.move_base.get_state()
             if state == GoalStatus.SUCCEEDED:
                 rospy.loginfo("Phase 1a: move_base reached entry SUCCEEDED in %.1fs", elapsed)
+                timer.shutdown()
                 return True
 
             dist = self.distance_to_point(x, y)
             if dist is not None and dist < self.entry_nav_tolerance:
-                rospy.logwarn("Phase 1a: near entry (dist=%.3f < %.3f) after %.1fs. Accept.",
-                              dist, self.entry_nav_tolerance, elapsed)
+                rospy.logwarn("Phase 1a: near entry (dist=%.3f) after %.1fs. Accept.", dist, elapsed)
                 self.move_base.cancel_goal()
                 self.stop_robot()
                 rospy.sleep(0.2)
+                timer.shutdown()
                 return True
 
+            pose = self.lookup_robot_pose()
+            if pose is not None:
+                now = rospy.Time.now()
+                pose_history.append((now, pose[0], pose[1]))
+                pose_history = [(t, px, py) for t, px, py in pose_history
+                                if (now - t).to_sec() <= self.direct_center_oscillation_window]
+
+                if len(pose_history) >= 2:
+                    window_dt = (pose_history[-1][0] - pose_history[0][0]).to_sec()
+                    if window_dt >= self.direct_center_oscillation_window:
+                        dx = pose_history[-1][1] - pose_history[0][1]
+                        dy = pose_history[-1][2] - pose_history[0][2]
+                        displacement = math.sqrt(dx * dx + dy * dy)
+                        if displacement < self.direct_center_oscillation_min_displacement:
+                            rospy.logwarn("Phase 1a: oscillation (disp=%.3fm < %.2fm). Cancel.",
+                                          displacement, self.direct_center_oscillation_min_displacement)
+                            self.move_base.cancel_goal()
+                            self.stop_robot()
+                            rospy.sleep(0.2)
+                            timer.shutdown()
+                            return False
+
             if elapsed > self.entry_nav_timeout:
-                rospy.logwarn("Phase 1a: timeout %.1fs. dist=%.3f", elapsed, dist if dist else -1)
+                rospy.logwarn("Phase 1a: timeout %.1fs", elapsed)
                 self.move_base.cancel_goal()
                 self.stop_robot()
                 rospy.sleep(0.2)
+                timer.shutdown()
                 return False
 
             rospy.sleep(poll_interval)
@@ -526,57 +599,59 @@ class AutoSinglePointTest:
         return r
 
     def precision_fine_tune(self):
-        """Phase 3: 用激光单点测距，精调到挡板目标距离"""
+        """Phase 3: 只用入口对面那个真实挡板做单方向激光精调"""
         rospy.loginfo("=== Phase 3: laser precision fine-tune ===")
 
-        # 收集激光点云评估 block 状态
-        points = self.collect_scan_points_in_map()
-        sides = self.evaluate_target_sides(points)
-        blocked = [k for k in ["left", "right", "up", "down"] if sides[k]["blocked"]]
-
-        if not blocked:
-            rospy.loginfo("Phase 3: no blocked sides detected, skip.")
+        if self.best_entry is None:
+            rospy.loginfo("Phase 3: no entry info, skip.")
             return
 
-        rospy.loginfo("Phase 3: blocked sides = %s", ",".join(blocked))
-
-        # box 坐标系下各边的方向角 (map 系)
-        box_angles = {
-            "right": 0.0,
-            "up": math.pi / 2,
-            "left": math.pi,
-            "down": -math.pi / 2,
+        # 入口对面 = 真挡板方向
+        opposite = {
+            "right": "left",
+            "left": "right",
+            "up": "down",
+            "down": "up",
         }
+        entry_name = self.best_entry["name"]
+        baffle_side = opposite[entry_name]
 
-        # 归类每个 blocked 边到 base 系的前/后/左/右
-        corrections = {"front": False, "back": False, "left": False, "right": False}
-        for side in blocked:
-            box_ang = box_angles[side]
-            base_ang = normalize_angle(box_ang - self.target_yaw)
+        # box 系下该挡板的方向角
+        box_angles = {"right": 0.0, "up": math.pi / 2, "left": math.pi, "down": -math.pi / 2}
+        box_ang = box_angles[baffle_side]
 
-            if abs(base_ang) < math.pi / 4:           # ~前
-                corrections["front"] = True
-            elif abs(base_ang) > 3 * math.pi / 4:     # ~后
-                corrections["back"] = True
-            elif base_ang > 0:                         # ~左
-                corrections["left"] = True
-            else:                                      # ~右
-                corrections["right"] = True
+        # 映射到 base 系 (机器人局部坐标系)
+        base_ang = normalize_angle(box_ang - self.target_yaw)
 
-        rospy.loginfo("Phase 3: base directions to correct: front=%s back=%s left=%s right=%s",
-                       str(corrections["front"]), str(corrections["back"]),
-                       str(corrections["left"]), str(corrections["right"]))
+        # 归类到 front/back/left/right + 确定激光角度和目标距离
+        if abs(base_ang) < math.pi / 4:
+            laser_ang = 0
+            target_dist = self.fine_tune_front_back_target
+            axis = "x"
+            sign = 1  # front: error>0 → 往前 (x+)
+        elif abs(base_ang) > 3 * math.pi / 4:
+            laser_ang = 180
+            target_dist = self.fine_tune_front_back_target
+            axis = "x"
+            sign = -1  # back: error>0 → 后退 (x-)
+        elif base_ang > 0:
+            laser_ang = 90
+            target_dist = self.fine_tune_side_target
+            axis = "y"
+            sign = 1  # left: error>0 → 左移 (y+)
+        else:
+            laser_ang = -90
+            target_dist = self.fine_tune_side_target
+            axis = "y"
+            sign = -1  # right: error>0 → 右移 (y-)
 
-        # PD 微调
-        pd_x = PDController(self.fine_tune_kp, self.fine_tune_kd)
-        pd_y = PDController(self.fine_tune_kp, self.fine_tune_kd)
+        rospy.loginfo("Phase 3: entry=%s baffle=%s box_ang=%.2f base_ang=%.2f laser=%d axis=%s sign=%d target=%.2f",
+                       entry_name, baffle_side, box_ang, base_ang, laser_ang, axis, sign, target_dist)
 
+        pd = PDController(self.fine_tune_kp, self.fine_tune_kd)
         rate = rospy.Rate(20)
         start_time = rospy.Time.now()
-        front_stable = 0
-        back_stable = 0
-        left_stable = 0
-        right_stable = 0
+        stable_cnt = 0
 
         while not rospy.is_shutdown():
             elapsed = (rospy.Time.now() - start_time).to_sec()
@@ -585,88 +660,90 @@ class AutoSinglePointTest:
                 break
 
             now = rospy.Time.now()
-            cmd = Twist()
+            d = self.get_laser_at_angle(laser_ang)
 
-            # 前向挡板
-            if corrections["front"]:
-                d = self.get_laser_at_angle(0)
-                if d is not None and d < 1.5:
-                    err = d - self.fine_tune_front_back_target
-                    if abs(err) < self.fine_tune_tolerance:
-                        front_stable += 1
+            if d is not None and d < 1.5:
+                err = d - target_dist
+                if abs(err) < self.fine_tune_tolerance:
+                    stable_cnt += 1
+                    if stable_cnt >= 3:
+                        rospy.loginfo("Phase 3: done. laser=%.3f target=%.2f err=%.3f",
+                                       d, target_dist, err)
+                        break
+                else:
+                    stable_cnt = 0
+                    v = self.clamp(sign * pd.update(err, now), -self.fine_tune_max_v, self.fine_tune_max_v)
+
+                    cmd = Twist()
+                    if axis == "x":
+                        cmd.linear.x = v
                     else:
-                        front_stable = 0
-                        v = self.clamp(pd_x.update(err, now), -self.fine_tune_max_v, self.fine_tune_max_v)
-                        cmd.linear.x += v
-
-            # 后方挡板
-            if corrections["back"]:
-                d = self.get_laser_at_angle(180)
-                if d is None:
-                    d = self.get_laser_at_angle(-180)
-                if d is not None and d < 1.5:
-                    # error>0 表示离后方挡板太远，需要后退 (linear.x<0)
-                    err = d - self.fine_tune_front_back_target
-                    if abs(err) < self.fine_tune_tolerance:
-                        back_stable += 1
-                    else:
-                        back_stable = 0
-                        v = self.clamp(-pd_x.update(err, now), -self.fine_tune_max_v, self.fine_tune_max_v)
-                        cmd.linear.x += v
-
-            # 左侧挡板
-            if corrections["left"]:
-                d = self.get_laser_at_angle(90)
-                if d is not None and d < 1.5:
-                    err = d - self.fine_tune_side_target
-                    if abs(err) < self.fine_tune_tolerance:
-                        left_stable += 1
-                    else:
-                        left_stable = 0
-                        v = self.clamp(pd_y.update(err, now), -self.fine_tune_max_v, self.fine_tune_max_v)
-                        cmd.linear.y += v
-
-            # 右侧挡板
-            if corrections["right"]:
-                d = self.get_laser_at_angle(-90)
-                if d is not None and d < 1.5:
-                    # error>0 表示离右侧挡板太远，需要右移 (linear.y<0)
-                    err = d - self.fine_tune_side_target
-                    if abs(err) < self.fine_tune_tolerance:
-                        right_stable += 1
-                    else:
-                        right_stable = 0
-                        v = self.clamp(-pd_y.update(err, now), -self.fine_tune_max_v, self.fine_tune_max_v)
-                        cmd.linear.y += v
-
-            # 所有需要修正的方向都稳定 3 帧 → 完成
-            all_stable = True
-            if corrections["front"] and front_stable < 3:
-                all_stable = False
-            if corrections["back"] and back_stable < 3:
-                all_stable = False
-            if corrections["left"] and left_stable < 3:
-                all_stable = False
-            if corrections["right"] and right_stable < 3:
-                all_stable = False
-
-            if all_stable:
-                rospy.loginfo("Phase 3: precision fine-tune done. front_s=%d back_s=%d left_s=%d right_s=%d",
-                               front_stable, back_stable, left_stable, right_stable)
-                break
-
-            # 有修正量才发布
-            if abs(cmd.linear.x) > 1e-5 or abs(cmd.linear.y) > 1e-5:
-                cmd.angular.z = 0.0
-                cmd = self.apply_laser_safety(cmd)
-                self.publish_cmd(cmd)
+                        cmd.linear.y = v
+                    cmd.angular.z = 0.0
+                    cmd = self.apply_laser_safety(cmd)
+                    self.publish_cmd(cmd)
             else:
-                self.stop_robot()
+                stable_cnt = 0
 
             rate.sleep()
 
         self.stop_robot()
         rospy.loginfo("Phase 3: finished.")
+
+    # =========================================================
+    # Phase 4: 逃逸 (泊车后沿入口轴反向退出)
+    # =========================================================
+    def escape(self):
+        """泊车后沿入口轴反向退出，离开挡板区域"""
+        if not self.escape_enabled or self.best_entry is None:
+            return
+
+        entry = self.best_entry
+        rospy.loginfo("=== Phase 4: escape via entry %s ===", entry["name"])
+
+        # 逃逸方向 = 入口轴反方向
+        escape_axis_x = -entry["axis_x"]
+        escape_axis_y = -entry["axis_y"]
+
+        start_pose = self.lookup_robot_pose()
+        if start_pose is None:
+            rospy.logwarn("escape: no start pose, skip.")
+            return
+        sx, sy, _ = start_pose
+
+        rate = rospy.Rate(20)
+        start_time = rospy.Time.now()
+
+        while not rospy.is_shutdown():
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            if elapsed > self.escape_timeout:
+                rospy.logwarn("escape: timeout %.1fs", elapsed)
+                break
+
+            pose = self.lookup_robot_pose()
+            if pose is None:
+                self.stop_robot()
+                rate.sleep()
+                continue
+
+            rx, ry, ryaw = pose
+            moved = math.sqrt((rx - sx) ** 2 + (ry - sy) ** 2)
+
+            if moved >= self.escape_distance:
+                rospy.loginfo("escape: done, moved=%.3f", moved)
+                break
+
+            vx_map = escape_axis_x * self.escape_speed
+            vy_map = escape_axis_y * self.escape_speed
+
+            cmd = self.map_velocity_to_base_cmd(vx_map, vy_map, ryaw)
+            cmd.angular.z = 0.0
+            cmd = self.apply_laser_safety(cmd)
+            self.publish_cmd(cmd)
+            rate.sleep()
+
+        self.stop_robot()
+        rospy.loginfo("Phase 4: escape finished.")
 
     # =========================================================
     # 4个入口生成 (复用现有逻辑)
