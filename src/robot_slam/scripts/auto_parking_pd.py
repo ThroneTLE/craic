@@ -151,12 +151,21 @@ class AutoSinglePointTest:
         self.escape_distance = rospy.get_param("escape_distance", 0.35)
         self.escape_speed = rospy.get_param("escape_speed", 0.10)
         self.escape_timeout = rospy.get_param("escape_timeout", 5.0)
+        self.auto_escape_mode = self.get_param("auto_escape_mode", "smart")
+        self.escape_if_blocked_count = int(self.get_param("escape_if_blocked_count", 1))
+        self.escape_if_near_obstacle_dist = self.get_param("escape_if_near_obstacle_dist", 0.18)
 
         # 运行时状态
         self.best_entry = None
         self.parking_done = False
         self.parking_start_time = None
         self.current_phase = "INIT"
+        self.relative_blocked_names = []
+        self.relative_open_names = []
+        self.relative_last_center_dist = None
+        self.relative_near_center_used = False
+        self.last_fine_tune_status = ""
+        self.last_fine_tune_detail = ""
 
         # =====================================================
         # 雷达安全
@@ -782,6 +791,8 @@ class AutoSinglePointTest:
         sides = self.evaluate_target_sides_relative(points)
         blocked_names = [k for k in ["left", "right", "up", "down"] if sides[k]["blocked"]]
         open_names = [k for k in ["left", "right", "up", "down"] if not sides[k]["blocked"]]
+        self.relative_blocked_names = blocked_names
+        self.relative_open_names = open_names
         self.phase_end(
             "RELATIVE_DETECT_SIDES",
             phase_start,
@@ -794,7 +805,9 @@ class AutoSinglePointTest:
         if pose is not None:
             cx, cy = self.map_to_cell(pose[0], pose[1])
             center_dist = math.sqrt(cx * cx + cy * cy)
+            self.relative_last_center_dist = center_dist
             if center_dist <= self.relative_near_center_direct_dist:
+                self.relative_near_center_used = True
                 entries = self.generate_entries()
                 self.best_entry = self.choose_relative_entry(entries, sides)
                 self.log_entry_candidates(entries, sides=sides, selected=self.best_entry)
@@ -870,16 +883,26 @@ class AutoSinglePointTest:
         center_ok = self.pid_translate_relative_center(timeout=self.relative_center_timeout)
         self.phase_end("RELATIVE_PID_CENTER", phase_start, "OK" if center_ok else "TIMEOUT_ACCEPT")
         self.log_pose_state("RELATIVE_CENTER_DONE")
+        pose = self.lookup_robot_pose()
+        if pose is not None:
+            cx, cy = self.map_to_cell(pose[0], pose[1])
+            self.relative_last_center_dist = math.sqrt(cx * cx + cy * cy)
 
         if self.fine_tune_enabled:
             if (not self.relative_fine_tune_only_if_blocked) or len(blocked_names) > 0:
                 phase_start = self.phase_start("RELATIVE_FINE_TUNE", "blocked=%s" % ",".join(blocked_names))
                 tune_side = blocked_names[0] if blocked_names else None
                 fine_status, fine_detail = self.precision_fine_tune(tune_side)
+                self.last_fine_tune_status = fine_status
+                self.last_fine_tune_detail = fine_detail
                 self.phase_end("RELATIVE_FINE_TUNE", phase_start, fine_status, fine_detail)
             else:
+                self.last_fine_tune_status = "SKIP"
+                self.last_fine_tune_detail = "no_blocked_sides=true"
                 self.phase_skip("RELATIVE_FINE_TUNE", "no_blocked_sides=true")
         else:
+            self.last_fine_tune_status = "SKIP"
+            self.last_fine_tune_detail = "fine_tune_enabled=false"
             self.phase_skip("RELATIVE_FINE_TUNE", "fine_tune_enabled=false")
 
         self.stop_robot()
@@ -1192,7 +1215,34 @@ class AutoSinglePointTest:
     # =========================================================
     # Phase 4: 逃逸 (泊车后沿入口轴反向退出)
     # =========================================================
-    def escape(self):
+    def should_escape_after_parking(self):
+        mode = str(self.auto_escape_mode).strip().lower()
+        if mode in ["always", "true", "1", "yes"]:
+            return True, "mode=always"
+        if mode in ["never", "false", "0", "no"]:
+            return False, "mode=never"
+
+        nearest = self.get_nearest_obstacle_range()
+        if self.escape_if_near_obstacle_dist > 0.0 and nearest < self.escape_if_near_obstacle_dist:
+            return True, "near_obstacle=%.3f<threshold=%.3f" % (
+                nearest, self.escape_if_near_obstacle_dist)
+
+        blocked_count = len(self.relative_blocked_names)
+        if self.relative_parking_mode:
+            if self.relative_near_center_used:
+                return False, "near_center_direct=true"
+            if blocked_count < self.escape_if_blocked_count:
+                return False, "blocked_count=%d<threshold=%d" % (
+                    blocked_count, self.escape_if_blocked_count)
+            if self.last_fine_tune_status in ["SKIP", ""]:
+                return False, "fine_tune_status=%s detail=%s" % (
+                    self.last_fine_tune_status, self.last_fine_tune_detail)
+            return True, "blocked=%s fine_tune=%s" % (
+                ",".join(self.relative_blocked_names), self.last_fine_tune_status)
+
+        return True, "legacy_non_relative"
+
+    def escape(self, force=False, reason=""):
         """泊车后沿入口轴反向退出，离开挡板区域"""
         if not self.escape_enabled or self.best_entry is None:
             self.phase_skip(
@@ -1202,11 +1252,26 @@ class AutoSinglePointTest:
             )
             return
 
+        if force:
+            escape_reason = "force=true"
+            if reason:
+                escape_reason += " " + reason
+        else:
+            try:
+                should_escape, escape_reason = self.should_escape_after_parking()
+            except Exception as e:
+                should_escape = False
+                escape_reason = "escape_check_error=%s" % str(e)
+                rospy.logwarn("escape check failed, skip escape: %s", str(e))
+            if not should_escape:
+                self.phase_skip("PHASE4_ESCAPE", escape_reason)
+                return
+
         entry = self.best_entry
         phase_start = self.phase_start(
             "PHASE4_ESCAPE",
-            "entry=%s distance=%.3f speed=%.3f timeout=%.1fs" %
-            (entry["name"], self.escape_distance, self.escape_speed, self.escape_timeout)
+            "entry=%s distance=%.3f speed=%.3f timeout=%.1fs reason=%s" %
+            (entry["name"], self.escape_distance, self.escape_speed, self.escape_timeout, escape_reason)
         )
         rospy.loginfo("=== Phase 4: escape via entry %s ===", entry["name"])
 
@@ -1541,6 +1606,19 @@ class AutoSinglePointTest:
                 continue
             a = msg.angle_min + i * msg.angle_increment
             if a0 <= a <= a1 and r < rmin:
+                rmin = r
+        return rmin
+
+    def get_nearest_obstacle_range(self):
+        if self.latest_scan is None:
+            return float("inf")
+        rmin = float("inf")
+        for r in self.latest_scan.ranges:
+            if math.isnan(r) or math.isinf(r):
+                continue
+            if r <= self.latest_scan.range_min or r >= self.latest_scan.range_max:
+                continue
+            if r < rmin:
                 rmin = r
         return rmin
 

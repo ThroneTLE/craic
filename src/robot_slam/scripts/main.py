@@ -128,6 +128,11 @@ class navigation_demo:
         self.final_yaw_min_vel = rospy.get_param("~final_yaw_min_vel", 0.08)
         self.final_yaw_max_vel = rospy.get_param("~final_yaw_max_vel", 0.45)
         self.final_yaw_stable_count = int(rospy.get_param("~final_yaw_stable_count", 3))
+        self.task_nav_timeout = rospy.get_param("~task_nav_timeout", 8.0)
+        self.task_nav_retry_timeout = rospy.get_param("~task_nav_retry_timeout", 5.0)
+        self.task_nav_accept_dist = rospy.get_param("~task_nav_accept_dist", 0.45)
+        self.last_move_base_state = None
+        self.last_move_base_feedback = None
     
     def scan_callback(self, msg):
         """存储最新的激光雷达数据"""
@@ -157,6 +162,48 @@ class navigation_demo:
             rospy.loginfo("[NAV_STATE][%s] target=(%.3f,%.3f,%.1f) yaw=%.3f odom_received=%s",
                           label, target[0], target[1], target[2],
                           self.current_yaw, str(self.odom_received))
+
+    def distance_to_goal_xy(self, target):
+        if self.last_move_base_feedback is not None:
+            pose = self.last_move_base_feedback.base_position.pose
+            dx = target[0] - pose.position.x
+            dy = target[1] - pose.position.y
+            return np.sqrt(dx * dx + dy * dy)
+        rospy.logwarn("无move_base反馈位姿，无法计算map目标距离")
+        return None
+
+    def reset_nav_feedback(self):
+        self.last_move_base_feedback = None
+        self.last_move_base_state = None
+
+    def nav_reached_by_state_and_distance(self, nav_ok, target):
+        nav_dist = self.distance_to_goal_xy(target)
+        if nav_dist is None:
+            if nav_ok:
+                rospy.logwarn("[TASK_TIME][NAV_NO_DISTANCE_ACCEPT_STATE] state_ok=true")
+                return True, None
+            return False, None
+        nav_reached = (
+            nav_ok and nav_dist is not None and nav_dist <= self.task_nav_accept_dist
+        ) or (
+            nav_dist is not None and nav_dist <= self.task_nav_accept_dist
+        )
+        if nav_ok and not nav_reached:
+            rospy.logwarn(
+                "[TASK_TIME][NAV_STATE_DISTANCE_MISMATCH] state_ok=true dist=%s accept=%.3f",
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                self.task_nav_accept_dist
+            )
+        return nav_reached, nav_dist
+
+    def fallback_odom_distance_to_goal_xy(self, target):
+        try:
+            odom = rospy.wait_for_message('/odom', Odometry, timeout=0.2)
+            dx = target[0] - odom.pose.pose.position.x
+            dy = target[1] - odom.pose.pose.position.y
+            return np.sqrt(dx * dx + dy * dy)
+        except Exception:
+            return None
 
     def clamp(self, value, min_value, max_value):
         """限制数值范围"""
@@ -579,6 +626,7 @@ class navigation_demo:
     # ---------------- 导航回调函数 ----------------
     def _done_cb(self, status, result):
         """导航完成后自动调用"""
+        self.last_move_base_state = status
         rospy.loginfo("导航完成! status=%s result=%s" % (status, result))
         self.arrive_pub.publish("arrived to target point")
 
@@ -588,7 +636,7 @@ class navigation_demo:
 
     def _feedback_cb(self, feedback):
         """导航过程中实时反馈(无需处理)"""
-        pass
+        self.last_move_base_feedback = feedback
 
     # ---------------- 核心：导航到目标点 ----------------
     def goto(self, p, timeout=60):
@@ -597,7 +645,7 @@ class navigation_demo:
         :param p: [x, y, 朝向角度]
         :param timeout: 超时秒数，默认60
         """
-        rospy.loginfo("[Navi] 前往目标点: %s (timeout=%ds)" % (p, timeout))
+        rospy.loginfo("[Navi] 前往目标点: %s (timeout=%.1fs)" % (p, timeout))
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = 'map'
         goal.target_pose.header.stamp = rospy.Time.now()
@@ -609,18 +657,22 @@ class navigation_demo:
         goal.target_pose.pose.orientation.z = q[2]
         goal.target_pose.pose.orientation.w = q[3]
 
+        self.reset_nav_feedback()
         self.move_base.send_goal(goal, self._done_cb, self._active_cb, self._feedback_cb)
         result = self.move_base.wait_for_result(rospy.Duration(timeout))
         if not result:
             self.move_base.cancel_goal()
+            self.last_move_base_state = GoalStatus.PREEMPTED
             rospy.loginfo("导航超时，取消目标")
             return False
         else:
-            if self.move_base.get_state() == GoalStatus.SUCCEEDED:
+            state = self.move_base.get_state()
+            self.last_move_base_state = state
+            if state == GoalStatus.SUCCEEDED:
                 rospy.loginfo("到达目标点 %s 成功! " % p)
                 return True
             rospy.logwarn("导航未成功到达目标点 %s，state=%s" %
-                          (p, self.move_base.get_state()))
+                          (p, state))
             return False
 
     def goto_detection_point(self, point):
@@ -742,6 +794,8 @@ class navigation_demo:
         # 先导航到中转点14
         # self.goto(goals[14])
         # 遍历所有线索
+        last_parking = None
+        last_task_id = None
         for idx, task_id in enumerate(task_numbers):
             task_start_time = rospy.Time.now()
             rospy.loginfo("[TASK_TIME][START] idx=%d/%d task_id=%s",
@@ -751,11 +805,59 @@ class navigation_demo:
                 target = goals[task_id]
                 self.log_nav_state("TASK_NAV_START_%d" % task_id, target)
                 nav_start_time = rospy.Time.now()
-                nav_ok = self.goto(target, timeout=2)
-                rospy.loginfo("[TASK_TIME][NAV_TO_TASK] idx=%d task_id=%d dt=%.2fs ok=%s",
+                nav_ok = self.goto(target, timeout=self.task_nav_timeout)
+                nav_reached, nav_dist = self.nav_reached_by_state_and_distance(nav_ok, target)
+                rospy.loginfo("[TASK_TIME][NAV_TO_TASK] idx=%d task_id=%d dt=%.2fs ok=%s dist=%s reached=%s state=%s",
                               idx + 1, task_id,
                               (rospy.Time.now() - nav_start_time).to_sec(),
-                              str(nav_ok))
+                              str(nav_ok),
+                              "%.3f" % nav_dist if nav_dist is not None else "None",
+                              str(nav_reached), str(self.last_move_base_state))
+                if (not nav_ok and self.last_move_base_state == GoalStatus.ABORTED
+                        and last_parking is not None):
+                    rospy.logwarn(
+                        "[TASK_TIME][NAV_ABORTED_ESCAPE] idx=%d task_id=%d prev_task_id=%s state=%s",
+                        idx + 1, task_id, str(last_task_id), str(self.last_move_base_state)
+                    )
+                    escape_retry_start = rospy.Time.now()
+                    last_parking.escape(force=True, reason="next_nav_aborted")
+                    rospy.loginfo("[TASK_TIME][NAV_ABORTED_ESCAPE_DONE] idx=%d task_id=%d dt=%.2fs",
+                                  idx + 1, task_id,
+                                  (rospy.Time.now() - escape_retry_start).to_sec())
+                    nav_retry_start = rospy.Time.now()
+                    nav_ok = self.goto(target, timeout=self.task_nav_retry_timeout)
+                    rospy.loginfo("[TASK_TIME][NAV_RETRY_AFTER_ESCAPE] idx=%d task_id=%d dt=%.2fs ok=%s state=%s",
+                                  idx + 1, task_id,
+                                  (rospy.Time.now() - nav_retry_start).to_sec(),
+                                  str(nav_ok), str(self.last_move_base_state))
+                    nav_reached, nav_dist = self.nav_reached_by_state_and_distance(nav_ok, target)
+                if not nav_reached:
+                    rospy.logwarn(
+                        "[TASK_TIME][NAV_NOT_REACHED_RETRY] idx=%d task_id=%d dist=%s accept=%.3f",
+                        idx + 1, task_id,
+                        "%.3f" % nav_dist if nav_dist is not None else "None",
+                        self.task_nav_accept_dist
+                    )
+                    nav_retry_start = rospy.Time.now()
+                    nav_ok = self.goto(target, timeout=self.task_nav_retry_timeout)
+                    nav_reached, nav_dist = self.nav_reached_by_state_and_distance(nav_ok, target)
+                    rospy.loginfo("[TASK_TIME][NAV_RETRY_TO_TASK] idx=%d task_id=%d dt=%.2fs ok=%s dist=%s reached=%s state=%s",
+                                  idx + 1, task_id,
+                                  (rospy.Time.now() - nav_retry_start).to_sec(),
+                                  str(nav_ok),
+                                  "%.3f" % nav_dist if nav_dist is not None else "None",
+                                  str(nav_reached), str(self.last_move_base_state))
+                if not nav_reached:
+                    rospy.logwarn(
+                        "[TASK_TIME][PARK_SKIP_NAV_TOO_FAR] idx=%d task_id=%d dist=%s accept=%.3f",
+                        idx + 1, task_id,
+                        "%.3f" % nav_dist if nav_dist is not None else "None",
+                        self.task_nav_accept_dist
+                    )
+                    rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs skipped=true reason=nav_too_far",
+                                  idx + 1, task_id,
+                                  (rospy.Time.now() - task_start_time).to_sec())
+                    continue
                 self.log_nav_state("TASK_NAV_DONE_%d" % task_id, target)
 
                 wait_start_time = rospy.Time.now()
@@ -805,6 +907,8 @@ class navigation_demo:
                 rospy.loginfo("[TASK_TIME][ESCAPE] idx=%d task_id=%d dt=%.2fs",
                               idx + 1, task_id,
                               (rospy.Time.now() - escape_start_time).to_sec())
+                last_parking = parking
+                last_task_id = task_id
                 rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs",
                               idx + 1, task_id,
                               (rospy.Time.now() - task_start_time).to_sec())
