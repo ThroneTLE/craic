@@ -27,15 +27,16 @@
       <!-- 调试/固定任务点模式：true时跳过10-13检测扫描，直接按fixed_task_ids泊车 -->
       <param name="use_fixed_task_positions" value="false"/>
       <param name="fixed_task_ids" value="31,49,50,51"/>
-      <param name="task_nav_timeout" value="4.0"/>
+
+      <param name="task_nav_timeout" value="2.0"/>
       <param name="task_nav_retry_timeout" value="5.0"/>
-      <param name="task_nav_accept_dist" value="0.45"/>
+      <param name="task_nav_accept_dist" value="0.55"/>
 
       <!-- 相对格子泊车：按目标格子局部坐标检测四边障碍并选择入口 -->
       <param name="relative_parking_mode" value="true"/>
       <param name="relative_direct_if_clear" value="true"/>
       <param name="relative_open_side_prefer_robot" value="true"/>
-      <param name="relative_entry_timeout" value="4.0"/>
+      <param name="relative_entry_timeout" value="6.0"/>
       <param name="relative_entry_tolerance" value="0.1"/>
       <param name="relative_center_timeout" value="4.0"/>
       <param name="relative_center_tolerance" value="0.035"/>

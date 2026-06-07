@@ -796,6 +796,7 @@ class navigation_demo:
         # 遍历所有线索
         last_parking = None
         last_task_id = None
+        all_tasks_completed = True
         for idx, task_id in enumerate(task_numbers):
             task_start_time = rospy.Time.now()
             rospy.loginfo("[TASK_TIME][START] idx=%d/%d task_id=%s",
@@ -849,16 +850,13 @@ class navigation_demo:
                                   str(nav_reached), str(self.last_move_base_state))
                 if not nav_reached:
                     rospy.logwarn(
-                        "[TASK_TIME][PARK_SKIP_NAV_TOO_FAR] idx=%d task_id=%d dist=%s accept=%.3f",
+                        "[TASK_TIME][NAV_TOO_FAR_TRY_PARK] idx=%d task_id=%d dist=%s accept=%.3f",
                         idx + 1, task_id,
                         "%.3f" % nav_dist if nav_dist is not None else "None",
                         self.task_nav_accept_dist
                     )
-                    rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs skipped=true reason=nav_too_far",
-                                  idx + 1, task_id,
-                                  (rospy.Time.now() - task_start_time).to_sec())
-                    continue
-                self.log_nav_state("TASK_NAV_DONE_%d" % task_id, target)
+                else:
+                    self.log_nav_state("TASK_NAV_DONE_%d" % task_id, target)
 
                 wait_start_time = rospy.Time.now()
                 rospy.sleep(1)
@@ -879,11 +877,16 @@ class navigation_demo:
 
                 parking_run_start_time = rospy.Time.now()
                 parking.run()
+                task_completed = bool(parking.parking_done)
                 rospy.loginfo("[TASK_TIME][PARK_RUN] idx=%d task_id=%d dt=%.2fs parking_done=%s best_entry=%s",
                               idx + 1, task_id,
                               (rospy.Time.now() - parking_run_start_time).to_sec(),
-                              str(parking.parking_done),
+                              str(task_completed),
                               parking.best_entry["name"] if parking.best_entry is not None else "None")
+                if not task_completed:
+                    all_tasks_completed = False
+                    rospy.logwarn("[TASK_TIME][PARK_NOT_DONE] idx=%d task_id=%d continue_next_task=true final_allowed=false",
+                                  idx + 1, task_id)
 
                 post_wait_start_time = rospy.Time.now()
                 rospy.sleep(0.5)
@@ -913,10 +916,12 @@ class navigation_demo:
                               idx + 1, task_id,
                               (rospy.Time.now() - task_start_time).to_sec())
             else:
+                all_tasks_completed = False
                 rospy.logwarn("任务编号%s无效，跳过" % task_id)
                 rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%s total_dt=%.2fs skipped=true",
                               idx + 1, str(task_id),
                               (rospy.Time.now() - task_start_time).to_sec())
+        return all_tasks_completed
 
     # ---------------- 执行完整任务流程 ----------------
     def execute_mission(self):
@@ -944,8 +949,12 @@ class navigation_demo:
             rospy.loginfo("\n=== 所有检测点处理完成 ===")
             rospy.loginfo("收集到的任务编号: %s" % task_numbers)
 
-        # 按线索导航
-        self.go_to_task_positions()
+        # 按线索导航。只有所有有效任务点都实际执行完，才允许去终点。
+        tasks_completed = self.go_to_task_positions()
+        if not tasks_completed:
+            rospy.logerr("[FINAL][SKIP] not all task positions completed")
+            self.tts_client(u"任务点未全部完成，停止执行")
+            return
 
         # 终点只让 move_base 粗到位，最后贴边交给激光闭环校准
         final_nav_start = rospy.Time.now()
