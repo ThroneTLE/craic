@@ -1,0 +1,418 @@
+process[navigation_node-1]: started with pid [5493]
+[INFO] [1780862453.438575]: 导航节点初始化成功! 等待语音唤醒信号...
+[INFO] [1780862454.793647]: 等待视觉大模型检测服务 /fruit_detection 可用...
+[INFO] [1780862454.796195]: 视觉大模型检测服务连接成功！
+[INFO] [1780862454.797751]: 等待TTS服务 /tts_service 可用...
+[INFO] [1780862454.800129]: TTS服务连接成功！
+[INFO] [1780862454.821550]: 等待IMU传感器激活...
+[INFO] [1780862467.232144]: IMU传感器已激活，5秒后开始任务...
+
+[INFO] [1780862476.625499]: 开始执行任务！
+[INFO] [1780862476.627093]: 
+=== 开始处理第1个检测点 ===
+[INFO] [1780862476.728306]: 导航到检测点 → 目标点索引10
+[INFO] [1780862476.730882]: 检测点10预对准目标: [0.28926703465542036, 1.5200089553065645, 178.6]
+[INFO] [1780862476.732462]: [Navi] 前往目标点: [0.28926703465542036, 1.5200089553065645, 178.6] (timeout=15s)
+[INFO] [1780862476.734838]: [Navi] 导航已激活
+[INFO] [1780862483.936181]: 导航完成! status=3 result=
+[INFO] [1780862483.956401]: 到达目标点 [0.28926703465542036, 1.5200089553065645, 178.6] 成功! 
+[INFO] [1780862483.957842]: 检测点yaw闭环开始: target=178.6deg tolerance=0.040rad
+[INFO] [1780862484.659092]: 检测点yaw闭环完成: err=-0.014rad
+[INFO] [1780862484.711174]: 锁yaw靠近拍照点: mode=left distance=0.030m speed=0.150m/s vx=0.000 vy=-0.150 time=0.20s target=178.6deg
+[INFO] [1780862484.961674]: 检测点yaw闭环开始: target=178.6deg tolerance=0.040rad
+[INFO] [1780862485.762217]: 检测点yaw闭环完成: err=-0.031rad
+[INFO] [1780862509.610068]: 视觉大模型识别结果: 31
+[INFO] [1780862509.611985]: 当前检测点10结果: 31
+[INFO] [1780862509.613289]: 收集到任务编号: 1 (原始VLM: 31)
+[INFO] [1780862513.968202]: TTS播报成功: 已检测第1条线索为31号 | 响应: TTS处理完成
+[INFO] [1780862513.969687]: 
+=== 开始处理第1个检测点 ===
+[INFO] [1780862514.071751]: 导航到检测点 → 目标点索引11
+[INFO] [1780862514.073759]: 检测点11预对准目标: [1.5400001827702663, 2.8398952804575432, 90.2]
+[INFO] [1780862514.075106]: [Navi] 前往目标点: [1.5400001827702663, 2.8398952804575432, 90.2] (timeout=15s)
+[INFO] [1780862514.077254]: [Navi] 导航已激活
+[INFO] [1780862527.177580]: 导航完成! status=3 result=
+[INFO] [1780862527.181858]: 到达目标点 [1.5400001827702663, 2.8398952804575432, 90.2] 成功! 
+[INFO] [1780862527.183070]: 检测点yaw闭环开始: target=90.2deg tolerance=0.040rad
+[INFO] [1780862527.983449]: 检测点yaw闭环完成: err=0.005rad
+[INFO] [1780862528.037217]: 锁yaw靠近拍照点: mode=left distance=0.030m speed=0.150m/s vx=0.000 vy=-0.150 time=0.20s target=90.2deg
+[INFO] [1780862528.287820]: 检测点yaw闭环开始: target=90.2deg tolerance=0.040rad
+[INFO] [1780862529.388068]: 检测点yaw闭环完成: err=-0.022rad
+[INFO] [1780862537.855300]: 视觉大模型识别结果: 49
+[INFO] [1780862537.857179]: 当前检测点11结果: 49
+[INFO] [1780862537.858504]: 收集到任务编号: 7 (原始VLM: 49)
+[INFO] [1780862542.412370]: TTS播报成功: 已检测第2条线索为49号 | 响应: TTS处理完成
+[INFO] [1780862542.414133]: 
+=== 开始处理第1个检测点 ===
+[INFO] [1780862542.515434]: 导航到检测点 → 目标点索引12
+[INFO] [1780862542.516822]: 检测点12预对准目标: [2.919005344648344, 1.5899835064782528, 1.9]
+[INFO] [1780862542.518060]: [Navi] 前往目标点: [2.919005344648344, 1.5899835064782528, 1.9] (timeout=15s)
+[INFO] [1780862542.521528]: [Navi] 导航已激活
+[INFO] [1780862551.524876]: 导航完成! status=3 result=
+[INFO] [1780862551.549394]: 到达目标点 [2.919005344648344, 1.5899835064782528, 1.9] 成功! 
+[INFO] [1780862551.552017]: 检测点yaw闭环开始: target=1.9deg tolerance=0.040rad
+[INFO] [1780862552.352705]: 检测点yaw闭环完成: err=-0.001rad
+[INFO] [1780862552.404973]: 锁yaw靠近拍照点: mode=left distance=0.030m speed=0.150m/s vx=0.000 vy=-0.150 time=0.20s target=1.9deg
+[INFO] [1780862552.656152]: 检测点yaw闭环开始: target=1.9deg tolerance=0.040rad
+[INFO] [1780862553.556503]: 检测点yaw闭环完成: err=-0.023rad
+[INFO] [1780862556.901941]: 视觉大模型识别结果: 50
+[INFO] [1780862556.903278]: 当前检测点12结果: 50
+[INFO] [1780862556.904726]: 收集到任务编号: 8 (原始VLM: 50)
+[INFO] [1780862560.902885]: TTS播报成功: 已检测第3条线索为50号 | 响应: TTS处理完成
+[INFO] [1780862560.904423]: 
+=== 开始处理第1个检测点 ===
+[INFO] [1780862561.007623]: 导航到检测点 → 目标点索引13
+[INFO] [1780862561.009042]: 检测点13预对准目标: [1.7295258682390773, 0.3546874577904125, -100.2]
+[INFO] [1780862561.010401]: [Navi] 前往目标点: [1.7295258682390773, 0.3546874577904125, -100.2] (timeout=15s)
+[INFO] [1780862561.013467]: [Navi] 导航已激活
+[INFO] [1780862571.316256]: 导航完成! status=3 result=
+[INFO] [1780862571.352262]: 到达目标点 [1.7295258682390773, 0.3546874577904125, -100.2] 成功! 
+[INFO] [1780862571.354768]: 检测点yaw闭环开始: target=-100.2deg tolerance=0.040rad
+[INFO] [1780862572.055128]: 检测点yaw闭环完成: err=-0.009rad
+[INFO] [1780862572.106905]: 锁yaw靠近拍照点: mode=left distance=0.030m speed=0.150m/s vx=0.000 vy=-0.150 time=0.20s target=-100.2deg
+[INFO] [1780862572.357859]: 检测点yaw闭环开始: target=-100.2deg tolerance=0.040rad
+[INFO] [1780862572.558142]: 检测点yaw闭环完成: err=-0.033rad
+[INFO] [1780862576.765939]: 视觉大模型识别结果: 51
+[INFO] [1780862576.767231]: 当前检测点13结果: 51
+[INFO] [1780862576.768313]: 收集到任务编号: 9 (原始VLM: 51)
+[INFO] [1780862586.236001]: TTS播报成功: 已检测第4条线索为51号 | 响应: TTS处理完成
+[INFO] [1780862586.237433]: 
+=== 所有检测点处理完成 ===
+[INFO] [1780862586.238538]: 收集到的任务编号: [1, 7, 8, 9]
+[INFO] [1780862586.239579]: 开始按顺序前往任务位置: [1, 7, 8, 9]
+[INFO] [1780862586.241280]: [TASK_TIME][START] idx=1/4 task_id=1
+[INFO] [1780862586.242898]: [NAV_STATE][TASK_NAV_START_1] target=(1.190,1.160,89.1) yaw=-1.712 odom_received=True
+[INFO] [1780862586.244368]: [Navi] 前往目标点: [1.19, 1.16, 89.1] (timeout=2s)
+[INFO] [1780862586.248459]: [Navi] 导航已激活
+[INFO] [1780862588.246762]: 导航超时，取消目标
+[INFO] [1780862588.248483]: [TASK_TIME][NAV_TO_TASK] idx=1 task_id=1 dt=2.00s ok=False
+[INFO] [1780862588.250935]: [NAV_STATE][TASK_NAV_DONE_1] target=(1.190,1.160,89.1) yaw=-2.500 odom_received=True
+[INFO] [1780862588.347937]: 导航完成! status=2 result=
+[INFO] [1780862589.253281]: [TASK_TIME][PRE_PARK_WAIT] idx=1 task_id=1 dt=1.00s
+[INFO] [1780862589.254359]: move_base 到达任务点 1，启动精密停车 (x=1.190 y=1.160 yaw=89.1)...
+[INFO] [1780862589.255496]: [PARK_TASK][START] idx=1 task_id=1 target=(1.190, 1.160, 89.1)
+[INFO] [1780862589.361723]: Waiting for move_base action server...
+[INFO] [1780862590.364322]: Auto single point target: x=1.190 y=1.160 yaw_deg=89.1
+[INFO] [1780862590.365442]: [TASK_TIME][PARK_INIT] idx=1 task_id=1 dt=1.11s
+[INFO] [1780862590.366753]: [PARK][RUN][START][+0.00s] target=(1.190, 1.160, 89.1deg)
+[INFO] [1780862590.368512]: [PARK_STATE][RUN_START] map=(1.625,0.506,-2.769) cell=(-0.647,-0.446) target=(1.190,1.160,1.555) err_cell=(0.647,0.446) yaw_err=-1.959
+[INFO] [1780862590.369708]: [PARK][RELATIVE_DETECT_SIDES][START][+0.00s] cell_frame=true
+[INFO] [1780862590.370802]: [PARK_STATE][RELATIVE_BEFORE_DETECT] map=(1.625,0.506,-2.769) cell=(-0.647,-0.446) target=(1.190,1.160,1.555) err_cell=(0.647,0.446) yaw_err=-1.959
+[INFO] [1780862590.375817]: [PARK][RELATIVE_DETECT_SIDES][OK][dt=0.01s][+0.01s] open=down blocked=left,right,up counts={'down': 0, 'right': 5, 'up': 38, 'left': 29}
+[INFO] [1780862590.377603]: Relative entry selected: down open=down score_entry=(1.530, 1.155)
+[INFO] [1780862590.378984]: [PARK_ENTRY] name=right selected=False entry=(1.195,1.500) cell=(0.340,0.000) axis=(-0.016,-1.000) yaw=-1.587 blocked=True count=5 score=na
+[INFO] [1780862590.380700]: [PARK_ENTRY] name=left selected=False entry=(1.185,0.820) cell=(-0.340,0.000) axis=(0.016,1.000) yaw=1.555 blocked=True count=29 score=na
+[INFO] [1780862590.382318]: [PARK_ENTRY] name=up selected=False entry=(0.850,1.165) cell=(0.000,0.340) axis=(1.000,-0.016) yaw=-0.016 blocked=True count=38 score=na
+[INFO] [1780862590.393134]: [PARK_ENTRY] name=down selected=True entry=(1.530,1.155) cell=(0.000,-0.340) axis=(-1.000,0.016) yaw=3.126 blocked=False count=0 score=na
+[INFO] [1780862590.395734]: [PARK][RELATIVE_MOVE_BASE_ENTRY][START][+0.03s] entry=down timeout=4.0s tolerance=0.180
+[INFO] [1780862590.397879]: Phase 1a: move_base to entry down (1.530, 1.155)
+[WARN] [1780862593.825256]: Phase 1a: near entry (dist=0.176) after 3.4s. Accept.
+[INFO] [1780862594.271631]: [PARK][RELATIVE_MOVE_BASE_ENTRY][OK][dt=3.88s][+3.90s] entry=down
+[INFO] [1780862594.273527]: [PARK_STATE][RELATIVE_ENTRY_REACHED] map=(1.557,1.091,2.539) cell=(-0.063,-0.368) target=(1.190,1.160,1.555) err_cell=(0.063,0.368) yaw_err=-0.984
+[INFO] [1780862594.274866]: [PARK][RELATIVE_PID_CENTER][START][+3.91s] timeout=5.0s pos_tol=0.035 yaw_tol=0.080
+[INFO] [1780862594.280872]: [PARK_CTRL][REL_CENTER] cx=-0.063 cy=-0.368 dist=0.373 yaw_err=-0.984 v_cell=(0.150,0.150) cmd=(0.208,-0.042,-0.600)
+[INFO] [1780862594.786715]: [PARK_CTRL][REL_CENTER] cx=-0.074 cy=-0.317 dist=0.325 yaw_err=-0.901 v_cell=(0.030,0.150) cmd=(0.136,0.069,-0.600)
+[INFO] [1780862595.331092]: [PARK_CTRL][REL_CENTER] cx=-0.034 cy=-0.236 dist=0.238 yaw_err=-0.761 v_cell=(-0.005,0.093) cmd=(0.060,0.071,-0.600)
+[INFO] [1780862595.832577]: [PARK_CTRL][REL_CENTER] cx=-0.023 cy=-0.187 dist=0.188 yaw_err=-0.630 v_cell=(-0.004,0.057) cmd=(0.030,0.048,-0.600)
+[INFO] [1780862596.333663]: [PARK_CTRL][REL_CENTER] cx=-0.022 cy=-0.186 dist=0.187 yaw_err=-0.498 v_cell=(0.010,0.087) cmd=(0.051,0.072,-0.598)
+[INFO] [1780862596.884533]: [PARK_CTRL][REL_CENTER] cx=-0.009 cy=-0.134 dist=0.134 yaw_err=-0.391 v_cell=(0.033,0.096) cmd=(0.067,0.076,-0.600)
+[WARN] [1780862597.330232]: [PARK_SAFE] reasons=front_slow in=(0.020,-0.043,-0.306) out=(0.020,-0.043,-0.306) front=0.299 left=0.279 right=0.544 rear=0.447 nearest=0.279
+[INFO] [1780862597.432290]: [PARK_CTRL][REL_CENTER] cx=-0.014 cy=-0.094 dist=0.095 yaw_err=-0.245 v_cell=(-0.007,0.066) cmd=(0.009,0.066,-0.255)
+[WARN] [1780862597.879660]: [PARK_SAFE] reasons=front_slow in=(0.020,0.046,-0.218) out=(0.020,0.046,-0.218) front=0.292 left=0.261 right=0.558 rear=0.373 nearest=0.261
+[INFO] [1780862597.934390]: [PARK_CTRL][REL_CENTER] cx=-0.019 cy=-0.079 dist=0.081 yaw_err=-0.200 v_cell=(0.010,0.054) cmd=(0.021,0.051,-0.311)
+[WARN] [1780862598.380451]: [PARK_SAFE] reasons=front_slow in=(0.023,0.003,-0.220) out=(0.023,0.000,-0.220) front=0.283 left=0.243 right=0.568 rear=0.322 nearest=0.243
+[INFO] [1780862598.439526]: [PARK_CTRL][REL_CENTER] cx=-0.018 cy=-0.054 dist=0.057 yaw_err=-0.131 v_cell=(0.030,-0.011) cmd=(0.028,-0.015,-0.125)
+[WARN] [1780862598.980720]: [PARK_SAFE] reasons=front_slow in=(0.004,0.037,-0.126) out=(0.004,0.037,-0.126) front=0.275 left=0.229 right=0.598 rear=0.290 nearest=0.229
+[INFO] [1780862598.982996]: [PARK_CTRL][REL_CENTER] cx=-0.007 cy=-0.056 dist=0.057 yaw_err=-0.097 v_cell=(0.001,0.037) cmd=(0.004,0.037,-0.126)
+[WARN] [1780862599.277698]: relative center timeout.
+[INFO] [1780862599.526030]: [PARK][RELATIVE_PID_CENTER][TIMEOUT_ACCEPT][dt=5.25s][+9.16s]
+[INFO] [1780862599.527904]: [PARK_STATE][RELATIVE_CENTER_DONE] map=(1.232,1.154,1.625) cell=(-0.005,-0.042) target=(1.190,1.160,1.555) err_cell=(0.005,0.042) yaw_err=-0.070
+[INFO] [1780862599.529314]: [PARK][RELATIVE_FINE_TUNE][START][+9.16s] blocked=left,right,up
+[INFO] [1780862599.530670]: === Phase 3: laser precision fine-tune ===
+[INFO] [1780862599.532321]: Phase 3: entry=relative baffle=left box_ang=3.14 base_ang=3.07 laser=180 axis=x sign=-1 target=0.24
+[INFO] [1780862599.548714]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.432 target=0.240 err=1.192 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862600.089780]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.432 target=0.240 err=1.192 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862600.589905]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.424 target=0.240 err=1.184 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862601.144697]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.408 target=0.240 err=1.168 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862601.693132]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.392 target=0.240 err=1.152 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862602.240974]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.382 target=0.240 err=1.142 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862602.741653]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.360 target=0.240 err=1.120 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862603.294660]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.350 target=0.240 err=1.110 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862603.841191]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.332 target=0.240 err=1.092 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862604.391345]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.314 target=0.240 err=1.074 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862604.939779]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.302 target=0.240 err=1.062 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862605.442576]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.290 target=0.240 err=1.050 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862605.943171]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.270 target=0.240 err=1.030 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862606.490749]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.254 target=0.240 err=1.014 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862607.040459]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.244 target=0.240 err=1.004 axis=x sign=-1 cmd=(-0.030,0.000)
+[WARN] [1780862607.536198]: Phase 3: timeout 8.0s
+[INFO] [1780862607.779128]: Phase 3: finished.
+[INFO] [1780862607.781645]: [PARK][RELATIVE_FINE_TUNE][TIMEOUT][dt=8.25s][+17.42s] elapsed=8.00
+[INFO] [1780862608.024941]: [PARK][RUN][OK][dt=17.66s][+17.66s] finished_by=relative_parking
+[INFO] [1780862608.027220]: [TASK_TIME][PARK_RUN] idx=1 task_id=1 dt=17.66s parking_done=True best_entry=down
+[INFO] [1780862608.529051]: [TASK_TIME][POST_PARK_WAIT] idx=1 task_id=1 dt=0.50s
+[INFO] [1780862612.103262]: TTS播报成功: 已到达任务点31号 | 响应: TTS处理完成
+[INFO] [1780862612.104907]: [TASK_TIME][TTS] idx=1 task_id=1 dt=3.57s ok=True
+[INFO] [1780862612.106710]: [PARK][PHASE4_ESCAPE][START][+21.74s] entry=down distance=0.350 speed=0.100 timeout=5.0s
+[INFO] [1780862612.108586]: === Phase 4: escape via entry down ===
+[INFO] [1780862616.562113]: escape: done, moved=0.350
+[INFO] [1780862616.809324]: Phase 4: escape finished.
+[INFO] [1780862616.811014]: [PARK][PHASE4_ESCAPE][OK][dt=4.70s][+26.44s] moved=0.350
+[INFO] [1780862616.812702]: [TASK_TIME][ESCAPE] idx=1 task_id=1 dt=4.71s
+[INFO] [1780862616.814524]: [TASK_TIME][END] idx=1 task_id=1 total_dt=30.57s
+[INFO] [1780862616.815662]: [TASK_TIME][START] idx=2/4 task_id=7
+[INFO] [1780862616.816767]: [NAV_STATE][TASK_NAV_START_7] target=(2.000,1.150,88.8) yaw=1.583 odom_received=True
+[INFO] [1780862616.817927]: [Navi] 前往目标点: [2.0, 1.15, 88.8] (timeout=2s)
+[INFO] [1780862616.820091]: [Navi] 导航已激活
+[INFO] [1780862618.819752]: 导航超时，取消目标
+[INFO] [1780862618.821293]: [TASK_TIME][NAV_TO_TASK] idx=2 task_id=7 dt=2.00s ok=False
+[INFO] [1780862618.823594]: [NAV_STATE][TASK_NAV_DONE_7] target=(2.000,1.150,88.8) yaw=0.653 odom_received=True
+[INFO] [1780862618.920098]: 导航完成! status=2 result=
+[INFO] [1780862619.825733]: [TASK_TIME][PRE_PARK_WAIT] idx=2 task_id=7 dt=1.00s
+[INFO] [1780862619.827733]: move_base 到达任务点 7，启动精密停车 (x=2.000 y=1.150 yaw=88.8)...
+[INFO] [1780862619.829402]: [PARK_TASK][START] idx=2 task_id=7 target=(2.000, 1.150, 88.8)
+[INFO] [1780862619.940676]: Waiting for move_base action server...
+[INFO] [1780862620.949335]: Auto single point target: x=2.000 y=1.150 yaw_deg=88.8
+[INFO] [1780862620.951277]: [TASK_TIME][PARK_INIT] idx=2 task_id=7 dt=1.12s
+[INFO] [1780862620.952665]: [PARK][RUN][START][+0.00s] target=(2.000, 1.150, 88.8deg)
+[INFO] [1780862620.954619]: [PARK_STATE][RUN_START] map=(1.566,0.973,0.383) cell=(-0.186,0.431) target=(2.000,1.150,1.550) err_cell=(0.186,-0.431) yaw_err=1.167
+[INFO] [1780862620.957424]: [PARK][RELATIVE_DETECT_SIDES][START][+0.00s] cell_frame=true
+[INFO] [1780862620.959976]: [PARK_STATE][RELATIVE_BEFORE_DETECT] map=(1.566,0.973,0.383) cell=(-0.186,0.431) target=(2.000,1.150,1.550) err_cell=(0.186,-0.431) yaw_err=1.167
+[INFO] [1780862620.969322]: [PARK][RELATIVE_DETECT_SIDES][OK][dt=0.01s][+0.02s] open= blocked=left,right,up,down counts={'down': 72, 'right': 84, 'up': 24, 'left': 7}
+[INFO] [1780862620.970828]: Relative entry selected: up open= score_entry=(1.660, 1.157)
+[INFO] [1780862620.974001]: [PARK_ENTRY] name=right selected=False entry=(2.007,1.490) cell=(0.340,0.000) axis=(-0.021,-1.000) yaw=-1.592 blocked=True count=84 score=na
+[INFO] [1780862620.976265]: [PARK_ENTRY] name=left selected=False entry=(1.993,0.810) cell=(-0.340,0.000) axis=(0.021,1.000) yaw=1.550 blocked=True count=7 score=na
+[INFO] [1780862620.990569]: [PARK_ENTRY] name=up selected=True entry=(1.660,1.157) cell=(0.000,0.340) axis=(1.000,-0.021) yaw=-0.021 blocked=True count=24 score=na
+[INFO] [1780862620.992187]: [PARK_ENTRY] name=down selected=False entry=(2.340,1.143) cell=(0.000,-0.340) axis=(-1.000,0.021) yaw=3.121 blocked=True count=72 score=na
+[INFO] [1780862620.993470]: [PARK][RELATIVE_MOVE_BASE_ENTRY][START][+0.04s] entry=up timeout=4.0s tolerance=0.180
+[INFO] [1780862620.995128]: Phase 1a: move_base to entry up (1.660, 1.157)
+[WARN] [1780862623.517013]: Phase 1a: near entry (dist=0.171) after 2.5s. Accept.
+[INFO] [1780862623.962352]: [PARK][RELATIVE_MOVE_BASE_ENTRY][OK][dt=2.97s][+3.01s] entry=up
+[INFO] [1780862623.965066]: [PARK_STATE][RELATIVE_ENTRY_REACHED] map=(1.604,1.095,0.963) cell=(-0.064,0.394) target=(2.000,1.150,1.550) err_cell=(0.064,-0.394) yaw_err=0.587
+[INFO] [1780862623.970425]: [PARK][RELATIVE_PID_CENTER][START][+3.02s] timeout=5.0s pos_tol=0.035 yaw_tol=0.080
+[INFO] [1780862623.983588]: [PARK_CTRL][REL_CENTER] cx=-0.067 cy=0.388 dist=0.394 yaw_err=0.587 v_cell=(0.150,-0.150) cmd=(0.208,-0.042,0.600)
+[WARN] [1780862624.326499]: [PARK_SAFE] reasons=front_slow in=(0.082,-0.125,0.600) out=(0.034,-0.125,0.600) front=0.294 left=0.606 right=0.576 rear=0.606 nearest=0.294
+[INFO] [1780862624.526181]: [PARK_CTRL][REL_CENTER] cx=-0.054 cy=0.349 dist=0.353 yaw_err=0.505 v_cell=(0.049,-0.150) cmd=(0.034,-0.108,0.600)
+[WARN] [1780862624.882459]: [PARK_SAFE] reasons=front_slow in=(0.066,-0.135,0.600) out=(0.034,-0.135,0.600) front=0.249 left=0.650 right=0.530 rear=0.652 nearest=0.249
+[INFO] [1780862625.027585]: [PARK_CTRL][REL_CENTER] cx=-0.060 cy=0.312 dist=0.318 yaw_err=0.410 v_cell=(0.049,-0.150) cmd=(0.034,-0.118,0.491)
+[WARN] [1780862625.384019]: [PARK_SAFE] reasons=front_slow in=(0.065,-0.136,0.557) out=(0.034,-0.136,0.557) front=0.229 left=0.698 right=0.480 rear=0.712 nearest=0.229
+[INFO] [1780862625.579752]: [PARK_CTRL][REL_CENTER] cx=-0.065 cy=0.268 dist=0.276 yaw_err=0.282 v_cell=(0.053,-0.150) cmd=(0.034,-0.129,0.297)
+[WARN] [1780862625.926666]: [PARK_SAFE] reasons=front_slow in=(0.034,-0.063,0.245) out=(0.034,-0.063,0.245) front=0.215 left=0.750 right=0.428 rear=0.790 nearest=0.215
+[INFO] [1780862626.083387]: [PARK_CTRL][REL_CENTER] cx=-0.068 cy=0.210 dist=0.220 yaw_err=0.207 v_cell=(0.048,-0.113) cmd=(0.034,-0.101,0.224)
+[WARN] [1780862626.427253]: [PARK_SAFE] reasons=front_slow in=(0.063,-0.073,0.313) out=(0.034,-0.073,0.313) front=0.210 left=0.798 right=0.380 rear=0.864 nearest=0.210
+[INFO] [1780862626.628820]: [PARK_CTRL][REL_CENTER] cx=-0.046 cy=0.153 dist=0.159 yaw_err=0.145 v_cell=(0.044,-0.093) cmd=(0.034,-0.086,0.186)
+[WARN] [1780862626.928732]: [PARK_SAFE] reasons=front_slow in=(0.069,-0.128,0.223) out=(0.034,-0.128,0.223) front=0.208 left=0.828 right=0.351 rear=0.916 nearest=0.208
+[INFO] [1780862627.176762]: [PARK_CTRL][REL_CENTER] cx=-0.050 cy=0.123 dist=0.133 yaw_err=0.112 v_cell=(0.039,-0.137) cmd=(0.034,-0.132,0.180)
+[WARN] [1780862627.430707]: [PARK_SAFE] reasons=front_slow in=(0.031,-0.025,0.148) out=(0.031,-0.025,0.148) front=0.204 left=0.860 right=0.321 rear=0.968 nearest=0.204
+[INFO] [1780862627.677600]: [PARK_CTRL][REL_CENTER] cx=-0.037 cy=0.102 dist=0.108 yaw_err=0.074 v_cell=(0.013,-0.051) cmd=(0.017,-0.050,0.084)
+[WARN] [1780862627.979769]: [PARK_SAFE] reasons=front_slow in=(0.032,-0.036,0.089) out=(0.032,-0.036,0.089) front=0.196 left=0.884 right=0.298 rear=0.946 nearest=0.196
+[INFO] [1780862628.179126]: [PARK_CTRL][REL_CENTER] cx=-0.031 cy=0.078 dist=0.084 yaw_err=0.063 v_cell=(-0.024,-0.029) cmd=(-0.022,-0.030,0.073)
+[WARN] [1780862628.527649]: [PARK_SAFE] reasons=front_slow in=(0.026,-0.056,0.046) out=(0.026,-0.056,0.046) front=0.188 left=0.904 right=0.279 rear=0.908 nearest=0.188
+[INFO] [1780862628.681572]: [PARK_CTRL][REL_CENTER] cx=-0.024 cy=0.076 dist=0.080 yaw_err=0.037 v_cell=(0.014,-0.045) cmd=(0.016,-0.045,0.023)
+[WARN] [1780862628.972276]: relative center timeout.
+[INFO] [1780862629.216313]: [PARK][RELATIVE_PID_CENTER][TIMEOUT_ACCEPT][dt=5.25s][+8.26s]
+[INFO] [1780862629.218307]: [PARK_STATE][RELATIVE_CENTER_DONE] map=(1.944,1.128,1.518) cell=(-0.023,0.055) target=(2.000,1.150,1.550) err_cell=(0.023,-0.055) yaw_err=0.032
+[INFO] [1780862629.219766]: [PARK][RELATIVE_FINE_TUNE][START][+8.27s] blocked=left,right,up,down
+[INFO] [1780862629.221330]: === Phase 3: laser precision fine-tune ===
+[INFO] [1780862629.222762]: Phase 3: entry=relative baffle=left box_ang=3.14 base_ang=-3.11 laser=180 axis=x sign=-1 target=0.24
+[INFO] [1780862629.236972]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.412 target=0.240 err=1.172 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862629.782791]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.406 target=0.240 err=1.166 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862630.284791]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.400 target=0.240 err=1.160 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862630.786179]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.390 target=0.240 err=1.150 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862631.334114]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.376 target=0.240 err=1.136 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862631.834790]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.362 target=0.240 err=1.122 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862632.335335]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.348 target=0.240 err=1.108 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862632.836654]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.330 target=0.240 err=1.090 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862633.393601]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.318 target=0.240 err=1.078 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862633.934792]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.300 target=0.240 err=1.060 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862634.483931]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.282 target=0.240 err=1.042 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862634.984585]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.272 target=0.240 err=1.032 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862635.485348]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.254 target=0.240 err=1.014 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862636.035001]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.240 target=0.240 err=1.000 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862636.536795]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.224 target=0.240 err=0.984 axis=x sign=-1 cmd=(-0.030,0.000)
+[INFO] [1780862637.084431]: [PARK_CTRL][FINE_TUNE] baffle=left laser=180 d=1.208 target=0.240 err=0.968 axis=x sign=-1 cmd=(-0.030,0.000)
+[WARN] [1780862637.231023]: Phase 3: timeout 8.0s
+[INFO] [1780862637.475443]: Phase 3: finished.
+[INFO] [1780862637.476912]: [PARK][RELATIVE_FINE_TUNE][TIMEOUT][dt=8.26s][+16.52s] elapsed=8.00
+[INFO] [1780862637.720550]: [PARK][RUN][OK][dt=16.77s][+16.77s] finished_by=relative_parking
+[INFO] [1780862637.722723]: [TASK_TIME][PARK_RUN] idx=2 task_id=7 dt=16.77s parking_done=True best_entry=up
+[INFO] [1780862638.224594]: [TASK_TIME][POST_PARK_WAIT] idx=2 task_id=7 dt=0.50s
+[INFO] [1780862641.768316]: TTS播报成功: 已到达任务点49号 | 响应: TTS处理完成
+[INFO] [1780862641.770218]: [TASK_TIME][TTS] idx=2 task_id=7 dt=3.54s ok=True
+[INFO] [1780862641.771974]: [PARK][PHASE4_ESCAPE][START][+20.82s] entry=up distance=0.350 speed=0.100 timeout=5.0s
+[INFO] [1780862641.775276]: === Phase 4: escape via entry up ===
+[INFO] [1780862646.328819]: escape: done, moved=0.350
+[INFO] [1780862646.575290]: Phase 4: escape finished.
+[INFO] [1780862646.577905]: [PARK][PHASE4_ESCAPE][OK][dt=4.81s][+25.63s] moved=0.350
+[INFO] [1780862646.579499]: [TASK_TIME][ESCAPE] idx=2 task_id=7 dt=4.81s
+[INFO] [1780862646.583648]: [TASK_TIME][END] idx=2 task_id=7 total_dt=29.77s
+[INFO] [1780862646.586200]: [TASK_TIME][START] idx=3/4 task_id=8
+[INFO] [1780862646.589229]: [NAV_STATE][TASK_NAV_START_8] target=(2.000,1.550,88.8) yaw=1.474 odom_received=True
+[INFO] [1780862646.591847]: [Navi] 前往目标点: [2.0, 1.55, 88.8] (timeout=2s)
+[INFO] [1780862646.594121]: [Navi] 导航已激活
+[INFO] [1780862648.594179]: 导航超时，取消目标
+[INFO] [1780862648.594794]: 导航完成! status=2 result=
+[INFO] [1780862648.595583]: [TASK_TIME][NAV_TO_TASK] idx=3 task_id=8 dt=2.00s ok=False
+[INFO] [1780862648.597950]: [NAV_STATE][TASK_NAV_DONE_8] target=(2.000,1.550,88.8) yaw=1.474 odom_received=True
+[INFO] [1780862649.602395]: [TASK_TIME][PRE_PARK_WAIT] idx=3 task_id=8 dt=1.00s
+[INFO] [1780862649.603948]: move_base 到达任务点 8，启动精密停车 (x=2.000 y=1.550 yaw=88.8)...
+[INFO] [1780862649.607821]: [PARK_TASK][START] idx=3 task_id=8 target=(2.000, 1.550, 88.8)
+[INFO] [1780862649.696440]: Waiting for move_base action server...
+[INFO] [1780862650.699043]: Auto single point target: x=2.000 y=1.550 yaw_deg=88.8
+[INFO] [1780862650.701008]: [TASK_TIME][PARK_INIT] idx=3 task_id=8 dt=1.09s
+[INFO] [1780862650.703806]: [PARK][RUN][START][+0.00s] target=(2.000, 1.550, 88.8deg)
+[INFO] [1780862650.705287]: [PARK_STATE][RUN_START] map=(1.593,0.923,1.523) cell=(-0.636,0.393) target=(2.000,1.550,1.550) err_cell=(0.636,-0.393) yaw_err=0.027
+[INFO] [1780862650.707386]: [PARK][RELATIVE_DETECT_SIDES][START][+0.00s] cell_frame=true
+[INFO] [1780862650.711211]: [PARK_STATE][RELATIVE_BEFORE_DETECT] map=(1.593,0.923,1.523) cell=(-0.636,0.393) target=(2.000,1.550,1.550) err_cell=(0.636,-0.393) yaw_err=0.027
+[INFO] [1780862650.721674]: [PARK][RELATIVE_DETECT_SIDES][OK][dt=0.01s][+0.02s] open=right blocked=left,up,down counts={'down': 17, 'right': 0, 'up': 21, 'left': 91}
+[INFO] [1780862650.724033]: Relative entry selected: right open=right score_entry=(2.007, 1.890)
+[INFO] [1780862650.728242]: [PARK_ENTRY] name=right selected=True entry=(2.007,1.890) cell=(0.340,0.000) axis=(-0.021,-1.000) yaw=-1.592 blocked=False count=0 score=na
+[INFO] [1780862650.730133]: [PARK_ENTRY] name=left selected=False entry=(1.993,1.210) cell=(-0.340,0.000) axis=(0.021,1.000) yaw=1.550 blocked=True count=91 score=na
+[INFO] [1780862650.733519]: [PARK_ENTRY] name=up selected=False entry=(1.660,1.557) cell=(0.000,0.340) axis=(1.000,-0.021) yaw=-0.021 blocked=True count=21 score=na
+[INFO] [1780862650.734853]: [PARK_ENTRY] name=down selected=False entry=(2.340,1.543) cell=(0.000,-0.340) axis=(-1.000,0.021) yaw=3.121 blocked=True count=17 score=na
+[INFO] [1780862650.736522]: [PARK][RELATIVE_MOVE_BASE_ENTRY][START][+0.03s] entry=right timeout=4.0s tolerance=0.180
+[INFO] [1780862650.737584]: Phase 1a: move_base to entry right (2.007, 1.890)
+[WARN] [1780862654.741594]: Phase 1a: TIMER CANCEL fired
+[WARN] [1780862654.782381]: Phase 1a: cancelled by timer. dist=0.316
+[INFO] [1780862655.228508]: [PARK][RELATIVE_MOVE_BASE_ENTRY][FAIL][dt=4.49s][+4.52s] entry=right
+[INFO] [1780862655.230090]: [PARK][RELATIVE_PID_ENTRY][START][+4.53s] entry=right
+[INFO] [1780862655.231546]: === pid_goto_point [relative_entry]: (2.007, 1.890) yaw=1.550 ===
+[INFO] [1780862655.232928]: [relative_entry] Sub-phase A: align yaw
+[INFO] [1780862655.237406]: [PARK][PID_RELATIVE_ENTRY_ALIGN_YAW][START][+4.53s] target_yaw=1.550 timeout=4.0s
+[INFO] [1780862655.246365]: pid_align_yaw: target=1.550
+[WARN] [1780862659.249352]: pid_align_yaw timeout. Accept current yaw.
+[INFO] [1780862659.492475]: [PARK][PID_RELATIVE_ENTRY_ALIGN_YAW][TIMEOUT_ACCEPT][dt=4.25s][+8.79s]
+[INFO] [1780862659.494393]: [relative_entry] Sub-phase B: translate
+[INFO] [1780862659.510267]: [PARK][PID_RELATIVE_ENTRY_TRANSLATE][START][+8.81s] target=(2.007, 1.890) timeout=11.0s pos_tol=0.020
+[INFO] [1780862659.513468]: pid_translate: to (2.007, 1.890) yaw=1.550
+[INFO] [1780862659.525167]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.264 ex=0.254 ey=0.072 yaw_err=0.865 cmd=(0.211,0.021,0.600)
+[INFO] [1780862660.071613]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.228 ex=0.219 ey=0.062 yaw_err=0.756 cmd=(0.139,-0.073,0.600)
+[INFO] [1780862660.577073]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.157 ex=0.155 ey=0.024 yaw_err=0.603 cmd=(0.049,-0.056,0.600)
+[INFO] [1780862661.119758]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.147 ex=0.143 ey=0.036 yaw_err=0.499 cmd=(0.083,-0.101,0.600)
+[INFO] [1780862661.620572]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.106 ex=0.101 ey=0.032 yaw_err=0.377 cmd=(0.023,-0.058,0.514)
+[INFO] [1780862662.122144]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.073 ex=0.072 ey=0.016 yaw_err=0.246 cmd=(0.016,-0.032,0.160)
+[INFO] [1780862662.624893]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.069 ex=0.067 ey=0.017 yaw_err=0.189 cmd=(0.038,-0.019,0.222)
+[INFO] [1780862663.170192]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.066 ex=0.062 ey=0.020 yaw_err=0.130 cmd=(0.033,-0.044,0.188)
+[INFO] [1780862663.674187]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.039 ex=0.038 ey=0.010 yaw_err=0.087 cmd=(-0.031,0.016,0.053)
+[INFO] [1780862664.221362]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.053 ex=0.049 ey=0.020 yaw_err=0.070 cmd=(0.039,-0.041,0.121)
+[INFO] [1780862664.770501]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.051 ex=0.046 ey=0.023 yaw_err=0.034 cmd=(0.019,-0.031,0.026)
+[INFO] [1780862665.320702]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.053 ex=0.048 ey=0.024 yaw_err=0.027 cmd=(0.065,0.000,0.032)
+[INFO] [1780862665.870186]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.044 ex=0.037 ey=0.024 yaw_err=0.018 cmd=(0.015,-0.022,0.023)
+[INFO] [1780862666.374744]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.043 ex=0.035 ey=0.025 yaw_err=0.020 cmd=(0.024,-0.031,0.031)
+[INFO] [1780862666.919858]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.032 ex=0.025 ey=0.019 yaw_err=0.003 cmd=(0.012,-0.016,-0.023)
+[INFO] [1780862667.421065]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.030 ex=0.023 ey=0.020 yaw_err=0.004 cmd=(-0.006,0.013,0.003)
+[INFO] [1780862667.970386]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.038 ex=0.029 ey=0.024 yaw_err=-0.013 cmd=(0.027,-0.036,-0.034)
+[INFO] [1780862668.518665]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.033 ex=0.024 ey=0.023 yaw_err=-0.010 cmd=(0.035,-0.051,-0.014)
+[INFO] [1780862669.020093]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.042 ex=0.031 ey=0.027 yaw_err=-0.010 cmd=(0.016,-0.019,-0.014)
+[INFO] [1780862669.565785]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.039 ex=0.030 ey=0.025 yaw_err=-0.011 cmd=(0.020,-0.027,-0.016)
+[INFO] [1780862670.112299]: [PARK_CTRL][PID_TRANSLATE] label=map dist=0.039 ex=0.031 ey=0.024 yaw_err=-0.011 cmd=(0.015,-0.018,-0.015)
+[WARN] [1780862670.557746]: pid_translate timeout.
+[INFO] [1780862670.801005]: [PARK][PID_RELATIVE_ENTRY_TRANSLATE][FAIL][dt=11.29s][+20.10s]
+[INFO] [1780862671.045925]: [PARK][RELATIVE_PID_ENTRY][FAIL][dt=15.82s][+20.34s]
+[INFO] [1780862671.289190]: [PARK][RUN][FAIL][dt=20.59s][+20.59s] finished_by=relative_parking
+[INFO] [1780862671.291688]: [TASK_TIME][PARK_RUN] idx=3 task_id=8 dt=20.59s parking_done=False best_entry=right
+[INFO] [1780862671.794944]: [TASK_TIME][POST_PARK_WAIT] idx=3 task_id=8 dt=0.50s
+[INFO] [1780862675.021610]: TTS播报成功: 已到达任务点50号 | 响应: TTS处理完成
+[INFO] [1780862675.023072]: [TASK_TIME][TTS] idx=3 task_id=8 dt=3.22s ok=True
+[INFO] [1780862675.025256]: [PARK][PHASE4_ESCAPE][START][+24.32s] entry=right distance=0.350 speed=0.100 timeout=5.0s
+[INFO] [1780862675.026625]: === Phase 4: escape via entry right ===
+[WARN] [1780862676.233344]: [PARK_SAFE] reasons=front_slow in=(0.100,-0.001,0.000) out=(0.034,0.000,0.000) front=0.297 left=0.992 right=1.422 rear=0.592 nearest=0.297
+[WARN] [1780862676.733821]: [PARK_SAFE] reasons=front_slow in=(0.100,-0.001,0.000) out=(0.034,0.000,0.000) front=0.279 left=0.984 right=1.422 rear=0.622 nearest=0.279
+[WARN] [1780862677.233919]: [PARK_SAFE] reasons=front_slow in=(0.100,-0.001,0.000) out=(0.034,0.000,0.000) front=0.268 left=0.980 right=1.422 rear=0.644 nearest=0.268
+[WARN] [1780862677.735115]: [PARK_SAFE] reasons=front_slow in=(0.100,-0.002,0.000) out=(0.034,0.000,0.000) front=0.258 left=0.984 right=1.422 rear=0.660 nearest=0.258
+[WARN] [1780862678.235833]: [PARK_SAFE] reasons=front_slow in=(0.100,-0.001,0.000) out=(0.034,0.000,0.000) front=0.251 left=1.382 right=1.422 rear=0.674 nearest=0.251
+[WARN] [1780862678.782772]: [PARK_SAFE] reasons=front_slow in=(0.100,-0.001,0.000) out=(0.034,0.000,0.000) front=0.251 left=1.378 right=0.244 rear=0.688 nearest=0.244
+[WARN] [1780862679.285320]: [PARK_SAFE] reasons=front_slow in=(0.100,-0.001,0.000) out=(0.034,0.000,0.000) front=0.251 left=0.976 right=0.238 rear=0.702 nearest=0.238
+[WARN] [1780862679.783834]: [PARK_SAFE] reasons=front_slow in=(0.100,-0.002,0.000) out=(0.034,0.000,0.000) front=0.251 left=1.372 right=0.233 rear=0.718 nearest=0.233
+[WARN] [1780862680.029354]: escape: timeout 5.0s
+[INFO] [1780862680.272324]: Phase 4: escape finished.
+[INFO] [1780862680.274077]: [PARK][PHASE4_ESCAPE][TIMEOUT][dt=5.25s][+29.57s] elapsed=5.00
+[INFO] [1780862680.278730]: [TASK_TIME][ESCAPE] idx=3 task_id=8 dt=5.25s
+[INFO] [1780862680.280005]: [TASK_TIME][END] idx=3 task_id=8 total_dt=33.69s
+[INFO] [1780862680.281813]: [TASK_TIME][START] idx=4/4 task_id=9
+[INFO] [1780862680.284342]: [NAV_STATE][TASK_NAV_START_9] target=(1.990,1.960,90.9) yaw=1.504 odom_received=True
+[INFO] [1780862680.285779]: [Navi] 前往目标点: [1.99, 1.96, 90.9] (timeout=2s)
+[INFO] [1780862680.290314]: [Navi] 导航已激活
+[INFO] [1780862680.490717]: 导航完成! status=3 result=
+[INFO] [1780862680.491998]: 到达目标点 [1.99, 1.96, 90.9] 成功! 
+[INFO] [1780862680.496222]: [TASK_TIME][NAV_TO_TASK] idx=4 task_id=9 dt=0.21s ok=True
+[INFO] [1780862680.498755]: [NAV_STATE][TASK_NAV_DONE_9] target=(1.990,1.960,90.9) yaw=1.504 odom_received=True
+[INFO] [1780862681.501583]: [TASK_TIME][PRE_PARK_WAIT] idx=4 task_id=9 dt=1.00s
+[INFO] [1780862681.503099]: move_base 到达任务点 9，启动精密停车 (x=1.990 y=1.960 yaw=90.9)...
+[INFO] [1780862681.504320]: [PARK_TASK][START] idx=4 task_id=9 target=(1.990, 1.960, 90.9)
+[INFO] [1780862681.595793]: Waiting for move_base action server...
+[INFO] [1780862682.598035]: Auto single point target: x=1.990 y=1.960 yaw_deg=90.9
+[INFO] [1780862682.599826]: [TASK_TIME][PARK_INIT] idx=4 task_id=9 dt=1.09s
+[INFO] [1780862682.601093]: [PARK][RUN][START][+0.00s] target=(1.990, 1.960, 90.9deg)
+[INFO] [1780862682.602261]: [PARK_STATE][RUN_START] map=(1.974,2.077,1.565) cell=(0.117,0.014) target=(1.990,1.960,1.587) err_cell=(-0.117,-0.014) yaw_err=0.021
+[INFO] [1780862682.603348]: [PARK][RELATIVE_DETECT_SIDES][START][+0.00s] cell_frame=true
+[INFO] [1780862682.604903]: [PARK_STATE][RELATIVE_BEFORE_DETECT] map=(1.974,2.077,1.565) cell=(0.117,0.014) target=(1.990,1.960,1.587) err_cell=(-0.117,-0.014) yaw_err=0.021
+[INFO] [1780862682.609154]: [PARK][RELATIVE_DETECT_SIDES][OK][dt=0.01s][+0.01s] open=left,up,down blocked=right counts={'down': 0, 'right': 42, 'up': 0, 'left': 0}
+[INFO] [1780862682.610768]: Relative entry selected: up open=left,up,down score_entry=(1.650, 1.955)
+[INFO] [1780862682.612168]: [PARK_ENTRY] name=right selected=False entry=(1.985,2.300) cell=(0.340,0.000) axis=(0.016,-1.000) yaw=-1.555 blocked=True count=42 score=na
+[INFO] [1780862682.613945]: [PARK_ENTRY] name=left selected=False entry=(1.995,1.620) cell=(-0.340,0.000) axis=(-0.016,1.000) yaw=1.587 blocked=False count=0 score=na
+[INFO] [1780862682.615921]: [PARK_ENTRY] name=up selected=True entry=(1.650,1.955) cell=(0.000,0.340) axis=(1.000,0.016) yaw=0.016 blocked=False count=0 score=na
+[INFO] [1780862682.620344]: [PARK_ENTRY] name=down selected=False entry=(2.330,1.965) cell=(0.000,-0.340) axis=(-1.000,-0.016) yaw=-3.126 blocked=False count=0 score=na
+[INFO] [1780862682.626311]: [PARK][RELATIVE_MOVE_BASE_ENTRY][START][+0.03s] entry=up timeout=4.0s tolerance=0.180
+[INFO] [1780862682.628260]: Phase 1a: move_base to entry up (1.650, 1.955)
+[WARN] [1780862685.360001]: Phase 1a: near entry (dist=0.180) after 2.7s. Accept.
+[INFO] [1780862685.809221]: [PARK][RELATIVE_MOVE_BASE_ENTRY][OK][dt=3.18s][+3.21s] entry=up
+[INFO] [1780862685.810995]: [PARK_STATE][RELATIVE_ENTRY_REACHED] map=(1.746,1.934,-2.510) cell=(-0.022,0.245) target=(1.990,1.960,1.587) err_cell=(0.022,-0.245) yaw_err=-2.187
+[INFO] [1780862685.814760]: [PARK][RELATIVE_PID_CENTER][START][+3.21s] timeout=5.0s pos_tol=0.035 yaw_tol=0.080
+[INFO] [1780862685.822872]: [PARK_CTRL][REL_CENTER] cx=-0.022 cy=0.245 dist=0.246 yaw_err=-2.187 v_cell=(0.103,-0.150) cmd=(-0.182,0.000,-0.600)
+[INFO] [1780862686.324740]: [PARK_CTRL][REL_CENTER] cx=0.007 cy=0.189 dist=0.189 yaw_err=-2.064 v_cell=(0.013,-0.126) cmd=(-0.117,0.048,-0.600)
+[INFO] [1780862686.871252]: [PARK_CTRL][REL_CENTER] cx=0.013 cy=0.127 dist=0.127 yaw_err=-1.949 v_cell=(0.009,-0.067) cmd=(-0.066,0.016,-0.600)
+[INFO] [1780862687.422318]: [PARK_CTRL][REL_CENTER] cx=0.017 cy=0.102 dist=0.103 yaw_err=-1.831 v_cell=(-0.017,-0.097) cmd=(-0.090,0.041,-0.600)
+[INFO] [1780862687.937854]: [PARK_CTRL][REL_CENTER] cx=0.002 cy=0.064 dist=0.064 yaw_err=-1.702 v_cell=(-0.000,-0.036) cmd=(-0.036,0.005,-0.600)
+[INFO] [1780862688.470666]: [PARK_CTRL][REL_CENTER] cx=0.013 cy=0.045 dist=0.047 yaw_err=-1.608 v_cell=(-0.003,-0.067) cmd=(-0.067,0.005,-0.600)
+[INFO] [1780862688.975027]: [PARK_CTRL][REL_CENTER] cx=0.002 cy=0.023 dist=0.023 yaw_err=-1.463 v_cell=(-0.006,-0.022) cmd=(-0.022,0.000,-0.600)
+[INFO] [1780862689.477863]: [PARK_CTRL][REL_CENTER] cx=-0.004 cy=0.016 dist=0.016 yaw_err=-1.339 v_cell=(0.013,-0.037) cmd=(-0.033,-0.021,-0.600)
+[INFO] [1780862690.018449]: [PARK_CTRL][REL_CENTER] cx=-0.011 cy=0.024 dist=0.027 yaw_err=-1.217 v_cell=(0.016,-0.037) cmd=(-0.029,-0.028,-0.600)
+[INFO] [1780862690.520269]: [PARK_CTRL][REL_CENTER] cx=-0.016 cy=0.027 dist=0.031 yaw_err=-1.068 v_cell=(0.015,-0.015) cmd=(-0.006,-0.020,-0.600)
+[WARN] [1780862690.816338]: relative center timeout.
+[INFO] [1780862691.061174]: [PARK][RELATIVE_PID_CENTER][TIMEOUT_ACCEPT][dt=5.25s][+8.46s]
+[INFO] [1780862691.062933]: [PARK_STATE][RELATIVE_CENTER_DONE] map=(1.966,1.942,2.518) cell=(-0.018,0.024) target=(1.990,1.960,1.587) err_cell=(0.018,-0.024) yaw_err=-0.931
+[INFO] [1780862691.064221]: [PARK][RELATIVE_FINE_TUNE][START][+8.46s] blocked=right
+[INFO] [1780862691.065984]: === Phase 3: laser precision fine-tune ===
+[INFO] [1780862691.072411]: Phase 3: entry=relative baffle=right box_ang=0.00 base_ang=-0.93 laser=-90 axis=y sign=-1 target=0.20
+[INFO] [1780862691.081686]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.514 target=0.200 err=0.314 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862691.631746]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.475 target=0.200 err=0.275 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862692.131595]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.455 target=0.200 err=0.255 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862692.690442]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.440 target=0.200 err=0.240 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862693.228295]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.424 target=0.200 err=0.224 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862693.728292]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.416 target=0.200 err=0.216 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862694.230708]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.399 target=0.200 err=0.199 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862694.780602]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.384 target=0.200 err=0.184 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862695.327952]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.365 target=0.200 err=0.165 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862695.832118]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.353 target=0.200 err=0.153 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862696.334796]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.341 target=0.200 err=0.141 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862696.879006]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.328 target=0.200 err=0.128 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862697.428432]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.322 target=0.200 err=0.122 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862697.984615]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.309 target=0.200 err=0.109 axis=y sign=-1 cmd=(0.000,-0.030)
+[INFO] [1780862698.530061]: [PARK_CTRL][FINE_TUNE] baffle=right laser=-90 d=0.294 target=0.200 err=0.094 axis=y sign=-1 cmd=(0.000,-0.022)
+[WARN] [1780862699.074635]: Phase 3: timeout 8.0s
+[INFO] [1780862699.318150]: Phase 3: finished.
+[INFO] [1780862699.319801]: [PARK][RELATIVE_FINE_TUNE][TIMEOUT][dt=8.26s][+16.72s] elapsed=8.00
+[INFO] [1780862699.563932]: [PARK][RUN][OK][dt=16.96s][+16.96s] finished_by=relative_parking
+[INFO] [1780862699.565279]: [TASK_TIME][PARK_RUN] idx=4 task_id=9 dt=16.96s parking_done=True best_entry=up
+[INFO] [1780862700.067075]: [TASK_TIME][POST_PARK_WAIT] idx=4 task_id=9 dt=0.50s
+[INFO] [1780862703.580603]: TTS播报成功: 已到达任务点51号 | 响应: TTS处理完成
+[INFO] [1780862703.582357]: [TASK_TIME][TTS] idx=4 task_id=9 dt=3.51s ok=True
+[INFO] [1780862703.584005]: [PARK][PHASE4_ESCAPE][START][+20.98s] entry=up distance=0.350 speed=0.100 timeout=5.0s
+[INFO] [1780862703.585271]: === Phase 4: escape via entry up ===
+[WARN] [1780862708.589210]: escape: timeout 5.0s
+[INFO] [1780862708.833943]: Phase 4: escape finished.
+[INFO] [1780862708.835493]: [PARK][PHASE4_ESCAPE][TIMEOUT][dt=5.25s][+26.23s] elapsed=5.00
+[INFO] [1780862708.836851]: [TASK_TIME][ESCAPE] idx=4 task_id=9 dt=5.25s
+[INFO] [1780862708.838206]: [TASK_TIME][END] idx=4 task_id=9 total_dt=28.56s
+[INFO] [1780862708.839562]: [Navi] 前往目标点: [0.35, 3.05, -3.13] (timeout=60s)
+[INFO] [1780862708.844172]: [Navi] 导航已激活
+[INFO] [1780862718.244651]: 导航完成! status=3 result=
+[INFO] [1780862718.251723]: 到达目标点 [0.35, 3.05, -3.13] 成功! 
+[INFO] [1780862718.254788]: 航向角已校准，正在调整位置...
+[INFO] [1780862721.955019]: 航向角已校准，正在调整位置...
+[INFO] [1780862722.955116]: 航向角已校准，正在调整位置...
+[INFO] [1780862723.955924]: 航向角已校准，正在调整位置...
+[INFO] [1780862724.155016]: 位置和航向角校准完成!
+[INFO] [1780862726.473331]: TTS播报成功: 已到达终点 | 响应: TTS处理完成
+^A^A^A

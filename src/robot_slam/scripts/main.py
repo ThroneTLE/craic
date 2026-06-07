@@ -117,6 +117,10 @@ class navigation_demo:
         self.detect_yaw_stable_count = int(rospy.get_param("~detect_yaw_stable_count", 4))
         self.detect_photo_settle_time = rospy.get_param("~detect_photo_settle_time", 0.25)
         self.detect_capture_wait = rospy.get_param("~detect_capture_wait", 0.5)
+
+        # 11. 调试/比赛固定任务点：跳过前置视觉扫描，直接进入任务点泊车
+        self.use_fixed_task_positions = rospy.get_param("~use_fixed_task_positions", False)
+        self.fixed_task_ids = rospy.get_param("~fixed_task_ids", "")
     
     def scan_callback(self, msg):
         """存储最新的激光雷达数据"""
@@ -137,6 +141,15 @@ class navigation_demo:
         while angle < -np.pi:
             angle += 2.0 * np.pi
         return angle
+
+    def log_nav_state(self, label, target=None):
+        if target is None:
+            rospy.loginfo("[NAV_STATE][%s] yaw=%.3f odom_received=%s",
+                          label, self.current_yaw, str(self.odom_received))
+        else:
+            rospy.loginfo("[NAV_STATE][%s] target=(%.3f,%.3f,%.1f) yaw=%.3f odom_received=%s",
+                          label, target[0], target[1], target[2],
+                          self.current_yaw, str(self.odom_received))
 
     def clamp(self, value, min_value, max_value):
         """限制数值范围"""
@@ -637,6 +650,39 @@ class navigation_demo:
         self.mission(p)
         return True
 
+    def parse_fixed_task_ids(self):
+        """
+        解析固定任务点列表。
+        支持内部任务编号1-9，也兼容VLM原始编号31/32/.../51。
+        """
+        parsed_tasks = []
+        raw_text = str(self.fixed_task_ids).strip()
+        if not raw_text:
+            rospy.logwarn("use_fixed_task_positions=true，但 fixed_task_ids 为空")
+            return parsed_tasks
+
+        for item in raw_text.replace(";", ",").split(","):
+            item = item.strip()
+            if not item:
+                continue
+            try:
+                raw_id = int(item)
+            except ValueError:
+                rospy.logwarn("固定任务点编号无效: %s" % item)
+                continue
+
+            if 1 <= raw_id <= 9:
+                task_id = raw_id
+            elif raw_id in VLM_TO_TASK:
+                task_id = VLM_TO_TASK[raw_id]
+            else:
+                rospy.logwarn("固定任务点编号超出范围: %s" % raw_id)
+                continue
+
+            parsed_tasks.append(task_id)
+
+        return parsed_tasks
+
     # ---------------- 按线索导航到任务点 ----------------
     def go_to_task_positions(self):
         """按识别到的线索，依次导航到对应任务点"""
@@ -650,12 +696,15 @@ class navigation_demo:
                           idx + 1, len(task_numbers), str(task_id))
             if 1 <= task_id <= 9:
                 # 导航到线索对应的任务点 (5s 超时)
+                target = goals[task_id]
+                self.log_nav_state("TASK_NAV_START_%d" % task_id, target)
                 nav_start_time = rospy.Time.now()
-                nav_ok = self.goto(goals[task_id], timeout=2)
+                nav_ok = self.goto(target, timeout=2)
                 rospy.loginfo("[TASK_TIME][NAV_TO_TASK] idx=%d task_id=%d dt=%.2fs ok=%s",
                               idx + 1, task_id,
                               (rospy.Time.now() - nav_start_time).to_sec(),
                               str(nav_ok))
+                self.log_nav_state("TASK_NAV_DONE_%d" % task_id, target)
 
                 wait_start_time = rospy.Time.now()
                 rospy.sleep(1)
@@ -664,7 +713,6 @@ class navigation_demo:
                               (rospy.Time.now() - wait_start_time).to_sec())
 
                 # 启动精密停车
-                target = goals[task_id]
                 rospy.loginfo("move_base 到达任务点 %d，启动精密停车 (x=%.3f y=%.3f yaw=%.1f)..." % (task_id, target[0], target[1], target[2]))
                 rospy.loginfo("[PARK_TASK][START] idx=%d task_id=%d target=(%.3f, %.3f, %.1f)",
                               idx + 1, task_id, target[0], target[1], target[2])
@@ -727,13 +775,18 @@ class navigation_demo:
         clue = 1
 
         rospy.loginfo("开始执行任务！")
-        # 执行所有检测点任务
-        for p in points:
-            rospy.loginfo("\n=== 开始处理第%s个检测点 ===" % (1))
-            self.recognize(p)
+        if self.use_fixed_task_positions:
+            task_numbers = self.parse_fixed_task_ids()
+            rospy.loginfo("使用固定任务点，跳过检测点扫描: raw=%s parsed=%s" %
+                          (self.fixed_task_ids, task_numbers))
+        else:
+            # 执行所有检测点任务
+            for p in points:
+                rospy.loginfo("\n=== 开始处理第%s个检测点 ===" % (1))
+                self.recognize(p)
 
-        rospy.loginfo("\n=== 所有检测点处理完成 ===")
-        rospy.loginfo("收集到的任务编号: %s" % task_numbers)
+            rospy.loginfo("\n=== 所有检测点处理完成 ===")
+            rospy.loginfo("收集到的任务编号: %s" % task_numbers)
 
         # 按线索导航
         self.go_to_task_positions()

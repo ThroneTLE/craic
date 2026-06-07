@@ -115,7 +115,7 @@ TebLocalPlannerROS:
   # 降低障碍物权重+viapoint，复杂狭窄区TEB能偏离全局路径绕障
   weight_obstacle: 50
   weight_inflation: 0.4
-  weight_viapoint: 0.1
+  weight_viapoint: 0.05
 
 
   ############################################################

@@ -62,8 +62,20 @@ class AutoSinglePointTest:
         # =====================================================
         # Phase 0: move_base 直达目标中心
         # =====================================================
+        self.relative_parking_mode = self.get_param("relative_parking_mode", False)
+        self.relative_direct_if_clear = self.get_param("relative_direct_if_clear", True)
+        self.relative_open_side_prefer_robot = self.get_param("relative_open_side_prefer_robot", True)
+        self.relative_entry_timeout = self.get_param("relative_entry_timeout", 4.0)
+        self.relative_entry_tolerance = self.get_param("relative_entry_tolerance", 0.18)
+        self.relative_center_timeout = self.get_param("relative_center_timeout", 5.0)
+        self.relative_center_tolerance = self.get_param("relative_center_tolerance", 0.035)
+        self.relative_yaw_tolerance = self.get_param("relative_yaw_tolerance", 0.08)
+        self.relative_center_stable_count = int(self.get_param("relative_center_stable_count", 2))
+        self.relative_fine_tune_only_if_blocked = self.get_param("relative_fine_tune_only_if_blocked", True)
+        self.relative_near_center_direct_dist = self.get_param("relative_near_center_direct_dist", 0.15)
+        self.relative_entry_pid_tolerance = self.get_param("relative_entry_pid_tolerance", 0.05)
         self.enable_direct_center = rospy.get_param("enable_direct_center", True)
-        self.direct_center_timeout =5.0          # 硬编码，不读 param server
+        self.direct_center_timeout = 5.0          # 硬编码，不读 param server
         self.direct_center_tolerance = rospy.get_param("direct_center_tolerance", 0.10)
         self.direct_center_oscillation_window = 3.0
         self.direct_center_oscillation_min_displacement = 0.2
@@ -111,31 +123,33 @@ class AutoSinglePointTest:
         self.pid_kd_xy = rospy.get_param("pid_kd_xy", 0.2)
         self.pid_kp_yaw = rospy.get_param("pid_kp_yaw", 1.5)
         self.pid_kd_yaw = rospy.get_param("pid_kd_yaw", 0.3)
-        self.pid_max_v = rospy.get_param("pid_max_v", 0.25)
-        self.pid_max_wz = rospy.get_param("pid_max_wz", 1.6)
+        self.pid_max_v = rospy.get_param("pid_max_v", 0.15)
+        self.pid_max_wz = rospy.get_param("pid_max_wz", 0.6)
         self.pid_yaw_align_timeout = rospy.get_param("pid_yaw_align_timeout", 4.0)
-        self.pid_translate_timeout = rospy.get_param("pid_translate_timeout", 9.0)
-        self.pos_tolerance = rospy.get_param("pos_tolerance", 0.02)
+        self.pid_translate_timeout = rospy.get_param("pid_translate_timeout", 11.0)
+        self.pos_tolerance = rospy.get_param("pos_tolerance", 0.04)
         self.yaw_tolerance = rospy.get_param("yaw_tolerance", 0.05)
 
         # =====================================================
         # Phase 3: 激光挡板精调
         # =====================================================
         self.fine_tune_enabled = rospy.get_param("fine_tune_enabled", True)
-        self.fine_tune_timeout = rospy.get_param("fine_tune_timeout", 6.0)
+        self.fine_tune_timeout = rospy.get_param("fine_tune_timeout", 8.0)
         self.fine_tune_front_back_target = rospy.get_param("fine_tune_front_back_target", 0.24)
         self.fine_tune_side_target = rospy.get_param("fine_tune_side_target", 0.20)
         self.fine_tune_tolerance = rospy.get_param("fine_tune_tolerance", 0.03)
         self.fine_tune_kp = rospy.get_param("fine_tune_kp", 0.3)
         self.fine_tune_kd = rospy.get_param("fine_tune_kd", 0.1)
         self.fine_tune_max_v = rospy.get_param("fine_tune_max_v", 0.03)
+        self.fine_tune_valid_max_range = self.get_param("fine_tune_valid_max_range", 0.70)
+        self.fine_tune_max_travel = self.get_param("fine_tune_max_travel", 0.05)
 
         # =====================================================
         # Phase 4: 逃逸
         # =====================================================
         self.escape_enabled = rospy.get_param("escape_enabled", True)
         self.escape_distance = rospy.get_param("escape_distance", 0.35)
-        self.escape_speed = rospy.get_param("escape_speed", 0.20)
+        self.escape_speed = rospy.get_param("escape_speed", 0.10)
         self.escape_timeout = rospy.get_param("escape_timeout", 5.0)
 
         # 运行时状态
@@ -194,6 +208,11 @@ class AutoSinglePointTest:
         rospy.loginfo("Auto single point target: x=%.3f y=%.3f yaw_deg=%.1f",
                        self.target_x, self.target_y, self.target_yaw_deg)
 
+    def get_param(self, name, default):
+        if rospy.has_param("~" + name):
+            return rospy.get_param("~" + name, default)
+        return rospy.get_param(name, default)
+
     # =========================================================
     # 回调
     # =========================================================
@@ -227,6 +246,35 @@ class AutoSinglePointTest:
         rospy.loginfo("[PARK][%s][SKIP][+%.2fs]%s",
                       phase, self.parking_elapsed(), suffix)
 
+    def log_pose_state(self, label):
+        pose = self.lookup_robot_pose()
+        if pose is None:
+            rospy.logwarn("[PARK_STATE][%s] pose=None", label)
+            return
+        rx, ry, ryaw = pose
+        cx, cy = self.map_to_cell(rx, ry)
+        yaw_err = normalize_angle(self.target_yaw - ryaw)
+        rospy.loginfo(
+            "[PARK_STATE][%s] map=(%.3f,%.3f,%.3f) cell=(%.3f,%.3f) target=(%.3f,%.3f,%.3f) err_cell=(%.3f,%.3f) yaw_err=%.3f",
+            label, rx, ry, ryaw, cx, cy,
+            self.target_x, self.target_y, self.target_yaw,
+            -cx, -cy, yaw_err
+        )
+
+    def log_entry_candidates(self, entries, sides=None, selected=None):
+        selected_name = selected["name"] if selected is not None else "None"
+        for e in entries:
+            side_info = sides.get(e["name"], {"count": -1, "blocked": False}) if sides is not None else {"count": -1, "blocked": False}
+            rospy.loginfo(
+                "[PARK_ENTRY] name=%s selected=%s entry=(%.3f,%.3f) cell=(%.3f,%.3f) axis=(%.3f,%.3f) yaw=%.3f blocked=%s count=%s score=%s",
+                e["name"], str(e["name"] == selected_name),
+                e["entry_x"], e["entry_y"],
+                e.get("cell_x", 0.0), e.get("cell_y", 0.0),
+                e["axis_x"], e["axis_y"], e["entry_yaw"],
+                str(side_info["blocked"]), str(side_info["count"]),
+                str(e.get("score", "na"))
+            )
+
     # =========================================================
     # 主流程
     # =========================================================
@@ -237,6 +285,13 @@ class AutoSinglePointTest:
             "target=(%.3f, %.3f, %.1fdeg)" %
             (self.target_x, self.target_y, self.target_yaw_deg)
         )
+        self.log_pose_state("RUN_START")
+
+        if self.relative_parking_mode:
+            ok = self.run_relative_parking(run_start)
+            self.phase_end("RUN", run_start, "OK" if ok else "FAIL",
+                           "finished_by=relative_parking")
+            return
 
         # ---- Phase 0: move_base 直达目标中心 ----
         if self.enable_direct_center:
@@ -274,6 +329,7 @@ class AutoSinglePointTest:
             entries = self.sort_entries_by_robot_position(entries)
         best_entry = entries[0]
         self.best_entry = best_entry  # 保存，供 escape() 使用
+        self.log_entry_candidates(entries, selected=best_entry)
 
         rospy.loginfo("Best entry: %s score=%.3f entry=(%.3f, %.3f)",
                        best_entry["name"], best_entry.get("score", -1),
@@ -667,6 +723,11 @@ class AutoSinglePointTest:
             cmd.angular.z = wz
             cmd = self.apply_laser_safety(cmd)
             self.publish_cmd(cmd)
+            rospy.loginfo_throttle(
+                0.5,
+                "[PARK_CTRL][PID_TRANSLATE] label=map dist=%.3f ex=%.3f ey=%.3f yaw_err=%.3f cmd=(%.3f,%.3f,%.3f)",
+                dist, ex, ey, yaw_err, cmd.linear.x, cmd.linear.y, cmd.angular.z
+            )
             rate.sleep()
 
         return False
@@ -712,6 +773,260 @@ class AutoSinglePointTest:
         return ok
 
     # =========================================================
+    # Relative parking: 格子局部坐标泊车
+    # =========================================================
+    def run_relative_parking(self, run_start):
+        phase_start = self.phase_start("RELATIVE_DETECT_SIDES", "cell_frame=true")
+        self.log_pose_state("RELATIVE_BEFORE_DETECT")
+        points = self.collect_scan_points_in_map()
+        sides = self.evaluate_target_sides_relative(points)
+        blocked_names = [k for k in ["left", "right", "up", "down"] if sides[k]["blocked"]]
+        open_names = [k for k in ["left", "right", "up", "down"] if not sides[k]["blocked"]]
+        self.phase_end(
+            "RELATIVE_DETECT_SIDES",
+            phase_start,
+            "OK",
+            "open=%s blocked=%s counts=%s" %
+            (",".join(open_names), ",".join(blocked_names), str({k: sides[k]["count"] for k in sides}))
+        )
+
+        pose = self.lookup_robot_pose()
+        if pose is not None:
+            cx, cy = self.map_to_cell(pose[0], pose[1])
+            center_dist = math.sqrt(cx * cx + cy * cy)
+            if center_dist <= self.relative_near_center_direct_dist:
+                entries = self.generate_entries()
+                self.best_entry = self.choose_relative_entry(entries, sides)
+                self.log_entry_candidates(entries, sides=sides, selected=self.best_entry)
+                phase_start = self.phase_start(
+                    "RELATIVE_NEAR_CENTER",
+                    "dist=%.3f threshold=%.3f" %
+                    (center_dist, self.relative_near_center_direct_dist)
+                )
+                ok = self.pid_translate_relative_center(timeout=self.relative_center_timeout)
+                self.phase_end("RELATIVE_NEAR_CENTER", phase_start, "OK" if ok else "TIMEOUT_ACCEPT")
+                self.log_pose_state("RELATIVE_NEAR_CENTER_DONE")
+                if self.fine_tune_enabled:
+                    self.phase_skip(
+                        "RELATIVE_FINE_TUNE",
+                        "near_center_direct=true avoid_push_out"
+                    )
+                self.stop_robot()
+                self.parking_done = True
+                return True
+
+        if self.relative_direct_if_clear and len(blocked_names) == 0:
+            phase_start = self.phase_start("RELATIVE_DIRECT_CENTER", "no_blocked_sides=true")
+            ok = self.pid_translate_relative_center(timeout=self.relative_center_timeout)
+            self.phase_end("RELATIVE_DIRECT_CENTER", phase_start, "OK" if ok else "FAIL")
+            self.stop_robot()
+            self.parking_done = ok
+            return ok
+
+        entries = self.generate_entries()
+        best_entry = self.choose_relative_entry(entries, sides)
+        self.best_entry = best_entry
+        self.log_entry_candidates(entries, sides=sides, selected=best_entry)
+        if best_entry is None:
+            rospy.logwarn("Relative parking: no usable entry.")
+            self.stop_robot()
+            return False
+
+        phase_start = self.phase_start(
+            "RELATIVE_MOVE_BASE_ENTRY",
+            "entry=%s timeout=%.1fs tolerance=%.3f" %
+            (best_entry["name"], self.relative_entry_timeout, self.relative_entry_tolerance)
+        )
+        old_timeout = self.entry_nav_timeout
+        old_tolerance = self.entry_nav_tolerance
+        self.entry_nav_timeout = self.relative_entry_timeout
+        self.entry_nav_tolerance = self.relative_entry_tolerance
+        entry_ok = self.goto_entry_polling(best_entry)
+        self.entry_nav_timeout = old_timeout
+        self.entry_nav_tolerance = old_tolerance
+        self.phase_end("RELATIVE_MOVE_BASE_ENTRY", phase_start, "OK" if entry_ok else "FAIL",
+                       "entry=%s" % best_entry["name"])
+
+        if not entry_ok:
+            phase_start = self.phase_start("RELATIVE_PID_ENTRY", "entry=%s" % best_entry["name"])
+            old_pos_tolerance = self.pos_tolerance
+            self.pos_tolerance = self.relative_entry_pid_tolerance
+            entry_ok = self.pid_goto_point(
+                best_entry["entry_x"], best_entry["entry_y"], best_entry["target_yaw"],
+                "relative_entry")
+            self.pos_tolerance = old_pos_tolerance
+            self.phase_end("RELATIVE_PID_ENTRY", phase_start, "OK" if entry_ok else "FAIL")
+
+        if not entry_ok:
+            self.stop_robot()
+            return False
+        self.log_pose_state("RELATIVE_ENTRY_REACHED")
+
+        phase_start = self.phase_start(
+            "RELATIVE_PID_CENTER",
+            "timeout=%.1fs pos_tol=%.3f yaw_tol=%.3f" %
+            (self.relative_center_timeout, self.relative_center_tolerance, self.relative_yaw_tolerance)
+        )
+        center_ok = self.pid_translate_relative_center(timeout=self.relative_center_timeout)
+        self.phase_end("RELATIVE_PID_CENTER", phase_start, "OK" if center_ok else "TIMEOUT_ACCEPT")
+        self.log_pose_state("RELATIVE_CENTER_DONE")
+
+        if self.fine_tune_enabled:
+            if (not self.relative_fine_tune_only_if_blocked) or len(blocked_names) > 0:
+                phase_start = self.phase_start("RELATIVE_FINE_TUNE", "blocked=%s" % ",".join(blocked_names))
+                tune_side = blocked_names[0] if blocked_names else None
+                fine_status, fine_detail = self.precision_fine_tune(tune_side)
+                self.phase_end("RELATIVE_FINE_TUNE", phase_start, fine_status, fine_detail)
+            else:
+                self.phase_skip("RELATIVE_FINE_TUNE", "no_blocked_sides=true")
+        else:
+            self.phase_skip("RELATIVE_FINE_TUNE", "fine_tune_enabled=false")
+
+        self.stop_robot()
+        self.parking_done = True
+        return True
+
+    def map_to_cell(self, mx, my):
+        dx = mx - self.target_x
+        dy = my - self.target_y
+        c = math.cos(self.target_yaw)
+        s = math.sin(self.target_yaw)
+        cx = c * dx + s * dy
+        cy = -s * dx + c * dy
+        return cx, cy
+
+    def cell_to_map(self, cx, cy):
+        c = math.cos(self.target_yaw)
+        s = math.sin(self.target_yaw)
+        mx = self.target_x + c * cx - s * cy
+        my = self.target_y + s * cx + c * cy
+        return mx, my
+
+    def evaluate_target_sides_relative(self, points):
+        h = self.target_box_half_size
+        w = self.side_detect_width
+        counts = {"left": 0, "right": 0, "up": 0, "down": 0}
+        for mx, my in points:
+            cx, cy = self.map_to_cell(mx, my)
+            if (-h - w) <= cx <= (-h + w) and -h <= cy <= h:
+                counts["left"] += 1
+            if (h - w) <= cx <= (h + w) and -h <= cy <= h:
+                counts["right"] += 1
+            if (-h - w) <= cy <= (-h + w) and -h <= cx <= h:
+                counts["down"] += 1
+            if (h - w) <= cy <= (h + w) and -h <= cx <= h:
+                counts["up"] += 1
+
+        sides = {}
+        for k in ["left", "right", "up", "down"]:
+            sides[k] = {"count": counts[k], "blocked": counts[k] >= self.side_detect_min_points}
+        return sides
+
+    def choose_relative_entry(self, entries, sides):
+        pose = self.lookup_robot_pose()
+        open_entries = [e for e in entries if not sides.get(e["name"], {"blocked": False})["blocked"]]
+        candidates = open_entries if open_entries else entries
+        if not candidates:
+            return None
+
+        if pose is None:
+            best = candidates[0]
+        else:
+            rx, ry, _ = pose
+            rcx, rcy = self.map_to_cell(rx, ry)
+
+            def score(e):
+                dist = math.sqrt((e["entry_x"] - rx) ** 2 + (e["entry_y"] - ry) ** 2)
+                if not self.relative_open_side_prefer_robot:
+                    return dist
+                side_bonus = 0.0
+                if e["name"] == "left" and rcx < -self.target_box_half_size:
+                    side_bonus = -0.4
+                elif e["name"] == "right" and rcx > self.target_box_half_size:
+                    side_bonus = -0.4
+                elif e["name"] == "down" and rcy < -self.target_box_half_size:
+                    side_bonus = -0.4
+                elif e["name"] == "up" and rcy > self.target_box_half_size:
+                    side_bonus = -0.4
+                return dist + side_bonus
+
+            best = sorted(candidates, key=score)[0]
+
+        rospy.loginfo("Relative entry selected: %s open=%s score_entry=(%.3f, %.3f)",
+                      best["name"], ",".join([e["name"] for e in open_entries]),
+                      best["entry_x"], best["entry_y"])
+        return best
+
+    def pid_translate_relative_center(self, timeout=None):
+        if timeout is None:
+            timeout = self.relative_center_timeout
+
+        rate = rospy.Rate(20)
+        start_time = rospy.Time.now()
+        pd_x = PDController(self.pid_kp_xy, self.pid_kd_xy)
+        pd_y = PDController(self.pid_kp_xy, self.pid_kd_xy)
+        pd_yaw = PDController(self.pid_kp_yaw, self.pid_kd_yaw)
+        stable_count = 0
+
+        while not rospy.is_shutdown():
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            if elapsed > timeout:
+                rospy.logwarn("relative center timeout.")
+                self.stop_robot()
+                return False
+
+            pose = self.lookup_robot_pose()
+            if pose is None:
+                self.stop_robot()
+                rate.sleep()
+                continue
+
+            rx, ry, ryaw = pose
+            cx, cy = self.map_to_cell(rx, ry)
+            ex = -cx
+            ey = -cy
+            yaw_err = normalize_angle(self.target_yaw - ryaw)
+            dist = math.sqrt(ex * ex + ey * ey)
+
+            if dist < self.relative_center_tolerance and abs(yaw_err) < self.relative_yaw_tolerance:
+                stable_count += 1
+                self.stop_robot()
+                if stable_count >= self.relative_center_stable_count:
+                    rospy.loginfo("relative center done: cx=%.3f cy=%.3f yaw_err=%.3f",
+                                  cx, cy, yaw_err)
+                    return True
+                rate.sleep()
+                continue
+
+            stable_count = 0
+            now = rospy.Time.now()
+            vx_cell = self.clamp(pd_x.update(ex, now), -self.pid_max_v, self.pid_max_v)
+            vy_cell = self.clamp(pd_y.update(ey, now), -self.pid_max_v, self.pid_max_v)
+            wz = self.clamp(pd_yaw.update(yaw_err, now), -self.pid_max_wz, self.pid_max_wz)
+
+            vx_map, vy_map = self.cell_velocity_to_map(vx_cell, vy_cell)
+            cmd = self.map_velocity_to_base_cmd(vx_map, vy_map, ryaw)
+            cmd.angular.z = wz
+            cmd = self.apply_laser_safety(cmd)
+            self.publish_cmd(cmd)
+            rospy.loginfo_throttle(
+                0.5,
+                "[PARK_CTRL][REL_CENTER] cx=%.3f cy=%.3f dist=%.3f yaw_err=%.3f v_cell=(%.3f,%.3f) cmd=(%.3f,%.3f,%.3f)",
+                cx, cy, dist, yaw_err, vx_cell, vy_cell,
+                cmd.linear.x, cmd.linear.y, cmd.angular.z
+            )
+            rate.sleep()
+
+        return False
+
+    def cell_velocity_to_map(self, vx_cell, vy_cell):
+        c = math.cos(self.target_yaw)
+        s = math.sin(self.target_yaw)
+        vx_map = c * vx_cell - s * vy_cell
+        vy_map = s * vx_cell + c * vy_cell
+        return vx_map, vy_map
+
+    # =========================================================
     # Phase 3: 激光挡板精调
     # =========================================================
     def get_laser_at_angle(self, angle_deg):
@@ -730,30 +1045,37 @@ class AutoSinglePointTest:
             return None
         return r
 
-    def precision_fine_tune(self):
+    def precision_fine_tune(self, forced_baffle_side=None):
         """Phase 3: 只用入口对面那个真实挡板做单方向激光精调"""
         rospy.loginfo("=== Phase 3: laser precision fine-tune ===")
 
-        if self.best_entry is None:
+        if self.best_entry is None and forced_baffle_side is None:
             rospy.loginfo("Phase 3: no entry info, skip.")
             return "SKIP", "reason=no_entry"
 
-        # 入口对面 = 真挡板方向
-        opposite = {
-            "right": "left",
-            "left": "right",
-            "up": "down",
-            "down": "up",
-        }
-        entry_name = self.best_entry["name"]
-        baffle_side = opposite[entry_name]
+        if forced_baffle_side is not None:
+            entry_name = "relative"
+            baffle_side = forced_baffle_side
+        else:
+            # 入口对面 = 真挡板方向
+            opposite = {
+                "right": "left",
+                "left": "right",
+                "up": "down",
+                "down": "up",
+            }
+            entry_name = self.best_entry["name"]
+            baffle_side = opposite[entry_name]
 
         # box 系下该挡板的方向角
         box_angles = {"right": 0.0, "up": math.pi / 2, "left": math.pi, "down": -math.pi / 2}
         box_ang = box_angles[baffle_side]
 
-        # 映射到 base 系 (机器人局部坐标系)
-        base_ang = normalize_angle(box_ang - self.target_yaw)
+        # box系方向 -> map系方向 -> base系方向
+        pose = self.lookup_robot_pose()
+        robot_yaw = pose[2] if pose is not None else self.target_yaw
+        map_ang = normalize_angle(self.target_yaw + box_ang)
+        base_ang = normalize_angle(map_ang - robot_yaw)
 
         # 归类到 front/back/left/right + 确定激光角度和目标距离
         if abs(base_ang) < math.pi / 4:
@@ -783,6 +1105,7 @@ class AutoSinglePointTest:
         pd = PDController(self.fine_tune_kp, self.fine_tune_kd)
         rate = rospy.Rate(20)
         start_time = rospy.Time.now()
+        start_pose = self.lookup_robot_pose()
         stable_cnt = 0
         status = "TIMEOUT"
         detail = ""
@@ -795,9 +1118,38 @@ class AutoSinglePointTest:
                 break
 
             now = rospy.Time.now()
+            if start_pose is not None:
+                current_pose = self.lookup_robot_pose()
+                if current_pose is not None:
+                    moved = math.sqrt((current_pose[0] - start_pose[0]) ** 2 +
+                                      (current_pose[1] - start_pose[1]) ** 2)
+                    if moved >= self.fine_tune_max_travel:
+                        rospy.logwarn(
+                            "Phase 3: travel limit %.3f >= %.3f, stop fine tune.",
+                            moved, self.fine_tune_max_travel
+                        )
+                        status = "TRAVEL_LIMIT"
+                        detail = "moved=%.3f limit=%.3f" % (moved, self.fine_tune_max_travel)
+                        break
+
             d = self.get_laser_at_angle(laser_ang)
 
-            if d is not None and d < 1.5:
+            if d is None:
+                status = "SKIP"
+                detail = "reason=no_laser laser=%d" % laser_ang
+                rospy.logwarn("Phase 3: skip, no valid laser at %d deg.", laser_ang)
+                break
+
+            if d > self.fine_tune_valid_max_range:
+                status = "SKIP"
+                detail = "reason=laser_too_far laser=%.3f max=%.3f" % (d, self.fine_tune_valid_max_range)
+                rospy.logwarn(
+                    "Phase 3: skip, laser %.3f > valid max %.3f at %d deg.",
+                    d, self.fine_tune_valid_max_range, laser_ang
+                )
+                break
+
+            if d < 1.5:
                 err = d - target_dist
                 if abs(err) < self.fine_tune_tolerance:
                     stable_cnt += 1
@@ -819,8 +1171,17 @@ class AutoSinglePointTest:
                     cmd.angular.z = 0.0
                     cmd = self.apply_laser_safety(cmd)
                     self.publish_cmd(cmd)
+                    rospy.loginfo_throttle(
+                        0.5,
+                        "[PARK_CTRL][FINE_TUNE] baffle=%s laser=%d d=%.3f target=%.3f err=%.3f axis=%s sign=%d cmd=(%.3f,%.3f)",
+                        baffle_side, laser_ang, d, target_dist, err, axis, sign,
+                        cmd.linear.x, cmd.linear.y
+                    )
             else:
-                stable_cnt = 0
+                status = "SKIP"
+                detail = "reason=laser_invalid laser=%.3f" % d
+                rospy.logwarn("Phase 3: skip, invalid laser %.3f at %d deg.", d, laser_ang)
+                break
 
             rate.sleep()
 
@@ -904,24 +1265,25 @@ class AutoSinglePointTest:
     # 4个入口生成 (复用现有逻辑)
     # =========================================================
     def generate_entries(self):
-        tx = self.target_x
-        ty = self.target_y
         d = self.entry_offset
 
         raw_entries = [
-            {"name": "right", "entry_x": tx + d, "entry_y": ty,
-             "axis_x": -1.0, "axis_y": 0.0, "target_yaw": self.target_yaw},
-            {"name": "left", "entry_x": tx - d, "entry_y": ty,
-             "axis_x": 1.0, "axis_y": 0.0, "target_yaw": self.target_yaw},
-            {"name": "up", "entry_x": tx, "entry_y": ty + d,
-             "axis_x": 0.0, "axis_y": -1.0, "target_yaw": self.target_yaw},
-            {"name": "down", "entry_x": tx, "entry_y": ty - d,
-             "axis_x": 0.0, "axis_y": 1.0, "target_yaw": self.target_yaw},
+            {"name": "right", "cell_x": d, "cell_y": 0.0, "axis_cell_x": -1.0, "axis_cell_y": 0.0},
+            {"name": "left", "cell_x": -d, "cell_y": 0.0, "axis_cell_x": 1.0, "axis_cell_y": 0.0},
+            {"name": "up", "cell_x": 0.0, "cell_y": d, "axis_cell_x": 0.0, "axis_cell_y": -1.0},
+            {"name": "down", "cell_x": 0.0, "cell_y": -d, "axis_cell_x": 0.0, "axis_cell_y": 1.0},
         ]
 
         entries = []
         for e in raw_entries:
-            e["entry_yaw"] = math.atan2(ty - e["entry_y"], tx - e["entry_x"])
+            entry_x, entry_y = self.cell_to_map(e["cell_x"], e["cell_y"])
+            axis_x, axis_y = self.cell_velocity_to_map(e["axis_cell_x"], e["axis_cell_y"])
+            e["entry_x"] = entry_x
+            e["entry_y"] = entry_y
+            e["axis_x"] = axis_x
+            e["axis_y"] = axis_y
+            e["target_yaw"] = self.target_yaw
+            e["entry_yaw"] = math.atan2(self.target_y - e["entry_y"], self.target_x - e["entry_x"])
             entries.append(e)
         return entries
 
@@ -1213,6 +1575,10 @@ class AutoSinglePointTest:
     # 激光安全 (含后方保护)
     # =========================================================
     def apply_laser_safety(self, cmd):
+        in_x = cmd.linear.x
+        in_y = cmd.linear.y
+        in_wz = cmd.angular.z
+        reasons = []
         front = self.get_sector_min_range(-15, 15)
         left_front = self.get_sector_min_range(15, 55)
         right_front = self.get_sector_min_range(-55, -15)
@@ -1236,41 +1602,64 @@ class AutoSinglePointTest:
         if nearest < self.any_stop_dist:
             self.last_block_any = True
             rospy.logwarn_throttle(0.5, "too close nearest=%.3f < %.3f", nearest, self.any_stop_dist)
+            reasons.append("any_stop")
             cmd.linear.x = 0.0
             cmd.linear.y = 0.0
+            rospy.logwarn_throttle(
+                0.5,
+                "[PARK_SAFE] reasons=%s in=(%.3f,%.3f,%.3f) out=(%.3f,%.3f,%.3f) front=%.3f left=%.3f right=%.3f rear=%.3f nearest=%.3f",
+                ",".join(reasons), in_x, in_y, in_wz,
+                cmd.linear.x, cmd.linear.y, cmd.angular.z,
+                front_danger, left_side, right_side, rear_danger, nearest
+            )
             return cmd
 
         if cmd.linear.x > 0.0:
             if front_danger < self.front_stop_dist:
                 self.last_block_front = True
                 rospy.logwarn_throttle(0.5, "front blocked %.3f < %.3f", front_danger, self.front_stop_dist)
+                reasons.append("front_stop")
                 cmd.linear.x = 0.0
             elif front_danger < self.front_slow_dist:
+                reasons.append("front_slow")
                 cmd.linear.x = min(cmd.linear.x, self.front_slow_v)
 
         if cmd.linear.x < 0.0:
             if rear_danger < self.front_stop_dist:
                 self.last_block_front = True
                 rospy.logwarn_throttle(0.5, "rear blocked %.3f < %.3f", rear_danger, self.front_stop_dist)
+                reasons.append("rear_stop")
                 cmd.linear.x = 0.0
 
         if cmd.linear.y > 0.0:
             if left_danger < self.side_stop_dist:
                 self.last_block_left = True
+                reasons.append("left_stop")
                 cmd.linear.y = 0.0
         if cmd.linear.y < 0.0:
             if right_danger < self.side_stop_dist:
                 self.last_block_right = True
+                reasons.append("right_stop")
                 cmd.linear.y = 0.0
 
         if front_danger < self.front_stop_dist and abs(cmd.linear.x) > 0.0:
             self.last_block_front = True
+            reasons.append("front_stop_final")
             cmd.linear.x = 0.0
 
         if abs(cmd.linear.x) < self.min_v:
             cmd.linear.x = 0.0
         if abs(cmd.linear.y) < self.min_v:
             cmd.linear.y = 0.0
+
+        if reasons:
+            rospy.logwarn_throttle(
+                0.5,
+                "[PARK_SAFE] reasons=%s in=(%.3f,%.3f,%.3f) out=(%.3f,%.3f,%.3f) front=%.3f left=%.3f right=%.3f rear=%.3f nearest=%.3f",
+                ",".join(reasons), in_x, in_y, in_wz,
+                cmd.linear.x, cmd.linear.y, cmd.angular.z,
+                front_danger, left_side, right_side, rear_danger, nearest
+            )
 
         return cmd
 
