@@ -16,13 +16,13 @@ TebLocalPlannerROS:
   dt_ref: 0.25
   dt_hysteresis: 0.1
 
-  # 小场地里不强制覆盖路径方向，减少边走边转
+  # 全向底盘不要强行用全局路径切线覆盖 yaw，否则容易倒着跟路径走，到点后再转身
   global_plan_overwrite_orientation: false
 
   allow_init_with_backwards_motion: true
-  max_global_plan_lookahead_dist: 0.8
-  global_plan_viapoint_sep: -1
-  global_plan_prune_distance: 0.25
+  max_global_plan_lookahead_dist: 0.55
+  global_plan_viapoint_sep: 0.4
+  global_plan_prune_distance: 0.15
   exact_arc_length: false
   feasibility_check_no_poses: 5
   publish_feedback: false
@@ -35,12 +35,12 @@ TebLocalPlannerROS:
 
   max_vel_x: 0.35
   max_vel_x_backwards: 0.16
-  max_vel_y: 0.25
-  max_vel_theta: 2.2
+  max_vel_y: 0.20
+  max_vel_theta: 3.0
 
   acc_lim_x: 0.9
   acc_lim_y: 0.9
-  acc_lim_theta: 1.8
+  acc_lim_theta: 2.8
 
 
   ############################################################
@@ -48,8 +48,8 @@ TebLocalPlannerROS:
   # move_base 只负责到目标框外，不负责最终塞进框
   ############################################################
 
-  xy_goal_tolerance: 0.13
-  yaw_goal_tolerance: 0.15
+  xy_goal_tolerance: 0.16
+  yaw_goal_tolerance: 0.28
   free_goal_vel: false
   complete_global_plan: true
 
@@ -82,8 +82,8 @@ TebLocalPlannerROS:
   # footprint 已经包含车体安全余量；格子间距约 0.39m，额外安全距离不能太大
   ############################################################
 
-  min_obstacle_dist: 0.01
-  inflation_dist: 0.08
+  min_obstacle_dist: 0.015
+  inflation_dist: 0.11
 
   include_costmap_obstacles: true
   costmap_obstacles_behind_robot_dist: 0.20
@@ -107,14 +107,14 @@ TebLocalPlannerROS:
 
   weight_acc_lim_x: 1
   weight_acc_lim_y: 1
-  weight_acc_lim_theta: 5
+  weight_acc_lim_theta: 3
 
-  weight_optimaltime: 0.6
+  weight_optimaltime: 0.3
   weight_shortest_path: 0
 
   # 适度贴合全局路径，避免局部优化直接拉成穿障碍的短直线
-  weight_obstacle: 50
-  weight_inflation: 0.2
+  weight_obstacle: 60
+  weight_inflation: 0.45
   weight_viapoint: 1.0
 
 

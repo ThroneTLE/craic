@@ -1,0 +1,3 @@
+logging to /home/abot/craic/logs/demo_carto/ros/5a0d56ca-6286-11f1-ac7d-48f17fdfcd0c/rosout.log
+re-publishing aggregated messages to /rosout_agg
+subscribed to /rosout

@@ -19,5 +19,6 @@ GlobalPlanner:
 
   lethal_cost: 253
   neutral_cost: 50
-  cost_factor: 1.5
+  # 提高代价权重，让全局路径少贴障碍边框，不只追求最短距离。
+  cost_factor: 5.0
   publish_potential: false

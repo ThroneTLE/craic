@@ -1,0 +1,18 @@
+[rospy.client][INFO] 2026-06-07 23:34:28,097: init_node, name[/game_node], pid[14874]
+[xmlrpc][INFO] 2026-06-07 23:34:28,097: XML-RPC server binding to 0.0.0.0:0
+[xmlrpc][INFO] 2026-06-07 23:34:28,097: Started XML-RPC server [http://abot-robot:37269/]
+[rospy.impl.masterslave][INFO] 2026-06-07 23:34:28,098: _ready: http://abot-robot:37269/
+[rospy.init][INFO] 2026-06-07 23:34:28,100: ROS Slave URI: [http://abot-robot:37269/]
+[rospy.registration][INFO] 2026-06-07 23:34:28,101: Registering with master node http://localhost:11311
+[xmlrpc][INFO] 2026-06-07 23:34:28,103: xml rpc node: starting XML-RPC server
+[rospy.init][INFO] 2026-06-07 23:34:28,200: registered with master
+[rospy.rosout][INFO] 2026-06-07 23:34:28,200: initializing /rosout core topic
+[rospy.rosout][INFO] 2026-06-07 23:34:28,206: connected to core topic /rosout
+[rospy.simtime][INFO] 2026-06-07 23:34:28,207: /use_sim_time is not set, will not subscribe to simulated time [/clock] topic
+[rospy.internal][INFO] 2026-06-07 23:34:28,336: topic[/rosout] adding connection to [/rosout], count 0
+[snowboy][INFO] 2026-06-07 23:34:30,244: Keyword 1 detected at time: 2026-06-07 23:34:30
+[rosout][INFO] 2026-06-07 23:34:30,357: 语音唤醒成功，已发布启动任务信号！
+[rospy.core][INFO] 2026-06-07 23:34:30,453: signal_shutdown [已成功发布启动信号，关闭节点]
+[rospy.internal][INFO] 2026-06-07 23:34:30,459: topic[/rosout] removing connection to /rosout
+[rospy.impl.masterslave][INFO] 2026-06-07 23:34:30,459: 已成功发布启动信号，关闭节点
+[rospy.core][INFO] 2026-06-07 23:34:31,058: signal_shutdown [atexit]

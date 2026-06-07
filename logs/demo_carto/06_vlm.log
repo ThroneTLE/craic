@@ -1,4 +1,4 @@
-===== 2026-06-07 22:41:25 START 06_vlm =====
+===== 2026-06-07 23:34:24 START 06_vlm =====
 PWD=/home/abot/craic
 CMD=roslaunch abot_vlm vlm_node.launch
 WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.

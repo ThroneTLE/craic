@@ -1,3 +1,5 @@
-===== 2026-06-07 22:41:25 START 09_tts =====
+===== 2026-06-07 23:34:24 START 09_tts =====
 PWD=/home/abot/craic
 CMD=rosrun TTS_audio TTS.py
+
+

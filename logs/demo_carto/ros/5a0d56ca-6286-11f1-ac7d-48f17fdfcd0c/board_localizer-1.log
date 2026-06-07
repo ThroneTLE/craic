@@ -1,0 +1,176 @@
+[rospy.client][INFO] 2026-06-07 23:34:30,129: init_node, name[/board_localizer], pid[14956]
+[xmlrpc][INFO] 2026-06-07 23:34:30,130: XML-RPC server binding to 0.0.0.0:0
+[xmlrpc][INFO] 2026-06-07 23:34:30,130: Started XML-RPC server [http://abot-robot:46439/]
+[rospy.impl.masterslave][INFO] 2026-06-07 23:34:30,131: _ready: http://abot-robot:46439/
+[rospy.init][INFO] 2026-06-07 23:34:30,131: ROS Slave URI: [http://abot-robot:46439/]
+[xmlrpc][INFO] 2026-06-07 23:34:30,132: xml rpc node: starting XML-RPC server
+[rospy.registration][INFO] 2026-06-07 23:34:30,132: Registering with master node http://localhost:11311
+[rospy.init][INFO] 2026-06-07 23:34:30,233: registered with master
+[rospy.rosout][INFO] 2026-06-07 23:34:30,233: initializing /rosout core topic
+[rospy.rosout][INFO] 2026-06-07 23:34:30,237: connected to core topic /rosout
+[rospy.simtime][INFO] 2026-06-07 23:34:30,257: /use_sim_time is not set, will not subscribe to simulated time [/clock] topic
+[rosout][INFO] 2026-06-07 23:34:30,343: board_localizer started: scan=/scan_filtered grid_origin=(-0.180, -0.200) cell=0.390
+[rospy.internal][INFO] 2026-06-07 23:34:30,362: topic[/scan_filtered] adding connection to [http://abot-robot:36445/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:30,363: topic[/tf] adding connection to [http://abot-robot:36973/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:30,366: topic[/tf] adding connection to [http://abot-robot:44537/], count 1
+[rospy.internal][INFO] 2026-06-07 23:34:30,372: topic[/tf] adding connection to [http://abot-robot:44611/], count 2
+[rospy.internal][INFO] 2026-06-07 23:34:30,369: topic[/tf_static] adding connection to [http://abot-robot:44611/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:30,370: topic[/tf] adding connection to [http://abot-robot:40335/], count 1
+[rospy.internal][INFO] 2026-06-07 23:34:30,370: topic[/tf] adding connection to [http://abot-robot:33975/], count 1
+[rospy.internal][INFO] 2026-06-07 23:34:30,368: topic[/tf] adding connection to [http://abot-robot:40395/], count 1
+[rospy.internal][INFO] 2026-06-07 23:34:30,374: topic[/tf] adding connection to [http://abot-robot:34739/], count 6
+[rosout][INFO] 2026-06-07 23:34:30,443: board obstacles: valid=False confidence=0.00 boards(v=0,h=0) observed_points=0
+[rospy.internal][INFO] 2026-06-07 23:34:30,456: topic[/rosout] adding connection to [/rosout], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:30,636: topic[/board_localizer/obstacles] adding connection to [/move_base], count 0
+[rosout][INFO] 2026-06-07 23:34:31,598: board obstacles: valid=True confidence=1.00 boards(v=3,h=5) observed_points=29
+[rosout][INFO] 2026-06-07 23:34:32,765: board obstacles: valid=True confidence=1.00 boards(v=3,h=5) observed_points=29
+[rosout][INFO] 2026-06-07 23:34:33,804: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=32
+[rosout][INFO] 2026-06-07 23:34:35,002: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=32
+[rosout][INFO] 2026-06-07 23:34:36,334: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=32
+[rosout][INFO] 2026-06-07 23:34:37,939: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=32
+[rosout][INFO] 2026-06-07 23:34:38,966: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=32
+[rosout][INFO] 2026-06-07 23:34:40,161: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=32
+[rosout][INFO] 2026-06-07 23:34:41,565: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=32
+[rosout][INFO] 2026-06-07 23:34:42,797: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:43,944: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:45,245: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:46,440: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:47,499: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:48,717: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:49,865: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:50,898: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:51,908: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=31
+[rosout][INFO] 2026-06-07 23:34:53,054: board obstacles: valid=True confidence=1.00 boards(v=4,h=5) observed_points=41
+[rosout][INFO] 2026-06-07 23:34:54,230: board obstacles: valid=True confidence=1.00 boards(v=6,h=5) observed_points=56
+[rosout][INFO] 2026-06-07 23:34:55,496: board obstacles: valid=True confidence=1.00 boards(v=6,h=6) observed_points=81
+[rosout][INFO] 2026-06-07 23:34:56,730: board obstacles: valid=True confidence=1.00 boards(v=6,h=6) observed_points=111
+[rosout][INFO] 2026-06-07 23:34:58,107: board obstacles: valid=True confidence=1.00 boards(v=6,h=6) observed_points=146
+[rosout][INFO] 2026-06-07 23:34:59,533: board obstacles: valid=True confidence=1.00 boards(v=6,h=7) observed_points=164
+[rosout][INFO] 2026-06-07 23:35:00,763: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=168
+[rosout][INFO] 2026-06-07 23:35:02,111: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=170
+[rosout][INFO] 2026-06-07 23:35:03,266: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=186
+[rosout][INFO] 2026-06-07 23:35:04,676: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=187
+[rosout][INFO] 2026-06-07 23:35:05,807: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=186
+[rosout][INFO] 2026-06-07 23:35:06,963: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=183
+[rosout][INFO] 2026-06-07 23:35:08,014: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=153
+[rosout][INFO] 2026-06-07 23:35:09,086: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=141
+[rosout][INFO] 2026-06-07 23:35:10,478: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=138
+[rosout][INFO] 2026-06-07 23:35:11,862: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=97
+[rosout][INFO] 2026-06-07 23:35:12,938: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=74
+[rosout][INFO] 2026-06-07 23:35:14,162: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=74
+[rosout][INFO] 2026-06-07 23:35:15,235: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=115
+[rosout][INFO] 2026-06-07 23:35:16,664: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=143
+[rosout][INFO] 2026-06-07 23:35:18,233: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=160
+[rosout][INFO] 2026-06-07 23:35:19,663: board obstacles: valid=True confidence=1.00 boards(v=7,h=8) observed_points=181
+[rosout][INFO] 2026-06-07 23:35:20,708: board obstacles: valid=True confidence=1.00 boards(v=7,h=8) observed_points=191
+[rosout][INFO] 2026-06-07 23:35:22,193: board obstacles: valid=True confidence=1.00 boards(v=7,h=8) observed_points=220
+[rosout][INFO] 2026-06-07 23:35:23,344: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=255
+[rosout][INFO] 2026-06-07 23:35:24,415: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=251
+[rosout][INFO] 2026-06-07 23:35:25,517: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=260
+[rosout][INFO] 2026-06-07 23:35:26,536: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=260
+[rosout][INFO] 2026-06-07 23:35:27,888: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=250
+[rosout][INFO] 2026-06-07 23:35:29,196: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=236
+[rosout][INFO] 2026-06-07 23:35:30,347: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=221
+[rosout][INFO] 2026-06-07 23:35:31,547: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=204
+[rosout][INFO] 2026-06-07 23:35:32,567: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=179
+[rosout][INFO] 2026-06-07 23:35:33,779: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=189
+[rosout][INFO] 2026-06-07 23:35:34,879: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=178
+[rosout][INFO] 2026-06-07 23:35:35,923: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=186
+[rosout][INFO] 2026-06-07 23:35:37,414: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=225
+[rosout][INFO] 2026-06-07 23:35:38,669: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=246
+[rosout][INFO] 2026-06-07 23:35:39,843: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=244
+[rosout][INFO] 2026-06-07 23:35:40,930: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=243
+[rosout][INFO] 2026-06-07 23:35:41,994: board obstacles: valid=True confidence=1.00 boards(v=8,h=7) observed_points=182
+[rosout][INFO] 2026-06-07 23:35:43,050: board obstacles: valid=True confidence=1.00 boards(v=8,h=6) observed_points=174
+[rosout][INFO] 2026-06-07 23:35:44,475: board obstacles: valid=True confidence=1.00 boards(v=8,h=6) observed_points=172
+[rosout][INFO] 2026-06-07 23:35:45,722: board obstacles: valid=True confidence=1.00 boards(v=8,h=6) observed_points=150
+[rosout][INFO] 2026-06-07 23:35:46,969: board obstacles: valid=True confidence=1.00 boards(v=8,h=6) observed_points=167
+[rosout][INFO] 2026-06-07 23:35:47,984: board obstacles: valid=True confidence=1.00 boards(v=8,h=7) observed_points=195
+[rosout][INFO] 2026-06-07 23:35:49,098: board obstacles: valid=True confidence=1.00 boards(v=8,h=7) observed_points=208
+[rosout][INFO] 2026-06-07 23:35:50,265: board obstacles: valid=True confidence=1.00 boards(v=8,h=7) observed_points=186
+[rosout][INFO] 2026-06-07 23:35:51,344: board obstacles: valid=True confidence=1.00 boards(v=8,h=7) observed_points=193
+[rosout][INFO] 2026-06-07 23:35:52,786: board obstacles: valid=True confidence=1.00 boards(v=8,h=7) observed_points=214
+[rosout][INFO] 2026-06-07 23:35:53,858: board obstacles: valid=True confidence=1.00 boards(v=8,h=7) observed_points=194
+[rosout][INFO] 2026-06-07 23:35:54,869: board obstacles: valid=True confidence=1.00 boards(v=8,h=7) observed_points=190
+[rosout][INFO] 2026-06-07 23:35:56,261: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=185
+[rosout][INFO] 2026-06-07 23:35:57,446: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=195
+[rosout][INFO] 2026-06-07 23:35:58,827: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=197
+[rosout][INFO] 2026-06-07 23:35:59,956: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=204
+[rosout][INFO] 2026-06-07 23:36:01,105: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=208
+[rosout][INFO] 2026-06-07 23:36:02,603: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=233
+[rosout][INFO] 2026-06-07 23:36:03,621: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=212
+[rosout][INFO] 2026-06-07 23:36:05,006: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=214
+[rosout][INFO] 2026-06-07 23:36:06,430: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=258
+[rosout][INFO] 2026-06-07 23:36:07,759: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=254
+[rosout][INFO] 2026-06-07 23:36:08,959: board obstacles: valid=True confidence=1.00 boards(v=7,h=8) observed_points=241
+[rosout][INFO] 2026-06-07 23:36:10,036: board obstacles: valid=True confidence=1.00 boards(v=7,h=8) observed_points=222
+[rosout][INFO] 2026-06-07 23:36:11,279: board obstacles: valid=True confidence=1.00 boards(v=7,h=8) observed_points=194
+[rosout][INFO] 2026-06-07 23:36:12,396: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=189
+[rosout][INFO] 2026-06-07 23:36:13,429: board obstacles: valid=True confidence=1.00 boards(v=5,h=8) observed_points=158
+[rosout][INFO] 2026-06-07 23:36:14,732: board obstacles: valid=True confidence=1.00 boards(v=5,h=8) observed_points=98
+[rosout][INFO] 2026-06-07 23:36:16,186: board obstacles: valid=True confidence=1.00 boards(v=5,h=8) observed_points=82
+[rosout][INFO] 2026-06-07 23:36:17,499: board obstacles: valid=True confidence=1.00 boards(v=5,h=8) observed_points=74
+[rosout][INFO] 2026-06-07 23:36:18,960: board obstacles: valid=True confidence=1.00 boards(v=5,h=8) observed_points=127
+[rosout][INFO] 2026-06-07 23:36:20,401: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=135
+[rosout][INFO] 2026-06-07 23:36:21,589: board obstacles: valid=True confidence=1.00 boards(v=6,h=8) observed_points=140
+[rosout][INFO] 2026-06-07 23:36:22,590: board obstacles: valid=True confidence=1.00 boards(v=7,h=8) observed_points=134
+[rosout][INFO] 2026-06-07 23:36:23,768: board obstacles: valid=True confidence=1.00 boards(v=7,h=8) observed_points=159
+[rosout][INFO] 2026-06-07 23:36:25,112: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=178
+[rosout][INFO] 2026-06-07 23:36:26,303: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=180
+[rosout][INFO] 2026-06-07 23:36:27,341: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=180
+[rosout][INFO] 2026-06-07 23:36:28,699: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=173
+[rosout][INFO] 2026-06-07 23:36:29,827: board obstacles: valid=True confidence=1.00 boards(v=8,h=8) observed_points=157
+[rospy.core][INFO] 2026-06-07 23:36:29,905: signal_shutdown [signal-2]
+[rospy.internal][INFO] 2026-06-07 23:36:29,917: topic[/board_localizer/obstacles] removing connection to /move_base
+[rospy.internal][INFO] 2026-06-07 23:36:29,918: topic[/rosout] removing connection to /rosout
+[rospy.internal][INFO] 2026-06-07 23:36:29,919: topic[/tf_static] removing connection to http://abot-robot:44611/
+[rospy.internal][INFO] 2026-06-07 23:36:29,919: topic[/tf_static] removing connection to http://abot-robot:44611/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,920: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,922: topic[/scan_filtered] removing connection to http://abot-robot:36445/
+[rospy.internal][INFO] 2026-06-07 23:36:29,922: topic[/tf] removing connection to http://abot-robot:36973/
+[rospy.internal][INFO] 2026-06-07 23:36:29,922: topic[/tf] removing connection to http://abot-robot:44537/
+[rospy.internal][INFO] 2026-06-07 23:36:29,923: topic[/tf] removing connection to http://abot-robot:44537/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,924: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,924: topic[/tf] removing connection to http://abot-robot:40335/
+[rospy.internal][INFO] 2026-06-07 23:36:29,924: topic[/tf] removing connection to http://abot-robot:40335/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,924: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,924: topic[/tf] removing connection to http://abot-robot:33975/
+[rospy.internal][INFO] 2026-06-07 23:36:29,928: topic[/tf] removing connection to http://abot-robot:44611/
+[rospy.internal][INFO] 2026-06-07 23:36:29,928: topic[/tf] removing connection to http://abot-robot:44611/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,929: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,929: topic[/tf] removing connection to http://abot-robot:40395/
+[rospy.internal][INFO] 2026-06-07 23:36:29,929: topic[/tf] removing connection to http://abot-robot:40395/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,929: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,929: topic[/tf] removing connection to http://abot-robot:34739/
+[rospy.impl.masterslave][INFO] 2026-06-07 23:36:29,930: signal-2
+[rospy.core][INFO] 2026-06-07 23:36:30,065: signal_shutdown [atexit]

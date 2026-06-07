@@ -1,0 +1,153 @@
+[rospy.client][INFO] 2026-06-07 23:34:29,094: init_node, name[/navigation_node], pid[14824]
+[xmlrpc][INFO] 2026-06-07 23:34:29,094: XML-RPC server binding to 0.0.0.0:0
+[xmlrpc][INFO] 2026-06-07 23:34:29,095: Started XML-RPC server [http://abot-robot:40891/]
+[rospy.impl.masterslave][INFO] 2026-06-07 23:34:29,095: _ready: http://abot-robot:40891/
+[rospy.init][INFO] 2026-06-07 23:34:29,095: ROS Slave URI: [http://abot-robot:40891/]
+[rospy.registration][INFO] 2026-06-07 23:34:29,097: Registering with master node http://localhost:11311
+[xmlrpc][INFO] 2026-06-07 23:34:29,099: xml rpc node: starting XML-RPC server
+[rospy.init][INFO] 2026-06-07 23:34:29,196: registered with master
+[rospy.rosout][INFO] 2026-06-07 23:34:29,196: initializing /rosout core topic
+[rospy.rosout][INFO] 2026-06-07 23:34:29,198: connected to core topic /rosout
+[rospy.simtime][INFO] 2026-06-07 23:34:29,199: /use_sim_time is not set, will not subscribe to simulated time [/clock] topic
+[rosout][INFO] 2026-06-07 23:34:29,204: 导航节点初始化成功! 等待语音唤醒信号...
+[rospy.internal][INFO] 2026-06-07 23:34:29,419: topic[/rosout] adding connection to [/rosout], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,267: topic[/move_base/feedback] adding connection to [http://abot-robot:45357/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,268: topic[/move_base/status] adding connection to [http://abot-robot:45357/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,269: topic[/move_base/result] adding connection to [http://abot-robot:45357/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,370: topic[/move_base/goal] adding connection to [/move_base], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,371: topic[/move_base/cancel] adding connection to [/move_base], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,383: topic[/tf] adding connection to [http://abot-robot:44537/], count 0
+[rosout][INFO] 2026-06-07 23:34:31,383: 等待视觉大模型检测服务 /fruit_detection 可用...
+[rospy.internal][INFO] 2026-06-07 23:34:31,387: topic[/tf] adding connection to [http://abot-robot:40395/], count 1
+[rospy.internal][INFO] 2026-06-07 23:34:31,389: topic[/tf] adding connection to [http://abot-robot:40335/], count 2
+[rospy.internal][INFO] 2026-06-07 23:34:31,394: topic[/tf] adding connection to [http://abot-robot:33975/], count 3
+[rosout][INFO] 2026-06-07 23:34:31,391: 视觉大模型检测服务连接成功！
+[rosout][INFO] 2026-06-07 23:34:31,394: 等待TTS服务 /tts_service 可用...
+[rospy.internal][INFO] 2026-06-07 23:34:31,397: topic[/tf] adding connection to [http://abot-robot:44611/], count 4
+[rospy.internal][INFO] 2026-06-07 23:34:31,398: topic[/tf] adding connection to [http://abot-robot:36973/], count 5
+[rospy.internal][INFO] 2026-06-07 23:34:31,400: topic[/tf] adding connection to [http://abot-robot:34739/], count 6
+[rosout][INFO] 2026-06-07 23:34:31,399: TTS服务连接成功！
+[rosout][INFO] 2026-06-07 23:34:31,431: 等待IMU传感器激活...
+[rospy.internal][INFO] 2026-06-07 23:34:31,453: topic[/tf_static] adding connection to [http://abot-robot:44611/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,464: topic[/odom] adding connection to [http://abot-robot:46159/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,459: topic[/scan] adding connection to [http://abot-robot:40369/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,484: topic[/imu/data] adding connection to [http://abot-robot:40395/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:31,565: topic[/cmd_vel] adding connection to [/abot_driver], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:42,641: topic impl's ref count is zero, deleting topic /imu/data...
+[rospy.internal][INFO] 2026-06-07 23:34:42,641: topic[/imu/data] removing connection to http://abot-robot:40395/
+[rosout][INFO] 2026-06-07 23:34:42,649: IMU传感器已激活，5秒后开始任务...
+[rosout][INFO] 2026-06-07 23:34:52,272: 开始执行任务！
+[rosout][INFO] 2026-06-07 23:34:52,275: 
+=== 开始处理第1个检测点 ===
+[rosout][INFO] 2026-06-07 23:34:52,377: 导航到检测点 → 目标点索引10
+[rosout][INFO] 2026-06-07 23:34:52,379: [Navi] 前往目标点: [0.29, 1.55, 178.6] (timeout=60s)
+[rosout][INFO] 2026-06-07 23:34:52,383: [Navi] 导航已激活
+[rosout][INFO] 2026-06-07 23:35:03,083: 导航完成! status=3 result=
+[rosout][INFO] 2026-06-07 23:35:03,116: 到达目标点 [0.29, 1.55, 178.6] 成功! 
+[rosout][INFO] 2026-06-07 23:35:08,324: 视觉大模型识别结果: 31
+[rosout][INFO] 2026-06-07 23:35:08,326: 当前检测点10结果: 31
+[rosout][INFO] 2026-06-07 23:35:08,329: 收集到任务编号: 1 (原始VLM: 31)
+[rosout][INFO] 2026-06-07 23:35:12,776: TTS播报成功: 已检测第1条线索为31号 | 响应: TTS处理完成
+[rosout][INFO] 2026-06-07 23:35:12,780: 
+=== 开始处理第1个检测点 ===
+[rosout][INFO] 2026-06-07 23:35:12,882: 导航到检测点 → 目标点索引11
+[rosout][INFO] 2026-06-07 23:35:12,885: [Navi] 前往目标点: [1.57, 2.84, 90.2] (timeout=60s)
+[rosout][INFO] 2026-06-07 23:35:12,889: [Navi] 导航已激活
+[rosout][INFO] 2026-06-07 23:35:37,090: 导航完成! status=3 result=
+[rosout][INFO] 2026-06-07 23:35:37,116: 到达目标点 [1.57, 2.84, 90.2] 成功! 
+[rosout][INFO] 2026-06-07 23:35:41,287: 视觉大模型识别结果: 无
+[rosout][INFO] 2026-06-07 23:35:41,288: 当前检测点11结果: 无
+[rosout][INFO] 2026-06-07 23:35:41,289: 
+=== 开始处理第1个检测点 ===
+[rosout][INFO] 2026-06-07 23:35:41,391: 导航到检测点 → 目标点索引12
+[rosout][INFO] 2026-06-07 23:35:41,392: [Navi] 前往目标点: [2.92, 1.56, 1.9] (timeout=60s)
+[rosout][INFO] 2026-06-07 23:35:41,395: [Navi] 导航已激活
+[rosout][INFO] 2026-06-07 23:36:07,295: 导航完成! status=3 result=
+[rosout][INFO] 2026-06-07 23:36:07,300: 到达目标点 [2.92, 1.56, 1.9] 成功! 
+[rosout][INFO] 2026-06-07 23:36:11,767: 视觉大模型识别结果: 50
+[rosout][INFO] 2026-06-07 23:36:11,768: 当前检测点12结果: 50
+[rosout][INFO] 2026-06-07 23:36:11,770: 收集到任务编号: 8 (原始VLM: 50)
+[rosout][INFO] 2026-06-07 23:36:16,252: TTS播报成功: 已检测第2条线索为50号 | 响应: TTS处理完成
+[rosout][INFO] 2026-06-07 23:36:16,254: 
+=== 开始处理第1个检测点 ===
+[rosout][INFO] 2026-06-07 23:36:16,355: 导航到检测点 → 目标点索引13
+[rosout][INFO] 2026-06-07 23:36:16,357: [Navi] 前往目标点: [1.7, 0.36, -100.2] (timeout=60s)
+[rosout][INFO] 2026-06-07 23:36:16,359: [Navi] 导航已激活
+[rosout][INFO] 2026-06-07 23:36:25,860: 导航完成! status=3 result=
+[rosout][INFO] 2026-06-07 23:36:25,891: 到达目标点 [1.7, 0.36, -100.2] 成功! 
+[rospy.internal][INFO] 2026-06-07 23:36:29,967: topic[/odom] removing connection to http://abot-robot:46159/
+[rospy.core][INFO] 2026-06-07 23:36:29,970: signal_shutdown [signal-2]
+[rospy.internal][INFO] 2026-06-07 23:36:29,976: topic[/rosout] removing connection to /rosout
+[rospy.internal][INFO] 2026-06-07 23:36:29,976: topic[/move_base/goal] removing connection to /move_base
+[rospy.internal][INFO] 2026-06-07 23:36:29,977: topic[/move_base/cancel] removing connection to /move_base
+[rospy.internal][INFO] 2026-06-07 23:36:29,977: topic[/cmd_vel] removing connection to /abot_driver
+[rospy.internal][INFO] 2026-06-07 23:36:29,977: topic[/tf_static] removing connection to http://abot-robot:44611/
+[rospy.internal][INFO] 2026-06-07 23:36:29,977: topic[/move_base/feedback] removing connection to http://abot-robot:45357/
+[rospy.internal][INFO] 2026-06-07 23:36:29,978: topic[/move_base/feedback] removing connection to http://abot-robot:45357/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,978: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,979: topic[/tf] removing connection to http://abot-robot:44537/
+[rospy.internal][INFO] 2026-06-07 23:36:29,979: topic[/tf] removing connection to http://abot-robot:40395/
+[rospy.internal][INFO] 2026-06-07 23:36:29,980: topic[/tf] removing connection to http://abot-robot:40335/
+[rospy.internal][INFO] 2026-06-07 23:36:29,980: topic[/tf] removing connection to http://abot-robot:40335/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,980: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,980: topic[/tf] removing connection to http://abot-robot:33975/
+[rospy.internal][INFO] 2026-06-07 23:36:29,980: topic[/tf] removing connection to http://abot-robot:44611/
+[rospy.internal][INFO] 2026-06-07 23:36:29,981: topic[/tf] removing connection to http://abot-robot:44611/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,981: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,981: topic[/tf] removing connection to http://abot-robot:36973/
+[rospy.internal][INFO] 2026-06-07 23:36:29,981: topic[/tf] removing connection to http://abot-robot:36973/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,981: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,982: topic[/tf] removing connection to http://abot-robot:34739/
+[rospy.internal][INFO] 2026-06-07 23:36:29,982: topic[/move_base/status] removing connection to http://abot-robot:45357/
+[rospy.internal][INFO] 2026-06-07 23:36:29,982: topic[/move_base/status] removing connection to http://abot-robot:45357/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,982: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,983: topic[/move_base/result] removing connection to http://abot-robot:45357/
+[rospy.internal][INFO] 2026-06-07 23:36:29,983: topic[/move_base/result] removing connection to http://abot-robot:45357/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,983: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.internal][INFO] 2026-06-07 23:36:29,983: topic[/scan] removing connection to http://abot-robot:40369/
+[rospy.internal][INFO] 2026-06-07 23:36:29,983: topic[/scan] removing connection to http://abot-robot:40369/
+[rospy.topics][ERROR] 2026-06-07 23:36:29,983: Traceback (most recent call last):
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/topics.py", line 326, in close
+    c.close()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/rospy/impl/tcpros_base.py", line 858, in close
+    self.socket.close()
+AttributeError: 'NoneType' object has no attribute 'close'
+
+[rospy.impl.masterslave][INFO] 2026-06-07 23:36:29,984: signal-2
+[rospy.core][INFO] 2026-06-07 23:36:30,088: signal_shutdown [atexit]

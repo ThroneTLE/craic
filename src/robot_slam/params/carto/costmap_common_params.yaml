@@ -7,10 +7,10 @@ raytrace_range: 3.5
 # y 左右 0.180m
 footprint: [[0.205, 0.18], [0.205, -0.18], [-0.19, -0.18], [-0.19, 0.18]]
 
-# move_base 阶段要防止轮子贴障碍
-# 目标框最终入框不靠 move_base 完成，所以这里可以稍微保守
-inflation_radius: 0.15
-cost_scaling_factor: 4.0
+# 全局规划阶段把边框周围的代价场做宽，让全局路径优先走中间。
+# local_costmap 使用 local_costmap_common_params.yaml，不受这里影响。
+inflation_radius: 0.25
+cost_scaling_factor: 2.0
 
 map_type: costmap
 

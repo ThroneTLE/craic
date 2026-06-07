@@ -1,0 +1,20 @@
+[rospy.client][INFO] 2026-06-07 23:34:29,820: init_node, name[/top_view_shot_node], pid[14847]
+[xmlrpc][INFO] 2026-06-07 23:34:29,821: XML-RPC server binding to 0.0.0.0:0
+[xmlrpc][INFO] 2026-06-07 23:34:29,821: Started XML-RPC server [http://abot-robot:40349/]
+[rospy.impl.masterslave][INFO] 2026-06-07 23:34:29,822: _ready: http://abot-robot:40349/
+[rospy.registration][INFO] 2026-06-07 23:34:29,823: Registering with master node http://localhost:11311
+[xmlrpc][INFO] 2026-06-07 23:34:29,823: xml rpc node: starting XML-RPC server
+[rospy.init][INFO] 2026-06-07 23:34:29,824: ROS Slave URI: [http://abot-robot:40349/]
+[rospy.init][INFO] 2026-06-07 23:34:29,824: registered with master
+[rospy.rosout][INFO] 2026-06-07 23:34:29,824: initializing /rosout core topic
+[rospy.rosout][INFO] 2026-06-07 23:34:29,829: connected to core topic /rosout
+[rospy.simtime][INFO] 2026-06-07 23:34:29,830: /use_sim_time is not set, will not subscribe to simulated time [/clock] topic
+[rosout][INFO] 2026-06-07 23:34:29,835: 视觉大模型模块导入成功！
+[rosout][INFO] 2026-06-07 23:34:29,837: 准备识别...
+[rospy.internal][INFO] 2026-06-07 23:34:29,847: topic[/usb_cam/image_raw] adding connection to [http://abot-robot:39109/], count 0
+[rospy.internal][INFO] 2026-06-07 23:34:30,045: topic[/rosout] adding connection to [/rosout], count 0
+[rospy.core][INFO] 2026-06-07 23:36:29,939: signal_shutdown [signal-2]
+[rospy.internal][INFO] 2026-06-07 23:36:29,941: topic[/rosout] removing connection to /rosout
+[rospy.internal][INFO] 2026-06-07 23:36:29,941: topic[/usb_cam/image_raw] removing connection to http://abot-robot:39109/
+[rospy.impl.masterslave][INFO] 2026-06-07 23:36:29,942: signal-2
+[rospy.core][INFO] 2026-06-07 23:36:30,048: signal_shutdown [atexit]

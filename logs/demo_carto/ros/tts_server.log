@@ -1,13 +1,17 @@
-[rospy.client][INFO] 2026-06-07 22:41:27,501: init_node, name[/tts_server], pid[28378]
-[xmlrpc][INFO] 2026-06-07 22:41:27,508: XML-RPC server binding to 0.0.0.0:0
-[xmlrpc][INFO] 2026-06-07 22:41:27,509: Started XML-RPC server [http://abot-robot:45405/]
-[rospy.impl.masterslave][INFO] 2026-06-07 22:41:27,509: _ready: http://abot-robot:45405/
-[rospy.registration][INFO] 2026-06-07 22:41:27,509: Registering with master node http://localhost:11311
-[xmlrpc][INFO] 2026-06-07 22:41:27,510: xml rpc node: starting XML-RPC server
-[rospy.init][INFO] 2026-06-07 22:41:27,511: ROS Slave URI: [http://abot-robot:45405/]
-[rospy.init][INFO] 2026-06-07 22:41:27,511: registered with master
-[rospy.rosout][INFO] 2026-06-07 22:41:27,511: initializing /rosout core topic
-[rospy.rosout][INFO] 2026-06-07 22:41:27,535: connected to core topic /rosout
-[rospy.simtime][INFO] 2026-06-07 22:41:27,542: /use_sim_time is not set, will not subscribe to simulated time [/clock] topic
-[rosout][INFO] 2026-06-07 22:41:27,561: TTS服务已启动 (REST API)，等待请求...
-[rospy.internal][INFO] 2026-06-07 22:41:27,825: topic[/rosout] adding connection to [/rosout], count 0
+[rospy.client][INFO] 2026-06-07 23:34:26,548: init_node, name[/tts_server], pid[14672]
+[xmlrpc][INFO] 2026-06-07 23:34:26,549: XML-RPC server binding to 0.0.0.0:0
+[xmlrpc][INFO] 2026-06-07 23:34:26,549: Started XML-RPC server [http://abot-robot:46883/]
+[rospy.impl.masterslave][INFO] 2026-06-07 23:34:26,549: _ready: http://abot-robot:46883/
+[rospy.registration][INFO] 2026-06-07 23:34:26,550: Registering with master node http://localhost:11311
+[xmlrpc][INFO] 2026-06-07 23:34:26,550: xml rpc node: starting XML-RPC server
+[rospy.init][INFO] 2026-06-07 23:34:26,551: ROS Slave URI: [http://abot-robot:46883/]
+[rospy.init][INFO] 2026-06-07 23:34:26,551: registered with master
+[rospy.rosout][INFO] 2026-06-07 23:34:26,551: initializing /rosout core topic
+[rospy.rosout][INFO] 2026-06-07 23:34:26,571: connected to core topic /rosout
+[rospy.simtime][INFO] 2026-06-07 23:34:26,581: /use_sim_time is not set, will not subscribe to simulated time [/clock] topic
+[rosout][INFO] 2026-06-07 23:34:26,601: TTS服务已启动 (REST API)，等待请求...
+[rospy.internal][INFO] 2026-06-07 23:34:26,800: topic[/rosout] adding connection to [/rosout], count 0
+[rosout][INFO] 2026-06-07 23:35:08,333: 收到TTS请求: 已检测第1条线索为31号
+[rosout][INFO] 2026-06-07 23:35:09,062: 音频保存至: output.mp3, 文件大小: 68640 字节
+[rosout][INFO] 2026-06-07 23:36:11,780: 收到TTS请求: 已检测第2条线索为50号
+[rosout][INFO] 2026-06-07 23:36:12,646: 音频保存至: output.mp3, 文件大小: 66720 字节

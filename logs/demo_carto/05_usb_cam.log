@@ -1,8 +1,8 @@
-===== 2026-06-07 22:41:25 START 05_usb_cam =====
+===== 2026-06-07 23:34:24 START 05_usb_cam =====
 PWD=/home/abot/craic
 CMD=roslaunch usb_cam usb_cam-test.launch
 WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
 WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
-[33m[ WARN] [1780843288.159637943]: Camera calibration file /home/abot/.ros/camera_info/head_camera.yaml not found.[0m
-[33m[ WARN] [1780843289.155268448]: unknown control 'focus_auto'
+[33m[ WARN] [1780846467.562001708]: Camera calibration file /home/abot/.ros/camera_info/head_camera.yaml not found.[0m
+[33m[ WARN] [1780846468.561689730]: unknown control 'focus_auto'
 [0m

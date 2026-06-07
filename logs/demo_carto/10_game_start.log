@@ -1,4 +1,4 @@
-===== 2026-06-07 22:41:25 START 10_game_start =====
+===== 2026-06-07 23:34:24 START 10_game_start =====
 PWD=/home/abot/craic
 CMD=roslaunch robot_slam GameStart.launch
 WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
@@ -6,13 +6,13 @@ WARNING: Package name "TTS_audio" does not follow the naming conventions. It sho
 /opt/ros/melodic/lib/python2.7/dist-packages/roslib/packages.py:470: UnicodeWarning: Unicode equal comparison failed to convert both arguments to Unicode - interpreting them as being unequal
   if resource_name in files:
 Listening... Press Ctrl+C to exit
-[INFO] [1780843299.998573]: 语音唤醒成功，已发布启动任务信号！
-... logging to /home/abot/craic/logs/demo_carto/ros/f370b04e-627e-11f1-a028-48f17fdfcd0c/roslaunch-abot-robot-28353.log
+[INFO] [1780846470.357890]: 语音唤醒成功，已发布启动任务信号！
+... logging to /home/abot/craic/logs/demo_carto/ros/5a0d56ca-6286-11f1-ac7d-48f17fdfcd0c/roslaunch-abot-robot-14677.log
 Checking log directory for disk usage. This may take a while.
 Press Ctrl-C to interrupt
 Done checking log file disk usage. Usage is <1GB.
 ]2;/home/abot/craic/src/robot_slam/launch/GameStart.launch
-[1mstarted roslaunch server http://abot-robot:40937/[0m
+[1mstarted roslaunch server http://abot-robot:35903/[0m
 
 SUMMARY
 ========
@@ -27,11 +27,11 @@ NODES
 
 [1mROS_MASTER_URI=http://localhost:11311[0m
 ]2;/home/abot/craic/src/robot_slam/launch/GameStart.launch http://localhost:11311
-[1mprocess[game_node-1]: started with pid [28568][0m
+[1mprocess[game_node-1]: started with pid [14874][0m
 [1m[game_node-1] process has finished cleanly
-log file: /home/abot/craic/logs/demo_carto/ros/f370b04e-627e-11f1-a028-48f17fdfcd0c/game_node-1*.log[0m
+log file: /home/abot/craic/logs/demo_carto/ros/5a0d56ca-6286-11f1-ac7d-48f17fdfcd0c/game_node-1*.log[0m
 all processes on machine have died, roslaunch will exit
 shutting down processing monitor...
 ... shutting down processing monitor complete
 [1mdone[0m
-===== 2026-06-07 22:41:41 END 10_game_start rc=0 =====
+===== 2026-06-07 23:34:31 END 10_game_start rc=0 =====
