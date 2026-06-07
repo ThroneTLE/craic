@@ -96,9 +96,18 @@ class navigation_demo:
 
         # 10. 检测点拍照前预对准参数
         self.detect_prealign_enabled = rospy.get_param("~detect_prealign_enabled", True)
+        self.detect_prealign_mode = rospy.get_param("~detect_prealign_mode", "back")
         self.detect_prealign_distance = rospy.get_param("~detect_prealign_distance", 0.35)
         self.detect_prealign_timeout = rospy.get_param("~detect_prealign_timeout", 25)
+        self.detect_yaw_align_at_prealign = rospy.get_param("~detect_yaw_align_at_prealign", True)
         self.detect_final_timeout = rospy.get_param("~detect_final_timeout", 35)
+        self.detect_locked_final_approach = rospy.get_param("~detect_locked_final_approach", True)
+        self.detect_locked_approach_speed = rospy.get_param("~detect_locked_approach_speed", 0.15)
+        self.detect_locked_approach_yaw_hold = rospy.get_param("~detect_locked_approach_yaw_hold", True)
+        self.detect_locked_approach_yaw_kp = rospy.get_param("~detect_locked_approach_yaw_kp", 0.8)
+        self.detect_locked_approach_max_yaw_vel = rospy.get_param("~detect_locked_approach_max_yaw_vel", 0.20)
+        self.detect_locked_approach_timeout_margin = rospy.get_param("~detect_locked_approach_timeout_margin", 1.0)
+        self.detect_yaw_align_at_photo = rospy.get_param("~detect_yaw_align_at_photo", False)
         self.detect_yaw_align_enabled = rospy.get_param("~detect_yaw_align_enabled", True)
         self.detect_yaw_tolerance = rospy.get_param("~detect_yaw_tolerance", 0.06)
         self.detect_yaw_align_timeout = rospy.get_param("~detect_yaw_align_timeout", 3.0)
@@ -233,13 +242,44 @@ class navigation_demo:
         self.is_adjusting = False
 
     def make_detection_prealign_goal(self, target):
-        """按目标朝向反方向退一段，生成检测点预对准位姿"""
+        """按配置方向生成检测点预对准位姿"""
         yaw_rad = target[2] / 180.0 * pi
+        forward_x = np.cos(yaw_rad)
+        forward_y = np.sin(yaw_rad)
+        left_x = -np.sin(yaw_rad)
+        left_y = np.cos(yaw_rad)
+        mode = str(self.detect_prealign_mode).strip().lower()
+        distance = self.detect_prealign_distance
+
+        if mode == "front":
+            offset_x = forward_x * distance
+            offset_y = forward_y * distance
+        elif mode == "left":
+            offset_x = left_x * distance
+            offset_y = left_y * distance
+        elif mode == "right":
+            offset_x = -left_x * distance
+            offset_y = -left_y * distance
+        else:
+            offset_x = -forward_x * distance
+            offset_y = -forward_y * distance
+
         return [
-            target[0] - self.detect_prealign_distance * np.cos(yaw_rad),
-            target[1] - self.detect_prealign_distance * np.sin(yaw_rad),
+            target[0] + offset_x,
+            target[1] + offset_y,
             target[2]
         ]
+
+    def get_locked_approach_velocity(self, speed):
+        """根据预对准方向生成保持当前yaw时的base_link速度"""
+        mode = str(self.detect_prealign_mode).strip().lower()
+        if mode == "front":
+            return -speed, 0.0
+        if mode == "left":
+            return 0.0, -speed
+        if mode == "right":
+            return 0.0, speed
+        return speed, 0.0
 
     def wait_for_odom_yaw(self, timeout=1.0):
         """等待里程计航向角可用"""
@@ -297,6 +337,60 @@ class navigation_demo:
                 rospy.sleep(self.detect_photo_settle_time)
                 return False
 
+            rate.sleep()
+
+        self.stop_movement()
+        return False
+
+    def locked_approach_detection_point(self, yaw_deg):
+        """
+        从预对准点到拍照点的短距离直行段。
+        不再交给move_base，避免TEB在最后0.6m重新优化yaw。
+        """
+        distance = self.detect_prealign_distance
+        speed = abs(self.detect_locked_approach_speed)
+        if distance <= 0.0 or speed <= 0.0:
+            rospy.logwarn("锁yaw靠近参数无效: distance=%.3f speed=%.3f" %
+                          (distance, speed))
+            return False
+        if not self.wait_for_odom_yaw(timeout=1.0):
+            rospy.logwarn("未收到里程计yaw，无法锁yaw靠近拍照点")
+            return False
+
+        target_yaw = yaw_deg / 180.0 * pi
+        travel_time = distance / speed
+        timeout = travel_time + self.detect_locked_approach_timeout_margin
+        cmd_x, cmd_y = self.get_locked_approach_velocity(speed)
+        start_time = rospy.Time.now()
+        rate = rospy.Rate(20)
+
+        rospy.loginfo("锁yaw靠近拍照点: mode=%s distance=%.3fm speed=%.3fm/s vx=%.3f vy=%.3f time=%.2fs target=%.1fdeg" %
+                      (self.detect_prealign_mode, distance, speed, cmd_x, cmd_y, travel_time, yaw_deg))
+        while not rospy.is_shutdown():
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            if elapsed >= travel_time:
+                self.stop_movement()
+                rospy.sleep(self.detect_photo_settle_time)
+                return True
+            if elapsed > timeout:
+                self.stop_movement()
+                rospy.logwarn("锁yaw靠近拍照点超时")
+                return False
+
+            cmd = Twist()
+            cmd.linear.x = cmd_x
+            cmd.linear.y = cmd_y
+
+            if self.detect_locked_approach_yaw_hold:
+                yaw_error = self.normalize_angle(target_yaw - self.current_yaw)
+                if abs(yaw_error) > self.detect_yaw_tolerance:
+                    cmd.angular.z = self.clamp(
+                        self.detect_locked_approach_yaw_kp * yaw_error,
+                        -self.detect_locked_approach_max_yaw_vel,
+                        self.detect_locked_approach_max_yaw_vel
+                    )
+
+            self.pub.publish(cmd)
             rate.sleep()
 
         self.stop_movement()
@@ -454,22 +548,36 @@ class navigation_demo:
         if not result:
             self.move_base.cancel_goal()
             rospy.loginfo("导航超时，取消目标")
+            return False
         else:
             if self.move_base.get_state() == GoalStatus.SUCCEEDED:
                 rospy.loginfo("到达目标点 %s 成功! " % p)
-        return True
+                return True
+            rospy.logwarn("导航未成功到达目标点 %s，state=%s" %
+                          (p, self.move_base.get_state()))
+            return False
 
     def goto_detection_point(self, point):
         """检测点导航：先用同yaw预对准，再进入原拍照点并短闭环修正yaw"""
         target = goals[point]
+        prealign_ok = True
         if self.detect_prealign_enabled and self.detect_prealign_distance > 0.0:
             prealign_goal = self.make_detection_prealign_goal(target)
             rospy.loginfo("检测点%s预对准目标: %s" % (point, prealign_goal))
-            self.goto(prealign_goal, timeout=self.detect_prealign_timeout)
+            prealign_ok = self.goto(prealign_goal, timeout=self.detect_prealign_timeout)
+            if self.detect_yaw_align_at_prealign:
+                self.align_detection_yaw(target[2])
 
-        rospy.loginfo("检测点%s原始拍照目标: %s" % (point, target))
-        self.goto(target, timeout=self.detect_final_timeout)
-        self.align_detection_yaw(target[2])
+        if self.detect_locked_final_approach:
+            if not prealign_ok:
+                rospy.logwarn("检测点%s预对准未确认成功，仍使用锁yaw靠近，避免再次发送最终点move_base" % point)
+            self.locked_approach_detection_point(target[2])
+        else:
+            rospy.loginfo("检测点%s原始拍照目标: %s" % (point, target))
+            self.goto(target, timeout=self.detect_final_timeout)
+
+        if self.detect_yaw_align_at_photo:
+            self.align_detection_yaw(target[2])
         if self.detect_photo_settle_time > 0:
             rospy.sleep(self.detect_photo_settle_time)
         return True

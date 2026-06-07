@@ -33,14 +33,14 @@ TebLocalPlannerROS:
   # 比之前略稳，防止贴障碍时冲得太快s
   ############################################################
 
-  max_vel_x: 0.45
-  max_vel_x_backwards: 0.35
-  max_vel_y: 0.45
-  max_vel_theta: 4.3
+  max_vel_x: 0.5
+  max_vel_x_backwards: 0.5
+  max_vel_y: 0.5
+  max_vel_theta: 4.5
 
-  acc_lim_x: 1.2
-  acc_lim_y: 1.2
-  acc_lim_theta: 2.8
+  acc_lim_x: 1.8
+  acc_lim_y: 1.8
+  acc_lim_theta: 2.2
 
 
   ############################################################
