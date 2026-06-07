@@ -18,7 +18,7 @@
       <!-- 检测点10-13：先退一段同yaw预对准，再到原拍照点并低速修yaw -->
       <param name="detect_prealign_enabled" value="true"/>
       <param name="detect_prealign_mode" value="left"/>
-      <param name="detect_prealign_distance" value="0.1"/>
+      <param name="detect_prealign_distance" value="0.05"/>
       <param name="detect_prealign_timeout" value="10"/>
       <param name="detect_yaw_align_at_prealign" value="true"/>
       <param name="detect_final_timeout" value="10"/>
@@ -32,9 +32,9 @@
       <param name="detect_yaw_align_enabled" value="true"/>
       <param name="detect_yaw_tolerance" value="0.06"/>
       <param name="detect_yaw_align_timeout" value="3.0"/>
-      <param name="detect_yaw_kp" value="3.2"/>
+      <param name="detect_yaw_kp" value="4.2"/>
       <param name="detect_yaw_min_vel" value="0.30"/>
-      <param name="detect_yaw_max_vel" value="4.5"/>
+      <param name="detect_yaw_max_vel" value="5.0"/>
       <param name="detect_yaw_stable_count" value="4"/>
       <param name="detect_photo_settle_time" value="0.25"/>
 
