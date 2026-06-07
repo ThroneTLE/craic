@@ -15,6 +15,15 @@
       <!-- 保留你原来先去 goals[14] 的逻辑 -->
       <param name="go_transition_before_tasks" value="true"/>
 
+      <!-- 终点导航只粗到位，最后由激光闭环贴边 -->
+      <param name="final_nav_timeout" value="13.0"/>
+      <param name="final_yaw_align_timeout" value="3.0"/>
+      <param name="final_yaw_tolerance" value="0.05"/>
+      <param name="final_yaw_kp" value="1.2"/>
+      <param name="final_yaw_min_vel" value="0.08"/>
+      <param name="final_yaw_max_vel" value="0.45"/>
+      <param name="final_yaw_stable_count" value="3"/>
+
       <!-- 调试/固定任务点模式：true时跳过10-13检测扫描，直接按fixed_task_ids泊车 -->
       <param name="use_fixed_task_positions" value="false"/>
       <param name="fixed_task_ids" value="31,49,50,51"/>
@@ -23,8 +32,8 @@
       <param name="relative_parking_mode" value="true"/>
       <param name="relative_direct_if_clear" value="true"/>
       <param name="relative_open_side_prefer_robot" value="true"/>
-      <param name="relative_entry_timeout" value="5.0"/>
-      <param name="relative_entry_tolerance" value="0.18"/>
+      <param name="relative_entry_timeout" value="6.0"/>
+      <param name="relative_entry_tolerance" value="0.1"/>
       <param name="relative_center_timeout" value="4.0"/>
       <param name="relative_center_tolerance" value="0.035"/>
       <param name="relative_yaw_tolerance" value="0.08"/>

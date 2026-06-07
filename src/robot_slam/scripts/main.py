@@ -121,6 +121,13 @@ class navigation_demo:
         # 11. 调试/比赛固定任务点：跳过前置视觉扫描，直接进入任务点泊车
         self.use_fixed_task_positions = rospy.get_param("~use_fixed_task_positions", False)
         self.fixed_task_ids = rospy.get_param("~fixed_task_ids", "")
+        self.final_nav_timeout = rospy.get_param("~final_nav_timeout", 10.0)
+        self.final_yaw_align_timeout = rospy.get_param("~final_yaw_align_timeout", 3.0)
+        self.final_yaw_tolerance = rospy.get_param("~final_yaw_tolerance", 0.05)
+        self.final_yaw_kp = rospy.get_param("~final_yaw_kp", 1.2)
+        self.final_yaw_min_vel = rospy.get_param("~final_yaw_min_vel", 0.08)
+        self.final_yaw_max_vel = rospy.get_param("~final_yaw_max_vel", 0.45)
+        self.final_yaw_stable_count = int(rospy.get_param("~final_yaw_stable_count", 3))
     
     def scan_callback(self, msg):
         """存储最新的激光雷达数据"""
@@ -349,6 +356,51 @@ class navigation_demo:
                 self.stop_movement()
                 rospy.logwarn("检测点yaw闭环超时: err=%.3frad" % yaw_error)
                 rospy.sleep(self.detect_photo_settle_time)
+                return False
+
+            rate.sleep()
+
+        self.stop_movement()
+        return False
+
+    def align_final_yaw(self, yaw_deg):
+        """终点贴边前先对齐终点 yaw，避免按错误车体方向做激光校准。"""
+        if not self.wait_for_odom_yaw(timeout=1.0):
+            rospy.logwarn("未收到里程计yaw，跳过终点yaw闭环")
+            return False
+
+        target_yaw = yaw_deg / 180.0 * pi
+        self.target_yaw = target_yaw
+        start_time = rospy.Time.now()
+        rate = rospy.Rate(10)
+        stable_count = 0
+
+        rospy.loginfo("[FINAL][YAW_ALIGN][START] target=%.1fdeg tolerance=%.3frad",
+                      yaw_deg, self.final_yaw_tolerance)
+        while not rospy.is_shutdown():
+            yaw_error = self.normalize_angle(target_yaw - self.current_yaw)
+            if abs(yaw_error) <= self.final_yaw_tolerance:
+                stable_count += 1
+                self.stop_movement()
+                if stable_count >= self.final_yaw_stable_count:
+                    rospy.loginfo("[FINAL][YAW_ALIGN][OK] err=%.3frad", yaw_error)
+                    return True
+            else:
+                stable_count = 0
+                cmd = Twist()
+                omega = self.clamp(
+                    self.final_yaw_kp * yaw_error,
+                    -self.final_yaw_max_vel,
+                    self.final_yaw_max_vel
+                )
+                if abs(omega) < self.final_yaw_min_vel:
+                    omega = self.final_yaw_min_vel if omega >= 0 else -self.final_yaw_min_vel
+                cmd.angular.z = omega
+                self.pub.publish(cmd)
+
+            if (rospy.Time.now() - start_time).to_sec() > self.final_yaw_align_timeout:
+                self.stop_movement()
+                rospy.logwarn("[FINAL][YAW_ALIGN][TIMEOUT] err=%.3frad", yaw_error)
                 return False
 
             rate.sleep()
@@ -791,8 +843,13 @@ class navigation_demo:
         # 按线索导航
         self.go_to_task_positions()
 
-        # 导航到终点
-        self.goto(goals[16])
+        # 终点只让 move_base 粗到位，最后贴边交给激光闭环校准
+        final_nav_start = rospy.Time.now()
+        final_nav_ok = self.goto(goals[16], timeout=self.final_nav_timeout)
+        rospy.loginfo("[FINAL][NAV_TO_FINAL] dt=%.2fs ok=%s timeout=%.1fs",
+                      (rospy.Time.now() - final_nav_start).to_sec(),
+                      str(final_nav_ok), self.final_nav_timeout)
+        self.align_final_yaw(goals[16][2])
         self.adjust_position(side_target=0.220, back_target=0.240)  
         # 语音播报到达终点
         tts_text = u"已到达终点"
