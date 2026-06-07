@@ -25,3 +25,15 @@ max_match_dist: 0.10
 min_match_points: 8
 max_correction: 0.12
 publish_rate: 10.0
+
+# Costmap obstacle export. These snapped board lines are consumed by move_base
+# as persistent planning obstacles; RViz markers are visualization only.
+publish_obstacles: true
+obstacle_memory_time: 8.0
+obstacle_snap_to_grid: true
+obstacle_line_margin: 0.06
+obstacle_z: 0.05
+obstacle_robot_clear_radius: 0.28
+obstacle_publish_radius: 2.0
+obstacle_voxel_size: 0.05
+obstacle_max_points: 500

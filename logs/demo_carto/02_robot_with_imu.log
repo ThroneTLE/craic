@@ -1,0 +1,125 @@
+===== 2026-06-07 22:41:24 START 02_robot_with_imu =====
+PWD=/home/abot/craic
+CMD=roslaunch abot_bringup robot_with_imu.launch
+WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
+WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
+warning: xacro.py is deprecated; please use xacro instead
+WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
+[0m[ INFO] [1780843285.328697445]: port:/dev/abot buadrate:921600[0m
+[0m[ INFO] [1780843285.414920418]: out_pid_debug_enable:0[0m
+[0m[ INFO] [1780843285.436020981]: BaseDriver startup[0m
+Transport main read/write started
+[33m[ WARN] [1780843287.826962003]: Calibrating accelerometer and gyroscope, make sure robot is stationary and level.[0m
+[33m[ WARN] [1780843295.549399555]: Still waiting for data on topic /imu/data_raw...[0m
+[0m[ INFO] [1780843285.436863036]: connected to main board[0m
+[0m[ INFO] [1780843287.436987022]: end sleep[0m
+[0m[ INFO] [1780843287.442343688]: robot version:v1.0.2 build time:20180730-m0e0[0m
+[0m[ INFO] [1780843287.461287264]: subscribe cmd topic on [cmd_vel][0m
+[0m[ INFO] [1780843287.464008973]: advertise odom topic on [wheel_odom][0m
+[0m[ INFO] [1780843287.494997090]: RobotParameters: 97 225 3960 10 320 2700 0 10 250 200 200 500 69[0m
+[0m[ INFO] [1780843312.131535086]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.147649849]: update_speed[0m
+[0m[ INFO] [1780843312.243417767]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.259590639]: update_speed[0m
+[0m[ INFO] [1780843312.323375210]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.339296828]: update_speed[0m
+[0m[ INFO] [1780843312.435289719]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.451278980]: update_speed[0m
+[0m[ INFO] [1780843312.547190270]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.563379130]: update_speed[0m
+[0m[ INFO] [1780843312.627213155]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.643094263]: update_speed[0m
+[0m[ INFO] [1780843312.739064341]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.756425179]: update_speed[0m
+[0m[ INFO] [1780843312.851913769]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.866938388]: update_speed[0m
+[0m[ INFO] [1780843312.930941973]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843312.946869404]: update_speed[0m
+[0m[ INFO] [1780843313.042832878]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843313.059644207]: update_speed[0m
+[0m[ INFO] [1780843313.122805694]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843313.138765141]: update_speed[0m
+[0m[ INFO] [1780843313.234706009]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843313.251986637]: update_speed[0m
+[0m[ INFO] [1780843313.346618451]: cmd_vel:[0.25 0.1 0][0m
+[0m[ INFO] [1780843313.362607199]: update_speed[0m
+[0m[ INFO] [1780843313.554800407]: cmd_vel:[0 0 0][0m
+[0m[ INFO] [1780843313.570454625]: update_speed[0m
+[0m[ INFO] [1780843313.666677833]: cmd_vel:[0 0 0][0m
+[0m[ INFO] [1780843313.682790438]: update_speed[0m
+[0m[ INFO] [1780843313.746432055]: cmd_vel:[0 0 0][0m
+[0m[ INFO] [1780843313.762341531]: update_speed[0m
+[0m[ INFO] [1780843313.858306108]: cmd_vel:[0 0 0][0m
+[0m[ INFO] [1780843313.874241846]: update_speed[0m
+[0m[ INFO] [1780843313.970198210]: cmd_vel:[-0.0541101 0.126756 0.467687][0m
+[0m[ INFO] [1780843313.987729357]: update_speed[0m
+[0m[ INFO] [1780843314.050317752]: cmd_vel:[-0.127167 0.0928762 0.50136][0m
+[0m[ INFO] [1780843314.066147925]: update_speed[0m
+[0m[ INFO] [1780843314.162106514]: cmd_vel:[-0.133704 0.0919867 0.507804][0m
+[0m[ INFO] [1780843314.178199080]: update_speed[0m
+[0m[ INFO] [1780843314.242044697]: cmd_vel:[-0.132827 0.0915409 0.521147][0m
+[0m[ INFO] [1780843314.258508761]: update_speed[0m
+[0m[ INFO] [1780843314.355830775]: cmd_vel:[-0.139967 0.0929264 0.517487][0m
+[0m[ INFO] [1780843314.370194962]: update_speed[0m
+[0m[ INFO] [1780843314.470252578]: cmd_vel:[-0.143322 0.0542767 0.523962][0m
+[0m[ INFO] [1780843314.481856670]: update_speed[0m
+[0m[ INFO] [1780843314.545883053]: cmd_vel:[-0.14246 0.0493788 0.520494][0m
+[0m[ INFO] [1780843314.563936411]: update_speed[0m
+[0m[ INFO] [1780843314.658005167]: cmd_vel:[-0.141316 0.0394162 0.523768][0m
+[0m[ INFO] [1780843314.673827841]: update_speed[0m
+[0m[ INFO] [1780843314.770401168]: cmd_vel:[-0.141192 0.0319764 0.519927][0m
+[0m[ INFO] [1780843314.785646651]: update_speed[0m
+[0m[ INFO] [1780843314.849610894]: cmd_vel:[-0.141156 -0.00883563 0.521853][0m
+[0m[ INFO] [1780843314.867518428]: update_speed[0m
+[0m[ INFO] [1780843314.961610568]: cmd_vel:[-0.142416 0.0306361 0.527199][0m
+[0m[ INFO] [1780843314.977747341]: update_speed[0m
+[0m[ INFO] [1780843315.041619622]: cmd_vel:[-0.145664 0.151988 0.51497][0m
+[0m[ INFO] [1780843315.061166802]: update_speed[0m
+[0m[ INFO] [1780843315.153441692]: cmd_vel:[-0.146015 0.25 0.511995][0m
+[0m[ INFO] [1780843315.169405113]: update_speed[0m
+[0m[ INFO] [1780843315.265406859]: cmd_vel:[-0.149007 0.25 0.512638][0m
+[0m[ INFO] [1780843315.281368432]: update_speed[0m
+[0m[ INFO] [1780843315.345294843]: cmd_vel:[-0.147357 0.25 0.529252][0m
+[0m[ INFO] [1780843315.361282518]: update_speed[0m
+[0m[ INFO] [1780843315.458030707]: cmd_vel:[-0.15037 0.25 0.520081][0m
+[0m[ INFO] [1780843315.473625555]: update_speed[0m
+[0m[ INFO] [1780843315.569177129]: cmd_vel:[-0.1519 0.25 0.519354][0m
+[0m[ INFO] [1780843315.585096334]: update_speed[0m
+[0m[ INFO] [1780843315.649128097]: cmd_vel:[-0.150523 0.25 0.5261][0m
+[0m[ INFO] [1780843315.665048088]: update_speed[0m
+[0m[ INFO] [1780843315.761252316]: cmd_vel:[-0.151974 0.25 0.549485][0m
+[0m[ INFO] [1780843315.776986326]: update_speed[0m
+[0m[ INFO] [1780843315.841203665]: cmd_vel:[-0.151494 0.25 0.548426][0m
+[0m[ INFO] [1780843315.856934535]: update_speed[0m
+[0m[ INFO] [1780843315.952952378]: cmd_vel:[-0.147119 0.25 0.517064][0m
+[0m[ INFO] [1780843315.968835278]: update_speed[0m
+[0m[ INFO] [1780843316.064934685]: cmd_vel:[-0.149405 0.25 0.511819][0m
+[0m[ INFO] [1780843316.080780736]: update_speed[0m
+[0m[ INFO] [1780843316.146636894]: cmd_vel:[-0.146706 0.25 0.555128][0m
+[0m[ INFO] [1780843316.160754551]: update_speed[0m
+[0m[ INFO] [1780843316.256731809]: cmd_vel:[-0.147767 0.25 0.561225][0m
+[0m[ INFO] [1780843316.272690528]: update_speed[0m
+[0m[ INFO] [1780843316.368754727]: cmd_vel:[-0.149903 0.25 0.540789][0m
+[0m[ INFO] [1780843316.384697413]: update_speed[0m
+[0m[ INFO] [1780843316.449558934]: cmd_vel:[-0.139342 0.25 0.524884][0m
+[0m[ INFO] [1780843316.464550814]: update_speed[0m
+[0m[ INFO] [1780843316.560553957]: cmd_vel:[-0.145385 0.25 0.536952][0m
+[0m[ INFO] [1780843316.576478769]: update_speed[0m
+[0m[ INFO] [1780843316.640499799]: cmd_vel:[-0.146256 0.25 0.567897][0m
+[0m[ INFO] [1780843316.657617625]: update_speed[0m
+[0m[ INFO] [1780843316.752385722]: cmd_vel:[-0.149017 0.25 0.535341][0m
+[0m[ INFO] [1780843316.768346422]: update_speed[0m
+[0m[ INFO] [1780843316.866352147]: cmd_vel:[-0.150024 0.25 0.530895][0m
+[0m[ INFO] [1780843316.881910547]: update_speed[0m
+[0m[ INFO] [1780843316.944340046]: cmd_vel:[-0.000946518 0.0222347 0.512908][0m
+[0m[ INFO] [1780843316.960246767]: update_speed[0m
+[0m[ INFO] [1780843317.056263483]: cmd_vel:[-0.0350083 0.0231722 0.523958][0m
+[0m[ INFO] [1780843317.072127522]: update_speed[0m
+[0m[ INFO] [1780843317.168098979]: cmd_vel:[-0.0681505 -0.00963501 0.528586][0m
+[0m[ INFO] [1780843317.184109071]: update_speed[0m
+[0m[ INFO] [1780843317.251337684]: cmd_vel:[-0.0992005 -0.00840289 0.529814][0m
+[0m[ INFO] [1780843317.264032128]: update_speed[0m
+[0m[ INFO] [1780843317.362392803]: cmd_vel:[-0.133381 -0.00743522 0.552586][0m
+[0m[ INFO] [1780843317.375912331]: update_speed[0m
+[0m[ INFO] [1780843317.439881131]: cmd_vel:[-0.0716674 -0.0496785 0.604784][0m
+[0m[ INFO] [1780843317.

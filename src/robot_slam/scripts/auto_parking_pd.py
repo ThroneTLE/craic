@@ -64,7 +64,7 @@ class AutoSinglePointTest:
         # Phase 0: move_base 直达目标中心
         # =====================================================
         self.enable_direct_center = rospy.get_param("enable_direct_center", True)
-        self.direct_center_timeout = 10.0          # 硬编码，不读 param server
+        self.direct_center_timeout = rospy.get_param("direct_center_timeout", 10.0)
         self.direct_center_tolerance = rospy.get_param("direct_center_tolerance", 0.10)
         self.direct_center_oscillation_window = 3.0
         self.direct_center_oscillation_min_displacement = 0.2
@@ -102,8 +102,10 @@ class AutoSinglePointTest:
         # =====================================================
         # Phase 1a: move_base 到入口
         # =====================================================
-        self.entry_nav_timeout = 8.0          # 硬编码
-        self.entry_nav_tolerance = rospy.get_param("entry_nav_tolerance", 0.15)
+        self.entry_nav_timeout = rospy.get_param("entry_nav_timeout",
+                                                 rospy.get_param("nav_timeout", 12.0))
+        self.entry_nav_tolerance = rospy.get_param("entry_nav_tolerance",
+                                                   rospy.get_param("entry_reached_tolerance", 0.15))
 
         # =====================================================
         # PD 控制参数
@@ -178,7 +180,7 @@ class AutoSinglePointTest:
         self.board_pose_topic = rospy.get_param("board_pose_topic", "/board_localizer/corrected_pose")
         self.board_valid_topic = rospy.get_param("board_valid_topic", "/board_localizer/valid")
         self.board_pose_timeout = rospy.get_param("board_pose_timeout", 0.5)
-        self.require_board_corrected_pose = rospy.get_param("require_board_corrected_pose", True)
+        self.require_board_corrected_pose = rospy.get_param("require_board_corrected_pose", False)
         self.latest_board_pose = None
         self.latest_board_pose_stamp = rospy.Time(0)
         self.board_pose_valid = False
@@ -1044,6 +1046,8 @@ class AutoSinglePointTest:
         if prefer_board and self.use_board_corrected_pose and self.require_board_corrected_pose:
             rospy.logwarn_throttle(1.0, "board corrected pose unavailable; parking controller holds position")
             return None
+        if prefer_board and self.use_board_corrected_pose:
+            rospy.logwarn_throttle(2.0, "board corrected pose unavailable; fallback to TF pose")
 
         try:
             self.tf_listener.waitForTransform(self.map_frame, self.base_frame,

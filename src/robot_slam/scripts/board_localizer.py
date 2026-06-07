@@ -7,10 +7,11 @@ import math
 
 import rospy
 import tf
+import sensor_msgs.point_cloud2 as point_cloud2
 
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Bool, Float32
+from sensor_msgs.msg import LaserScan, PointCloud2
+from std_msgs.msg import Bool, Float32, Header
 from visualization_msgs.msg import Marker, MarkerArray
 
 from board_localizer_core import (
@@ -49,6 +50,15 @@ class BoardLocalizer(object):
         self.max_match_dist = rospy.get_param("~max_match_dist", 0.10)
         self.min_match_points = int(rospy.get_param("~min_match_points", 8))
         self.publish_rate = rospy.get_param("~publish_rate", 10.0)
+        self.publish_obstacles = rospy.get_param("~publish_obstacles", True)
+        self.obstacle_memory_time = rospy.get_param("~obstacle_memory_time", 8.0)
+        self.obstacle_snap_to_grid = rospy.get_param("~obstacle_snap_to_grid", True)
+        self.obstacle_line_margin = rospy.get_param("~obstacle_line_margin", 0.06)
+        self.obstacle_z = rospy.get_param("~obstacle_z", 0.05)
+        self.obstacle_robot_clear_radius = rospy.get_param("~obstacle_robot_clear_radius", 0.28)
+        self.obstacle_publish_radius = rospy.get_param("~obstacle_publish_radius", 2.0)
+        self.obstacle_voxel_size = rospy.get_param("~obstacle_voxel_size", 0.05)
+        self.obstacle_max_points = int(rospy.get_param("~obstacle_max_points", 500))
 
         self.tf_listener = tf.TransformListener()
         self.scan_memory = []
@@ -61,6 +71,7 @@ class BoardLocalizer(object):
         self.valid_pub = rospy.Publisher("~valid", Bool, queue_size=5)
         self.conf_pub = rospy.Publisher("~confidence", Float32, queue_size=5)
         self.marker_pub = rospy.Publisher("~markers", MarkerArray, queue_size=1)
+        self.obstacle_pub = rospy.Publisher("~obstacles", PointCloud2, queue_size=1)
         self.scan_sub = rospy.Subscriber(self.scan_topic, LaserScan, self.scan_cb, queue_size=1)
 
         self.timer = rospy.Timer(rospy.Duration(1.0 / self.publish_rate), self.publish_timer)
@@ -159,6 +170,89 @@ class BoardLocalizer(object):
             self.pose_pub.publish(msg)
 
         self.marker_pub.publish(self.build_markers())
+        if self.publish_obstacles:
+            cloud, point_count = self.build_obstacle_cloud(valid)
+            self.obstacle_pub.publish(cloud)
+            rospy.loginfo_throttle(
+                1.0,
+                "board obstacles: valid=%s confidence=%.2f boards(v=%d,h=%d) observed_points=%d",
+                valid,
+                self.latest_correction.confidence if valid else 0.0,
+                len(self.boards.get("vertical", [])),
+                len(self.boards.get("horizontal", [])),
+                point_count,
+            )
+
+    def build_obstacle_cloud(self, valid):
+        header = Header()
+        header.stamp = rospy.Time.now()
+        header.frame_id = self.map_frame
+
+        points = []
+        if not valid:
+            return point_cloud2.create_cloud_xyz32(header, points), 0
+
+        now = rospy.Time.now()
+        raw_points = []
+        max_age = min(float(self.obstacle_memory_time), float(self.memory_time))
+        for stamp, ps in self.scan_memory:
+            if (now - stamp).to_sec() <= max_age:
+                raw_points.extend(ps)
+
+        clear_radius_sq = float(self.obstacle_robot_clear_radius) ** 2
+        publish_radius_sq = float(self.obstacle_publish_radius) ** 2
+        robot_x = self.latest_pose[0] + self.latest_correction.dx
+        robot_y = self.latest_pose[1] + self.latest_correction.dy
+        voxel_size = max(0.01, float(self.obstacle_voxel_size))
+        voxel_points = {}
+
+        for x, y in raw_points:
+            obstacle_point = self.match_observed_point_to_board(x, y)
+            if obstacle_point is None:
+                continue
+            px, py = obstacle_point
+            dist_sq = (px - robot_x) ** 2 + (py - robot_y) ** 2
+            if dist_sq < clear_radius_sq or dist_sq > publish_radius_sq:
+                continue
+            key = (int(round(px / voxel_size)), int(round(py / voxel_size)))
+            if key not in voxel_points or dist_sq < voxel_points[key][0]:
+                voxel_points[key] = (dist_sq, px, py)
+
+        limited = sorted(voxel_points.values(), key=lambda item: item[0])
+        if self.obstacle_max_points > 0:
+            limited = limited[:self.obstacle_max_points]
+        for _, px, py in limited:
+            points.append((px, py, self.obstacle_z))
+
+        return point_cloud2.create_cloud_xyz32(header, points), len(points)
+
+    def match_observed_point_to_board(self, x, y):
+        best = None
+        for board in self.boards.get("vertical", []):
+            if not (board.spread_min - self.obstacle_line_margin <= y <= board.spread_max + self.obstacle_line_margin):
+                continue
+            dist = abs(x - board.position)
+            if dist > self.max_snap_dist:
+                continue
+            px = board.position if self.obstacle_snap_to_grid else x
+            candidate = (dist, px, y)
+            if best is None or candidate[0] < best[0]:
+                best = candidate
+
+        for board in self.boards.get("horizontal", []):
+            if not (board.spread_min - self.obstacle_line_margin <= x <= board.spread_max + self.obstacle_line_margin):
+                continue
+            dist = abs(y - board.position)
+            if dist > self.max_snap_dist:
+                continue
+            py = board.position if self.obstacle_snap_to_grid else y
+            candidate = (dist, x, py)
+            if best is None or candidate[0] < best[0]:
+                best = candidate
+
+        if best is None:
+            return None
+        return best[1], best[2]
 
     def build_markers(self):
         arr = MarkerArray()

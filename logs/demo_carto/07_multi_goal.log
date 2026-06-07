@@ -1,0 +1,8 @@
+===== 2026-06-07 22:41:25 START 07_multi_goal =====
+PWD=/home/abot/craic
+CMD=roslaunch robot_slam multi_goal.launch
+WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
+WARNING: Package name "TTS_audio" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
+/opt/ros/melodic/lib/python2.7/dist-packages/roslib/packages.py:470: UnicodeWarning: Unicode equal comparison failed to convert both arguments to Unicode - interpreting them as being unequal
+  if resource_name in files:
+

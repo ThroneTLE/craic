@@ -7,7 +7,7 @@
     <node pkg="move_base" type="move_base" respawn="false"
           name="move_base" output="screen">
       <rosparam file="$(find robot_slam)/params/carto/costmap_common_params.yaml" command="load" ns="global_costmap"/>
-      <rosparam file="$(find robot_slam)/params/carto/costmap_common_params.yaml" command="load" ns="local_costmap"/>
+      <rosparam file="$(find robot_slam)/params/carto/local_costmap_common_params.yaml" command="load" ns="local_costmap"/>
       <rosparam file="$(find robot_slam)/params/carto/global_costmap_params.yaml" command="load"/>
       <rosparam file="$(find robot_slam)/params/carto/local_costmap_params.yaml" command="load"/>
       <rosparam file="$(find robot_slam)/params/carto/global_planner_params.yaml" command="load"/>
@@ -24,7 +24,7 @@
     <node pkg="move_base" type="move_base" respawn="false"
           name="move_base" output="screen">
       <rosparam file="$(find robot_slam)/params/carto/costmap_common_params.yaml" command="load" ns="global_costmap"/>
-      <rosparam file="$(find robot_slam)/params/carto/costmap_common_params.yaml" command="load" ns="local_costmap"/>
+      <rosparam file="$(find robot_slam)/params/carto/local_costmap_common_params.yaml" command="load" ns="local_costmap"/>
       <rosparam file="$(find robot_slam)/params/carto/global_costmap_params.yaml" command="load"/>
       <rosparam file="$(find robot_slam)/params/carto/local_costmap_params.yaml" command="load"/>
       <rosparam file="$(find robot_slam)/params/carto/global_planner_params.yaml" command="load"/>

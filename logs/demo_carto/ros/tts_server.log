@@ -1,0 +1,13 @@
+[rospy.client][INFO] 2026-06-07 22:41:27,501: init_node, name[/tts_server], pid[28378]
+[xmlrpc][INFO] 2026-06-07 22:41:27,508: XML-RPC server binding to 0.0.0.0:0
+[xmlrpc][INFO] 2026-06-07 22:41:27,509: Started XML-RPC server [http://abot-robot:45405/]
+[rospy.impl.masterslave][INFO] 2026-06-07 22:41:27,509: _ready: http://abot-robot:45405/
+[rospy.registration][INFO] 2026-06-07 22:41:27,509: Registering with master node http://localhost:11311
+[xmlrpc][INFO] 2026-06-07 22:41:27,510: xml rpc node: starting XML-RPC server
+[rospy.init][INFO] 2026-06-07 22:41:27,511: ROS Slave URI: [http://abot-robot:45405/]
+[rospy.init][INFO] 2026-06-07 22:41:27,511: registered with master
+[rospy.rosout][INFO] 2026-06-07 22:41:27,511: initializing /rosout core topic
+[rospy.rosout][INFO] 2026-06-07 22:41:27,535: connected to core topic /rosout
+[rospy.simtime][INFO] 2026-06-07 22:41:27,542: /use_sim_time is not set, will not subscribe to simulated time [/clock] topic
+[rosout][INFO] 2026-06-07 22:41:27,561: TTS服务已启动 (REST API)，等待请求...
+[rospy.internal][INFO] 2026-06-07 22:41:27,825: topic[/rosout] adding connection to [/rosout], count 0
