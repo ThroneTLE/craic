@@ -91,7 +91,22 @@ class navigation_demo:
         self.yaw_tolerance = 0.05        # 航向角容差 (弧度, ~3°)
         self.target_yaw = 0.0            # 目标航向角
         self.current_yaw = 0.0           # 当前航向角
+        self.odom_received = False
         self.is_adjusting = False
+
+        # 10. 检测点拍照前预对准参数
+        self.detect_prealign_enabled = rospy.get_param("~detect_prealign_enabled", True)
+        self.detect_prealign_distance = rospy.get_param("~detect_prealign_distance", 0.35)
+        self.detect_prealign_timeout = rospy.get_param("~detect_prealign_timeout", 25)
+        self.detect_final_timeout = rospy.get_param("~detect_final_timeout", 35)
+        self.detect_yaw_align_enabled = rospy.get_param("~detect_yaw_align_enabled", True)
+        self.detect_yaw_tolerance = rospy.get_param("~detect_yaw_tolerance", 0.06)
+        self.detect_yaw_align_timeout = rospy.get_param("~detect_yaw_align_timeout", 3.0)
+        self.detect_yaw_kp = rospy.get_param("~detect_yaw_kp", 1.2)
+        self.detect_yaw_min_vel = rospy.get_param("~detect_yaw_min_vel", 0.08)
+        self.detect_yaw_max_vel = rospy.get_param("~detect_yaw_max_vel", 0.45)
+        self.detect_yaw_stable_count = int(rospy.get_param("~detect_yaw_stable_count", 4))
+        self.detect_photo_settle_time = rospy.get_param("~detect_photo_settle_time", 0.25)
     
     def scan_callback(self, msg):
         """存储最新的激光雷达数据"""
@@ -103,6 +118,7 @@ class navigation_demo:
         (_, _, yaw) = euler_from_quaternion([
             orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w])
         self.current_yaw = yaw
+        self.odom_received = True
 
     def normalize_angle(self, angle):
         """将角度归一化到[-π, π]范围内"""
@@ -111,6 +127,10 @@ class navigation_demo:
         while angle < -np.pi:
             angle += 2.0 * np.pi
         return angle
+
+    def clamp(self, value, min_value, max_value):
+        """限制数值范围"""
+        return max(min_value, min(max_value, value))
     
     def get_range_at_angle(self, angle):
         """获取指定角度的激光距离"""
@@ -211,6 +231,76 @@ class navigation_demo:
         cmd = Twist()
         self.pub.publish(cmd)
         self.is_adjusting = False
+
+    def make_detection_prealign_goal(self, target):
+        """按目标朝向反方向退一段，生成检测点预对准位姿"""
+        yaw_rad = target[2] / 180.0 * pi
+        return [
+            target[0] - self.detect_prealign_distance * np.cos(yaw_rad),
+            target[1] - self.detect_prealign_distance * np.sin(yaw_rad),
+            target[2]
+        ]
+
+    def wait_for_odom_yaw(self, timeout=1.0):
+        """等待里程计航向角可用"""
+        start_time = rospy.Time.now()
+        rate = rospy.Rate(20)
+        while not rospy.is_shutdown() and not self.odom_received:
+            if (rospy.Time.now() - start_time).to_sec() > timeout:
+                return False
+            rate.sleep()
+        return True
+
+    def align_detection_yaw(self, yaw_deg):
+        """
+        拍照前低速闭环修正 yaw，避免 move_base 到点后最后一刻大幅旋转。
+        :param yaw_deg: 目标航向角，单位为度
+        """
+        if not self.detect_yaw_align_enabled:
+            return True
+        if not self.wait_for_odom_yaw(timeout=1.0):
+            rospy.logwarn("未收到里程计yaw，跳过检测点yaw闭环")
+            return False
+
+        target_yaw = yaw_deg / 180.0 * pi
+        start_time = rospy.Time.now()
+        rate = rospy.Rate(10)
+        stable_count = 0
+
+        rospy.loginfo("检测点yaw闭环开始: target=%.1fdeg tolerance=%.3frad" %
+                      (yaw_deg, self.detect_yaw_tolerance))
+        while not rospy.is_shutdown():
+            yaw_error = self.normalize_angle(target_yaw - self.current_yaw)
+            if abs(yaw_error) <= self.detect_yaw_tolerance:
+                stable_count += 1
+                self.stop_movement()
+                if stable_count >= self.detect_yaw_stable_count:
+                    rospy.loginfo("检测点yaw闭环完成: err=%.3frad" % yaw_error)
+                    rospy.sleep(self.detect_photo_settle_time)
+                    return True
+            else:
+                stable_count = 0
+                cmd = Twist()
+                omega = self.clamp(
+                    self.detect_yaw_kp * yaw_error,
+                    -self.detect_yaw_max_vel,
+                    self.detect_yaw_max_vel
+                )
+                if abs(omega) < self.detect_yaw_min_vel:
+                    omega = self.detect_yaw_min_vel if omega >= 0 else -self.detect_yaw_min_vel
+                cmd.angular.z = omega
+                self.pub.publish(cmd)
+
+            if (rospy.Time.now() - start_time).to_sec() > self.detect_yaw_align_timeout:
+                self.stop_movement()
+                rospy.logwarn("检测点yaw闭环超时: err=%.3frad" % yaw_error)
+                rospy.sleep(self.detect_photo_settle_time)
+                return False
+
+            rate.sleep()
+
+        self.stop_movement()
+        return False
 
     # ---------------- TTS语音播报客户端 ----------------
     def tts_client(self, text):
@@ -369,6 +459,21 @@ class navigation_demo:
                 rospy.loginfo("到达目标点 %s 成功! " % p)
         return True
 
+    def goto_detection_point(self, point):
+        """检测点导航：先用同yaw预对准，再进入原拍照点并短闭环修正yaw"""
+        target = goals[point]
+        if self.detect_prealign_enabled and self.detect_prealign_distance > 0.0:
+            prealign_goal = self.make_detection_prealign_goal(target)
+            rospy.loginfo("检测点%s预对准目标: %s" % (point, prealign_goal))
+            self.goto(prealign_goal, timeout=self.detect_prealign_timeout)
+
+        rospy.loginfo("检测点%s原始拍照目标: %s" % (point, target))
+        self.goto(target, timeout=self.detect_final_timeout)
+        self.align_detection_yaw(target[2])
+        if self.detect_photo_settle_time > 0:
+            rospy.sleep(self.detect_photo_settle_time)
+        return True
+
     # ---------------- 取消导航 ----------------
     def cancel(self):
         self.move_base.cancel_all_goals()
@@ -390,7 +495,7 @@ class navigation_demo:
 
         rospy.loginfo("导航到检测点 → 目标点索引%s" % point)
         # 步骤1：导航到预设检测点
-        self.goto(goals[point])
+        self.goto_detection_point(point)
 
         # 步骤2：调用视觉检测
         detect_result = self.call_fruit_detection_service()
