@@ -11,6 +11,8 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Path, Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
+import math
+import tf as tf_mod
 from math import pi
 from std_msgs.msg import String, Int32
 from ar_track_alvar_msgs.msg import AlvarMarkers
@@ -61,6 +63,7 @@ class navigation_demo:
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         # 等待导航服务启动(超时60秒)
         self.move_base.wait_for_server(rospy.Duration(60))
+        self.tf_listener = tf_mod.TransformListener()
 
         # 4. 发布者：控制机器人底盘速度(前进/旋转/平移)
         self.pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1000)
@@ -341,11 +344,19 @@ class navigation_demo:
         pass
 
     # ---------------- 核心：导航到目标点 ----------------
+<<<<<<< HEAD
     def goto(self, p, timeout=60):
+=======
+    def goto(self, p, timeout=60, close_dist=None):
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
         """
         功能：导航到指定坐标
         :param p: [x, y, 朝向角度]
         :param timeout: 超时秒数，默认60
+<<<<<<< HEAD
+=======
+        :param close_dist: 靠近即收距离，None则必须等SUCCEEDED
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
         """
         rospy.loginfo("[Navi] 前往目标点: %s (timeout=%ds)" % (p, timeout))
         goal = MoveBaseGoal()
@@ -360,6 +371,7 @@ class navigation_demo:
         goal.target_pose.pose.orientation.w = q[3]
 
         self.move_base.send_goal(goal, self._done_cb, self._active_cb, self._feedback_cb)
+<<<<<<< HEAD
         result = self.move_base.wait_for_result(rospy.Duration(timeout))
         if not result:
             self.move_base.cancel_goal()
@@ -367,6 +379,41 @@ class navigation_demo:
         else:
             if self.move_base.get_state() == GoalStatus.SUCCEEDED:
                 rospy.loginfo("到达目标点 %s 成功! " % p)
+=======
+
+        if close_dist is not None:
+            # 轮询模式：靠近即收
+            start_time = rospy.Time.now()
+            while not rospy.is_shutdown():
+                elapsed = (rospy.Time.now() - start_time).to_sec()
+                if elapsed > timeout:
+                    rospy.loginfo("导航超时，取消目标")
+                    self.move_base.cancel_goal()
+                    return True
+                if self.move_base.get_state() == GoalStatus.SUCCEEDED:
+                    rospy.loginfo("到达目标点 %s 成功! (%.1fs)" % (p, elapsed))
+                    return True
+                try:
+                    self.tf_listener.waitForTransform("map", "base_footprint", rospy.Time(0), rospy.Duration(0.2))
+                    trans, _ = self.tf_listener.lookupTransform("map", "base_footprint", rospy.Time(0))
+                    dx = p[0] - trans[0]
+                    dy = p[1] - trans[1]
+                    if math.sqrt(dx*dx + dy*dy) < close_dist:
+                        rospy.logwarn("导航靠近目标点 %s (dist=%.3f < %.3f), 取消导航." % (p, math.sqrt(dx*dx+dy*dy), close_dist))
+                        self.move_base.cancel_goal()
+                        return True
+                except:
+                    pass
+                rospy.sleep(0.1)
+        else:
+            result = self.move_base.wait_for_result(rospy.Duration(timeout))
+            if not result:
+                self.move_base.cancel_goal()
+                rospy.loginfo("导航超时，取消目标")
+            else:
+                if self.move_base.get_state() == GoalStatus.SUCCEEDED:
+                    rospy.loginfo("到达目标点 %s 成功! " % p)
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
         return True
 
     # ---------------- 取消导航 ----------------
@@ -432,12 +479,16 @@ class navigation_demo:
         # 遍历所有线索
         for idx, task_id in enumerate(task_numbers):
             if 1 <= task_id <= 9:
+<<<<<<< HEAD
                 # 导航到线索对应的任务点 (5s 超时)
                 self.goto(goals[task_id], timeout=5)
                 rospy.sleep(1)
                 # 启动精密停车
+=======
+                # 直接启动精密停车 (Phase 0 内部会用 move_base 尝试)
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
                 target = goals[task_id]
-                rospy.loginfo("move_base 到达任务点 %d，启动精密停车 (x=%.3f y=%.3f yaw=%.1f)..." % (task_id, target[0], target[1], target[2]))
+                rospy.loginfo("启动精密停车, 任务点 %d (x=%.3f y=%.3f yaw=%.1f)..." % (task_id, target[0], target[1], target[2]))
                 parking = AutoSinglePointTest(target_x=target[0], target_y=target[1], target_yaw_deg=target[2])
                 parking.run()
                 rospy.sleep(0.5)

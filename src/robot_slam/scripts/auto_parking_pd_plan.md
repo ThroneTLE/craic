@@ -52,8 +52,13 @@ main.py
 | Phase | 超时 | 超时行为 |
 |-------|------|---------|
 | main.py goto() 检测点 | 60s | 正常等待 |
+<<<<<<< HEAD
 | main.py goto() 任务点 | 5s | 切 PID 泊车 |
 | Phase 0: move_base 直达中心 | 5s (硬编码) | 走入口 |
+=======
+| main.py 任务点 | 直接启动泊车 | Phase 0 内部调用 move_base |
+| Phase 0: move_base 直达中心 | 10s (硬编码) | 走入口 |
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
 | Phase 1a: move_base 到入口 | 8s (硬编码) | 走 Phase 1b |
 | Phase 1b-A: PID 航向对齐 | 4s | 跳过对齐, 直接平移 |
 | Phase 1b-B: PID 平移 | 11s | 停在当前位置, 进 Phase 2 |
@@ -118,14 +123,22 @@ main.py 在 TTS 播报之后调用
 | 调用 | timeout |
 |------|---------|
 | 检测点 `self.goto(goals[point])` | 60s |
+<<<<<<< HEAD
 | 任务点 `self.goto(goals[task_id], timeout=5)` | 5s |
+=======
+| 任务点 | 直接启动泊车, Phase 0 内部调用 move_base |
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
 
 ### 二、Phase 0: move_base 直达目标中心
 
 | 参数 | 值 | 说明 |
 |------|-----|------|
 | `enable_direct_center` | True | 开关 |
+<<<<<<< HEAD
 | `direct_center_timeout` | 5.0 (硬编码) | 超时 s |
+=======
+| `direct_center_timeout` | 10.0 (硬编码) | 超时 s |
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
 | `direct_center_tolerance` | 0.10 | dist < 此值 + yaw < 0.05 即接受 m |
 | `direct_center_oscillation_window` | 3.0 (硬编码) | 抽搐窗口 s |
 | `direct_center_oscillation_min_displacement` | 0.2 (硬编码) | 抽搐位移阈值 m |
@@ -167,7 +180,11 @@ main.py 在 TTS 播报之后调用
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
+<<<<<<< HEAD
 | `pid_kp_xy` | 0.6 | 位置 P 增益 |
+=======
+| `pid_kp_xy` | 2.4 | 位置 P 增益 |
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
 | `pid_kd_xy` | 0.2 | 位置 D 增益 |
 | `pid_kp_yaw` | 1.5 | 航向 P 增益 |
 | `pid_kd_yaw` | 0.3 | 航向 D 增益 |

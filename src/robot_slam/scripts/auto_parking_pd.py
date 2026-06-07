@@ -63,7 +63,11 @@ class AutoSinglePointTest:
         # Phase 0: move_base 直达目标中心
         # =====================================================
         self.enable_direct_center = rospy.get_param("enable_direct_center", True)
+<<<<<<< HEAD
         self.direct_center_timeout = 5.0          # 硬编码，不读 param server
+=======
+        self.direct_center_timeout = 10.0          # 硬编码，不读 param server
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
         self.direct_center_tolerance = rospy.get_param("direct_center_tolerance", 0.10)
         self.direct_center_oscillation_window = 3.0
         self.direct_center_oscillation_min_displacement = 0.2
@@ -107,7 +111,7 @@ class AutoSinglePointTest:
         # =====================================================
         # PD 控制参数
         # =====================================================
-        self.pid_kp_xy = rospy.get_param("pid_kp_xy", 0.6)
+        self.pid_kp_xy = rospy.get_param("pid_kp_xy", 2.4)
         self.pid_kd_xy = rospy.get_param("pid_kd_xy", 0.2)
         self.pid_kp_yaw = rospy.get_param("pid_kp_yaw", 1.5)
         self.pid_kd_yaw = rospy.get_param("pid_kd_yaw", 0.3)
@@ -135,7 +139,11 @@ class AutoSinglePointTest:
         # =====================================================
         self.escape_enabled = rospy.get_param("escape_enabled", True)
         self.escape_distance = rospy.get_param("escape_distance", 0.35)
+<<<<<<< HEAD
         self.escape_speed = rospy.get_param("escape_speed", 0.10)
+=======
+        self.escape_speed = rospy.get_param("escape_speed", 0.30)
+>>>>>>> d99393dcc1bc4b13118fcda0280ed972cd35cdff
         self.escape_timeout = rospy.get_param("escape_timeout", 5.0)
 
         # 运行时状态
