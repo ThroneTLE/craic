@@ -9,8 +9,8 @@ footprint: [[0.205, 0.18], [0.205, -0.18], [-0.19, -0.18], [-0.19, 0.18]]
 
 # move_base 阶段要防止轮子贴障碍
 # 目标框最终入框不靠 move_base 完成，所以这里可以稍微保守
-inflation_radius: 0.18
-cost_scaling_factor: 3.5
+inflation_radius: 0.20
+cost_scaling_factor: 2.5
 
 map_type: costmap
 

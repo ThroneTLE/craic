@@ -141,6 +141,8 @@ class AutoSinglePointTest:
         # 运行时状态
         self.best_entry = None
         self.parking_done = False
+        self.parking_start_time = None
+        self.current_phase = "INIT"
 
         # =====================================================
         # 雷达安全
@@ -199,18 +201,72 @@ class AutoSinglePointTest:
         self.latest_scan = msg
 
     # =========================================================
+    # 阶段日志
+    # =========================================================
+    def parking_elapsed(self):
+        if self.parking_start_time is None:
+            return 0.0
+        return (rospy.Time.now() - self.parking_start_time).to_sec()
+
+    def phase_start(self, phase, detail=""):
+        self.current_phase = phase
+        start_time = rospy.Time.now()
+        suffix = (" " + detail) if detail else ""
+        rospy.loginfo("[PARK][%s][START][+%.2fs]%s",
+                      phase, self.parking_elapsed(), suffix)
+        return start_time
+
+    def phase_end(self, phase, start_time, status, detail=""):
+        dt = (rospy.Time.now() - start_time).to_sec() if start_time is not None else 0.0
+        suffix = (" " + detail) if detail else ""
+        rospy.loginfo("[PARK][%s][%s][dt=%.2fs][+%.2fs]%s",
+                      phase, status, dt, self.parking_elapsed(), suffix)
+
+    def phase_skip(self, phase, detail=""):
+        suffix = (" " + detail) if detail else ""
+        rospy.loginfo("[PARK][%s][SKIP][+%.2fs]%s",
+                      phase, self.parking_elapsed(), suffix)
+
+    # =========================================================
     # 主流程
     # =========================================================
     def run(self):
+        self.parking_start_time = rospy.Time.now()
+        run_start = self.phase_start(
+            "RUN",
+            "target=(%.3f, %.3f, %.1fdeg)" %
+            (self.target_x, self.target_y, self.target_yaw_deg)
+        )
+
         # ---- Phase 0: move_base 直达目标中心 ----
         if self.enable_direct_center:
-            if self.try_direct_goal_center():
+            phase_start = self.phase_start(
+                "PHASE0_DIRECT_CENTER",
+                "timeout=%.1fs tolerance=%.3f" %
+                (self.direct_center_timeout, self.direct_center_tolerance)
+            )
+            direct_ok = self.try_direct_goal_center()
+            self.phase_end(
+                "PHASE0_DIRECT_CENTER",
+                phase_start,
+                "OK" if direct_ok else "FAIL",
+                "next=%s" % ("finish" if direct_ok else "entry_based")
+            )
+            if direct_ok:
                 rospy.loginfo("SUCCESS: Phase 0 direct center parking finished.")
                 self.stop_robot()
+                self.parking_done = True
+                self.phase_end("RUN", run_start, "OK", "finished_by=direct_center")
                 return
             rospy.logwarn("Phase 0 failed. Switch to entry-based parking.")
+        else:
+            self.phase_skip("PHASE0_DIRECT_CENTER", "enable_direct_center=false")
 
         # ---- 生成入口 + 评分 + 取最佳 ----
+        phase_start = self.phase_start(
+            "ENTRY_SELECT",
+            "recognition=%s" % str(self.enable_entry_recognition)
+        )
         entries = self.generate_entries()
         if self.enable_entry_recognition:
             entries = self.sort_entries_by_obstacle_score(entries)
@@ -222,25 +278,70 @@ class AutoSinglePointTest:
         rospy.loginfo("Best entry: %s score=%.3f entry=(%.3f, %.3f)",
                        best_entry["name"], best_entry.get("score", -1),
                        best_entry["entry_x"], best_entry["entry_y"])
+        self.phase_end(
+            "ENTRY_SELECT",
+            phase_start,
+            "OK",
+            "best=%s score=%.3f entry=(%.3f, %.3f)" %
+            (best_entry["name"], best_entry.get("score", -1),
+             best_entry["entry_x"], best_entry["entry_y"])
+        )
 
         # ---- Phase 1a: move_base 到入口 ----
+        phase_start = self.phase_start(
+            "PHASE1A_MOVE_BASE_ENTRY",
+            "entry=%s timeout=%.1fs tolerance=%.3f" %
+            (best_entry["name"], self.entry_nav_timeout, self.entry_nav_tolerance)
+        )
         entry_ok = self.goto_entry_polling(best_entry)
+        self.phase_end(
+            "PHASE1A_MOVE_BASE_ENTRY",
+            phase_start,
+            "OK" if entry_ok else "FAIL",
+            "entry=%s" % best_entry["name"]
+        )
 
         # ---- Phase 1b: PID 到入口 (move_base 失败时) ----
         if not entry_ok:
             rospy.logwarn("Phase 1a move_base failed. Switch to Phase 1b PID to entry.")
+            phase_start = self.phase_start(
+                "PHASE1B_PID_ENTRY",
+                "entry=%s timeout=%.1fs max_v=%.3f max_wz=%.3f" %
+                (best_entry["name"], self.pid_translate_timeout,
+                 self.pid_max_v, self.pid_max_wz)
+            )
             entry_ok = self.pid_goto_point(
                 best_entry["entry_x"], best_entry["entry_y"], best_entry["target_yaw"],
                 "entry")
+            self.phase_end(
+                "PHASE1B_PID_ENTRY",
+                phase_start,
+                "OK" if entry_ok else "FAIL",
+                "entry=%s" % best_entry["name"]
+            )
+        else:
+            self.phase_skip("PHASE1B_PID_ENTRY", "phase1a_ok=true")
 
         if not entry_ok:
             rospy.logwarn("Phase 1b PID to entry failed. Stop here.")
             self.stop_robot()
+            self.phase_end("RUN", run_start, "FAIL", "failed_at=entry")
             return
 
         # ---- Phase 2: PID 入口 → 目标中心 ----
+        phase_start = self.phase_start(
+            "PHASE2_PID_CENTER",
+            "timeout=%.1fs max_v=%.3f max_wz=%.3f" %
+            (self.pid_translate_timeout, self.pid_max_v, self.pid_max_wz)
+        )
         center_ok = self.pid_goto_point(
             self.target_x, self.target_y, self.target_yaw, "center")
+        self.phase_end(
+            "PHASE2_PID_CENTER",
+            phase_start,
+            "OK" if center_ok else "TIMEOUT_ACCEPT",
+            "target=(%.3f, %.3f)" % (self.target_x, self.target_y)
+        )
 
         if center_ok:
             rospy.loginfo("SUCCESS: parked at target center via entry %s.", best_entry["name"])
@@ -249,10 +350,19 @@ class AutoSinglePointTest:
 
         # ---- Phase 3: 激光挡板精调 ----
         if self.fine_tune_enabled:
-            self.precision_fine_tune()
+            phase_start = self.phase_start(
+                "PHASE3_FINE_TUNE",
+                "timeout=%.1fs tolerance=%.3f max_v=%.3f" %
+                (self.fine_tune_timeout, self.fine_tune_tolerance, self.fine_tune_max_v)
+            )
+            fine_status, fine_detail = self.precision_fine_tune()
+            self.phase_end("PHASE3_FINE_TUNE", phase_start, fine_status, fine_detail)
+        else:
+            self.phase_skip("PHASE3_FINE_TUNE", "fine_tune_enabled=false")
 
         self.stop_robot()
         self.parking_done = True
+        self.phase_end("RUN", run_start, "OK", "finished_by=entry_based")
 
     # =========================================================
     # Phase 0: move_base 直达目标中心 (轮询 + 抽搐检测)
@@ -570,11 +680,33 @@ class AutoSinglePointTest:
 
         # 子阶段A: 航向对齐
         rospy.loginfo("[%s] Sub-phase A: align yaw", label)
-        self.pid_align_yaw(target_yaw)
+        phase_name = "PID_%s_ALIGN_YAW" % label.upper()
+        phase_start = self.phase_start(
+            phase_name,
+            "target_yaw=%.3f timeout=%.1fs" %
+            (target_yaw, self.pid_yaw_align_timeout)
+        )
+        align_ok = self.pid_align_yaw(target_yaw)
+        self.phase_end(
+            phase_name,
+            phase_start,
+            "OK" if align_ok else "TIMEOUT_ACCEPT"
+        )
 
         # 子阶段B: 平移 + 航向锁
         rospy.loginfo("[%s] Sub-phase B: translate", label)
+        phase_name = "PID_%s_TRANSLATE" % label.upper()
+        phase_start = self.phase_start(
+            phase_name,
+            "target=(%.3f, %.3f) timeout=%.1fs pos_tol=%.3f" %
+            (tx, ty, self.pid_translate_timeout, self.pos_tolerance)
+        )
         ok = self.pid_translate(tx, ty, target_yaw)
+        self.phase_end(
+            phase_name,
+            phase_start,
+            "OK" if ok else "FAIL"
+        )
 
         self.stop_robot()
         return ok
@@ -604,7 +736,7 @@ class AutoSinglePointTest:
 
         if self.best_entry is None:
             rospy.loginfo("Phase 3: no entry info, skip.")
-            return
+            return "SKIP", "reason=no_entry"
 
         # 入口对面 = 真挡板方向
         opposite = {
@@ -652,11 +784,14 @@ class AutoSinglePointTest:
         rate = rospy.Rate(20)
         start_time = rospy.Time.now()
         stable_cnt = 0
+        status = "TIMEOUT"
+        detail = ""
 
         while not rospy.is_shutdown():
             elapsed = (rospy.Time.now() - start_time).to_sec()
             if elapsed > self.fine_tune_timeout:
                 rospy.logwarn("Phase 3: timeout %.1fs", elapsed)
+                detail = "elapsed=%.2f" % elapsed
                 break
 
             now = rospy.Time.now()
@@ -669,6 +804,8 @@ class AutoSinglePointTest:
                     if stable_cnt >= 3:
                         rospy.loginfo("Phase 3: done. laser=%.3f target=%.2f err=%.3f",
                                        d, target_dist, err)
+                        status = "OK"
+                        detail = "laser=%.3f target=%.2f err=%.3f" % (d, target_dist, err)
                         break
                 else:
                     stable_cnt = 0
@@ -689,6 +826,7 @@ class AutoSinglePointTest:
 
         self.stop_robot()
         rospy.loginfo("Phase 3: finished.")
+        return status, detail
 
     # =========================================================
     # Phase 4: 逃逸 (泊车后沿入口轴反向退出)
@@ -696,9 +834,19 @@ class AutoSinglePointTest:
     def escape(self):
         """泊车后沿入口轴反向退出，离开挡板区域"""
         if not self.escape_enabled or self.best_entry is None:
+            self.phase_skip(
+                "PHASE4_ESCAPE",
+                "escape_enabled=%s best_entry=%s" %
+                (str(self.escape_enabled), str(self.best_entry is not None))
+            )
             return
 
         entry = self.best_entry
+        phase_start = self.phase_start(
+            "PHASE4_ESCAPE",
+            "entry=%s distance=%.3f speed=%.3f timeout=%.1fs" %
+            (entry["name"], self.escape_distance, self.escape_speed, self.escape_timeout)
+        )
         rospy.loginfo("=== Phase 4: escape via entry %s ===", entry["name"])
 
         # 逃逸方向 = 入口轴反方向
@@ -708,16 +856,20 @@ class AutoSinglePointTest:
         start_pose = self.lookup_robot_pose()
         if start_pose is None:
             rospy.logwarn("escape: no start pose, skip.")
+            self.phase_end("PHASE4_ESCAPE", phase_start, "SKIP", "reason=no_start_pose")
             return
         sx, sy, _ = start_pose
 
         rate = rospy.Rate(20)
         start_time = rospy.Time.now()
+        escape_status = "TIMEOUT"
+        escape_detail = ""
 
         while not rospy.is_shutdown():
             elapsed = (rospy.Time.now() - start_time).to_sec()
             if elapsed > self.escape_timeout:
                 rospy.logwarn("escape: timeout %.1fs", elapsed)
+                escape_detail = "elapsed=%.2f" % elapsed
                 break
 
             pose = self.lookup_robot_pose()
@@ -731,6 +883,8 @@ class AutoSinglePointTest:
 
             if moved >= self.escape_distance:
                 rospy.loginfo("escape: done, moved=%.3f", moved)
+                escape_status = "OK"
+                escape_detail = "moved=%.3f" % moved
                 break
 
             vx_map = escape_axis_x * self.escape_speed
@@ -744,6 +898,7 @@ class AutoSinglePointTest:
 
         self.stop_robot()
         rospy.loginfo("Phase 4: escape finished.")
+        self.phase_end("PHASE4_ESCAPE", phase_start, escape_status, escape_detail)
 
     # =========================================================
     # 4个入口生成 (复用现有逻辑)

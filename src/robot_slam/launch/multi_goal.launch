@@ -22,12 +22,6 @@
       <param name="detect_prealign_timeout" value="10"/>
       <param name="detect_yaw_align_at_prealign" value="true"/>
       <param name="detect_final_timeout" value="10"/>
-      <param name="detect_locked_final_approach" value="false"/>
-      <param name="detect_locked_approach_speed" value="0.15"/>
-      <param name="detect_locked_approach_yaw_hold" value="false"/>
-      <param name="detect_locked_approach_yaw_kp" value="5.6"/>
-      <param name="detect_locked_approach_max_yaw_vel" value="0.20"/>
-      <param name="detect_locked_approach_timeout_margin" value="1.0"/>
       <param name="detect_yaw_align_at_photo" value="true"/>
       <param name="detect_yaw_align_enabled" value="true"/>
       <param name="detect_yaw_tolerance" value="0.06"/>

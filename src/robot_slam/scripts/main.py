@@ -644,24 +644,74 @@ class navigation_demo:
         # self.goto(goals[14])
         # 遍历所有线索
         for idx, task_id in enumerate(task_numbers):
+            task_start_time = rospy.Time.now()
+            rospy.loginfo("[TASK_TIME][START] idx=%d/%d task_id=%s",
+                          idx + 1, len(task_numbers), str(task_id))
             if 1 <= task_id <= 9:
                 # 导航到线索对应的任务点 (5s 超时)
-                self.goto(goals[task_id], timeout=5)
+                nav_start_time = rospy.Time.now()
+                nav_ok = self.goto(goals[task_id], timeout=5)
+                rospy.loginfo("[TASK_TIME][NAV_TO_TASK] idx=%d task_id=%d dt=%.2fs ok=%s",
+                              idx + 1, task_id,
+                              (rospy.Time.now() - nav_start_time).to_sec(),
+                              str(nav_ok))
+
+                wait_start_time = rospy.Time.now()
                 rospy.sleep(1)
+                rospy.loginfo("[TASK_TIME][PRE_PARK_WAIT] idx=%d task_id=%d dt=%.2fs",
+                              idx + 1, task_id,
+                              (rospy.Time.now() - wait_start_time).to_sec())
+
                 # 启动精密停车
                 target = goals[task_id]
                 rospy.loginfo("move_base 到达任务点 %d，启动精密停车 (x=%.3f y=%.3f yaw=%.1f)..." % (task_id, target[0], target[1], target[2]))
+                rospy.loginfo("[PARK_TASK][START] idx=%d task_id=%d target=(%.3f, %.3f, %.1f)",
+                              idx + 1, task_id, target[0], target[1], target[2])
+
+                parking_init_start_time = rospy.Time.now()
                 parking = AutoSinglePointTest(target_x=target[0], target_y=target[1], target_yaw_deg=target[2])
+                rospy.loginfo("[TASK_TIME][PARK_INIT] idx=%d task_id=%d dt=%.2fs",
+                              idx + 1, task_id,
+                              (rospy.Time.now() - parking_init_start_time).to_sec())
+
+                parking_run_start_time = rospy.Time.now()
                 parking.run()
+                rospy.loginfo("[TASK_TIME][PARK_RUN] idx=%d task_id=%d dt=%.2fs parking_done=%s best_entry=%s",
+                              idx + 1, task_id,
+                              (rospy.Time.now() - parking_run_start_time).to_sec(),
+                              str(parking.parking_done),
+                              parking.best_entry["name"] if parking.best_entry is not None else "None")
+
+                post_wait_start_time = rospy.Time.now()
                 rospy.sleep(0.5)
+                rospy.loginfo("[TASK_TIME][POST_PARK_WAIT] idx=%d task_id=%d dt=%.2fs",
+                              idx + 1, task_id,
+                              (rospy.Time.now() - post_wait_start_time).to_sec())
+
                 # 语音播报到达任务点（用原始VLM识别编号）
                 raw_id = TASK_TO_VLM.get(task_id, task_id)
                 tts_text = u"已到达任务点%d号" % raw_id
-                self.tts_client(tts_text)
+                tts_start_time = rospy.Time.now()
+                tts_ok = self.tts_client(tts_text)
+                rospy.loginfo("[TASK_TIME][TTS] idx=%d task_id=%d dt=%.2fs ok=%s",
+                              idx + 1, task_id,
+                              (rospy.Time.now() - tts_start_time).to_sec(),
+                              str(tts_ok))
+
                 # 播报完毕，逃逸离开挡板区域
+                escape_start_time = rospy.Time.now()
                 parking.escape()
+                rospy.loginfo("[TASK_TIME][ESCAPE] idx=%d task_id=%d dt=%.2fs",
+                              idx + 1, task_id,
+                              (rospy.Time.now() - escape_start_time).to_sec())
+                rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs",
+                              idx + 1, task_id,
+                              (rospy.Time.now() - task_start_time).to_sec())
             else:
                 rospy.logwarn("任务编号%s无效，跳过" % task_id)
+                rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%s total_dt=%.2fs skipped=true",
+                              idx + 1, str(task_id),
+                              (rospy.Time.now() - task_start_time).to_sec())
 
     # ---------------- 执行完整任务流程 ----------------
     def execute_mission(self):
