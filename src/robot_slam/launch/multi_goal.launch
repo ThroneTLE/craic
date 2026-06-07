@@ -23,9 +23,9 @@
       <param name="relative_parking_mode" value="true"/>
       <param name="relative_direct_if_clear" value="true"/>
       <param name="relative_open_side_prefer_robot" value="true"/>
-      <param name="relative_entry_timeout" value="4.0"/>
+      <param name="relative_entry_timeout" value="5.0"/>
       <param name="relative_entry_tolerance" value="0.18"/>
-      <param name="relative_center_timeout" value="5.0"/>
+      <param name="relative_center_timeout" value="4.0"/>
       <param name="relative_center_tolerance" value="0.035"/>
       <param name="relative_yaw_tolerance" value="0.08"/>
       <param name="relative_center_stable_count" value="2"/>
