@@ -36,7 +36,7 @@ TebLocalPlannerROS:
   max_vel_x: 0.5
   max_vel_x_backwards: 0.5
   max_vel_y: 0.5
-  max_vel_theta: 4.8
+  max_vel_theta: 4.0
 
   acc_lim_x: 1.8
   acc_lim_y: 1.8

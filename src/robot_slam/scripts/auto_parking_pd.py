@@ -63,7 +63,7 @@ class AutoSinglePointTest:
         # Phase 0: move_base 直达目标中心
         # =====================================================
         self.enable_direct_center = rospy.get_param("enable_direct_center", True)
-        self.direct_center_timeout = 5.0          # 硬编码，不读 param server
+        self.direct_center_timeout =5.0          # 硬编码，不读 param server
         self.direct_center_tolerance = rospy.get_param("direct_center_tolerance", 0.10)
         self.direct_center_oscillation_window = 3.0
         self.direct_center_oscillation_min_displacement = 0.2
@@ -111,10 +111,10 @@ class AutoSinglePointTest:
         self.pid_kd_xy = rospy.get_param("pid_kd_xy", 0.2)
         self.pid_kp_yaw = rospy.get_param("pid_kp_yaw", 1.5)
         self.pid_kd_yaw = rospy.get_param("pid_kd_yaw", 0.3)
-        self.pid_max_v = rospy.get_param("pid_max_v", 0.15)
-        self.pid_max_wz = rospy.get_param("pid_max_wz", 0.6)
+        self.pid_max_v = rospy.get_param("pid_max_v", 0.25)
+        self.pid_max_wz = rospy.get_param("pid_max_wz", 1.6)
         self.pid_yaw_align_timeout = rospy.get_param("pid_yaw_align_timeout", 4.0)
-        self.pid_translate_timeout = rospy.get_param("pid_translate_timeout", 11.0)
+        self.pid_translate_timeout = rospy.get_param("pid_translate_timeout", 9.0)
         self.pos_tolerance = rospy.get_param("pos_tolerance", 0.02)
         self.yaw_tolerance = rospy.get_param("yaw_tolerance", 0.05)
 
@@ -122,7 +122,7 @@ class AutoSinglePointTest:
         # Phase 3: 激光挡板精调
         # =====================================================
         self.fine_tune_enabled = rospy.get_param("fine_tune_enabled", True)
-        self.fine_tune_timeout = rospy.get_param("fine_tune_timeout", 8.0)
+        self.fine_tune_timeout = rospy.get_param("fine_tune_timeout", 6.0)
         self.fine_tune_front_back_target = rospy.get_param("fine_tune_front_back_target", 0.24)
         self.fine_tune_side_target = rospy.get_param("fine_tune_side_target", 0.20)
         self.fine_tune_tolerance = rospy.get_param("fine_tune_tolerance", 0.03)
@@ -135,7 +135,7 @@ class AutoSinglePointTest:
         # =====================================================
         self.escape_enabled = rospy.get_param("escape_enabled", True)
         self.escape_distance = rospy.get_param("escape_distance", 0.35)
-        self.escape_speed = rospy.get_param("escape_speed", 0.10)
+        self.escape_speed = rospy.get_param("escape_speed", 0.20)
         self.escape_timeout = rospy.get_param("escape_timeout", 5.0)
 
         # 运行时状态
