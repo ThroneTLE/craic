@@ -323,12 +323,8 @@ class AutoSinglePointTest:
             elapsed = (rospy.Time.now() - start_time).to_sec()
 
             state = self.move_base.get_state()
-            if state == GoalStatus.SUCCEEDED:
-                rospy.loginfo("Phase 0: move_base SUCCEEDED in %.1fs", elapsed)
-                timer.shutdown()
-                return True
 
-            pose = self.lookup_robot_pose()
+            pose = self.lookup_robot_pose(prefer_board=True)
             if pose is not None:
                 now = rospy.Time.now()
                 pose_history.append((now, pose[0], pose[1]))
@@ -344,6 +340,15 @@ class AutoSinglePointTest:
                     rospy.sleep(0.2)
                     timer.shutdown()
                     return True
+
+                if state == GoalStatus.SUCCEEDED:
+                    rospy.logwarn(
+                        "Phase 0: move_base SUCCEEDED, but corrected pose is not close "
+                        "(dist=%.3f yaw_err=%.3f). Switch to entry/PD.",
+                        dist, yaw_err)
+                    self.stop_robot()
+                    timer.shutdown()
+                    return False
 
                 if len(pose_history) >= 2:
                     window_dt = (pose_history[-1][0] - pose_history[0][0]).to_sec()
@@ -423,12 +428,8 @@ class AutoSinglePointTest:
             elapsed = (rospy.Time.now() - start_time).to_sec()
 
             state = self.move_base.get_state()
-            if state == GoalStatus.SUCCEEDED:
-                rospy.loginfo("Phase 1a: move_base reached entry SUCCEEDED in %.1fs", elapsed)
-                timer.shutdown()
-                return True
 
-            dist = self.distance_to_point(x, y)
+            dist = self.distance_to_point(x, y, prefer_board=True)
             if dist is not None and dist < self.entry_nav_tolerance:
                 rospy.logwarn("Phase 1a: near entry (dist=%.3f) after %.1fs. Accept.", dist, elapsed)
                 self.move_base.cancel_goal()
@@ -437,7 +438,16 @@ class AutoSinglePointTest:
                 timer.shutdown()
                 return True
 
-            pose = self.lookup_robot_pose()
+            if state == GoalStatus.SUCCEEDED:
+                rospy.logwarn(
+                    "Phase 1a: move_base SUCCEEDED, but corrected entry distance is %.3f. "
+                    "Switch to PID.",
+                    dist if dist is not None else -1.0)
+                self.stop_robot()
+                timer.shutdown()
+                return False
+
+            pose = self.lookup_robot_pose(prefer_board=True)
             if pose is not None:
                 now = rospy.Time.now()
                 pose_history.append((now, pose[0], pose[1]))
@@ -793,7 +803,7 @@ class AutoSinglePointTest:
         return entries
 
     def sort_entries_by_robot_position(self, entries):
-        pose = self.lookup_robot_pose()
+        pose = self.lookup_robot_pose(prefer_board=True)
         if pose is None:
             return entries
         rx, ry, _ = pose
@@ -875,7 +885,7 @@ class AutoSinglePointTest:
         if self.enable_opening_circle_detect:
             opening = self.detect_opening_by_circle(points)
 
-        pose = self.lookup_robot_pose()
+        pose = self.lookup_robot_pose(prefer_board=True)
         if pose is None:
             return self.sort_entries_by_robot_position(entries)
         rx, ry, _ = pose
@@ -942,6 +952,8 @@ class AutoSinglePointTest:
                                               rospy.Time(0), rospy.Duration(0.3))
             trans, rot = self.tf_listener.lookupTransform(self.map_frame, scan.header.frame_id, rospy.Time(0))
             _, _, yaw = tf.transformations.euler_from_quaternion(rot)
+            raw_base_pose = self.lookup_robot_pose()
+            corrected_base_pose = self.lookup_board_corrected_pose()
             cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
             for i, r in enumerate(scan.ranges):
                 if math.isnan(r) or math.isinf(r):
@@ -952,6 +964,8 @@ class AutoSinglePointTest:
                 lx, ly = r * math.cos(a), r * math.sin(a)
                 mx = trans[0] + cos_yaw * lx - sin_yaw * ly
                 my = trans[1] + sin_yaw * lx + cos_yaw * ly
+                if raw_base_pose is not None and corrected_base_pose is not None:
+                    mx, my = self.correct_map_point_by_board_pose(mx, my, raw_base_pose, corrected_base_pose)
                 if math.sqrt((mx - self.target_x) ** 2 + (my - self.target_y) ** 2) <= self.recognition_max_range:
                     points.append((mx, my))
             self.scan_memory.append((now, points))
@@ -1014,11 +1028,19 @@ class AutoSinglePointTest:
         cmd.angular.z = 0.0
         return cmd
 
+    def lookup_board_corrected_pose(self):
+        if not self.use_board_corrected_pose or not self.board_pose_valid or not self.latest_board_pose:
+            return None
+        age = (rospy.Time.now() - self.latest_board_pose_stamp).to_sec()
+        if age > self.board_pose_timeout:
+            return None
+        return self.latest_board_pose
+
     def lookup_robot_pose(self, prefer_board=False):
-        if prefer_board and self.use_board_corrected_pose and self.board_pose_valid and self.latest_board_pose:
-            age = (rospy.Time.now() - self.latest_board_pose_stamp).to_sec()
-            if age <= self.board_pose_timeout:
-                return self.latest_board_pose
+        if prefer_board:
+            pose = self.lookup_board_corrected_pose()
+            if pose is not None:
+                return pose
         if prefer_board and self.use_board_corrected_pose and self.require_board_corrected_pose:
             rospy.logwarn_throttle(1.0, "board corrected pose unavailable; parking controller holds position")
             return None
@@ -1038,6 +1060,24 @@ class AutoSinglePointTest:
         if pose is None:
             return None
         return math.sqrt((x - pose[0]) ** 2 + (y - pose[1]) ** 2)
+
+    def correct_map_point_by_board_pose(self, mx, my, raw_pose, corrected_pose):
+        raw_x, raw_y, raw_yaw = raw_pose
+        corrected_x, corrected_y, corrected_yaw = corrected_pose
+
+        dx = mx - raw_x
+        dy = my - raw_y
+        cos_raw = math.cos(-raw_yaw)
+        sin_raw = math.sin(-raw_yaw)
+        bx = cos_raw * dx - sin_raw * dy
+        by = sin_raw * dx + cos_raw * dy
+
+        cos_corr = math.cos(corrected_yaw)
+        sin_corr = math.sin(corrected_yaw)
+        return (
+            corrected_x + cos_corr * bx - sin_corr * by,
+            corrected_y + sin_corr * bx + cos_corr * by,
+        )
 
     def get_sector_min_range(self, deg_min, deg_max):
         if self.latest_scan is None:
