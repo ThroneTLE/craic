@@ -129,6 +129,8 @@ class navigation_demo:
         self.final_yaw_min_vel = rospy.get_param("~final_yaw_min_vel", 0.08)
         self.final_yaw_max_vel = rospy.get_param("~final_yaw_max_vel", 0.45)
         self.final_yaw_stable_count = int(rospy.get_param("~final_yaw_stable_count", 3))
+        self.final_side_laser_direction = rospy.get_param("~final_side_laser_direction", "left")
+        self.final_depth_laser_direction = rospy.get_param("~final_depth_laser_direction", "back")
         self.task_nav_timeout = rospy.get_param("~task_nav_timeout", 8.0)
         self.task_nav_retry_timeout = rospy.get_param("~task_nav_retry_timeout", 5.0)
         self.task_nav_accept_dist = rospy.get_param("~task_nav_accept_dist", 0.45)
@@ -543,24 +545,13 @@ class navigation_demo:
         nav_dist = self.distance_to_goal_xy(target)
         if nav_reached:
             yaw_err = self.yaw_error_to_goal(target)
-            if mode == "target" and not nav_ok and abs(yaw_err) > self.task_nav_target_accept_yaw:
-                rospy.logwarn(
-                    "[TASK_NAV][TARGET_DISTANCE_ACCEPT_REJECT_YAW] dist=%s yaw_err=%.3f accept_yaw=%.3f",
-                    "%.3f" % approach_dist if approach_dist is not None else "None",
-                    yaw_err,
-                    self.task_nav_target_accept_yaw
-                )
-                nav_reached = False
-            elif mode != "target" and abs(yaw_err) > self.task_nav_target_accept_yaw:
-                rospy.logwarn(
-                    "[TASK_NAV][APPROACH_REACHED_REJECT_YAW] mode=%s approach_dist=%s target_dist=%s yaw_err=%.3f accept_yaw=%.3f",
-                    mode,
-                    "%.3f" % approach_dist if approach_dist is not None else "None",
-                    "%.3f" % nav_dist if nav_dist is not None else "None",
-                    yaw_err,
-                    self.task_nav_target_accept_yaw
-                )
-                nav_reached = False
+            rospy.loginfo(
+                "[TASK_NAV][REACHED_BY_POSITION] mode=%s approach_dist=%s target_dist=%s yaw_err=%.3f",
+                mode,
+                "%.3f" % approach_dist if approach_dist is not None else "None",
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                yaw_err
+            )
         if mode != "target" and nav_ok and not nav_reached:
             rospy.logwarn(
                 "[TASK_NAV][APPROACH_STATE_DISTANCE_MISMATCH] mode=%s approach_dist=%s accept=%.3f",
@@ -691,16 +682,49 @@ class navigation_demo:
             if self.scan_data.range_min <= distance <= self.scan_data.range_max:
                 return distance
         return float('nan')  # 返回NaN表示无效值
+    def final_laser_direction_config(self, direction):
+        direction = str(direction).strip().lower()
+        configs = {
+            "left": (np.pi / 2.0, "linear.y", 1.0),
+            "right": (-np.pi / 2.0, "linear.y", -1.0),
+            "front": (0.0, "linear.x", 1.0),
+            "back": (np.pi, "linear.x", -1.0),
+        }
+        return configs.get(direction)
+
+    def apply_final_axis_cmd(self, cmd, axis, value):
+        if axis == "linear.x":
+            cmd.linear.x += value
+        elif axis == "linear.y":
+            cmd.linear.y += value
+
     def adjust_position(self, side_target, back_target):
         """
         执行位置校准
-        :param side_target: 侧方(+90°)目标距离 (米)
-        :param back_target: 后方(-180°)目标距离 (米)
+        :param side_target: 侧方目标距离 (米)
+        :param back_target: 深度方向目标距离 (米)
         :return: 是否完成校准
         """
         if self.scan_data is None:
             rospy.logwarn("无激光数据，无法校准!")
             return False
+
+        side_config = self.final_laser_direction_config(self.final_side_laser_direction)
+        depth_config = self.final_laser_direction_config(self.final_depth_laser_direction)
+        if side_config is None or depth_config is None:
+            rospy.logerr(
+                "终点激光方向配置无效: side=%s depth=%s，应为 left/right/front/back",
+                str(self.final_side_laser_direction),
+                str(self.final_depth_laser_direction)
+            )
+            return False
+        side_angle, side_axis, side_sign = side_config
+        depth_angle, depth_axis, depth_sign = depth_config
+        rospy.loginfo(
+            "[FINAL][ADJUST_POSITION][CONFIG] side=%s target=%.3f depth=%s target=%.3f",
+            str(self.final_side_laser_direction), side_target,
+            str(self.final_depth_laser_direction), back_target
+        )
         
         #rospy.loginfo(f"开始位置校准: 侧方目标={side_target:.2f}m, 后方目标={back_target:.2f}m, 航向角目标=0°")
         
@@ -715,13 +739,13 @@ class navigation_demo:
                 self.stop_movement()
                 return False
             # 获取关键角度距离
-            left_dist = self.get_range_at_angle(np.pi/2)   # +90度 (左侧)
-            back_dist = self.get_range_at_angle(np.pi)     # -180度 (后方)
+            side_dist = self.get_range_at_angle(side_angle)
+            depth_dist = self.get_range_at_angle(depth_angle)
             
             
             # 计算位置误差
-            left_error = left_dist - side_target
-            back_error = back_dist - back_target
+            side_error = side_dist - side_target
+            depth_error = depth_dist - back_target
             
             # 计算航向角误差
             yaw_error = self.normalize_angle(self.target_yaw - self.current_yaw)
@@ -729,13 +753,13 @@ class navigation_demo:
             # 创建速度指令
             cmd = Twist()
             
-            # 横向移动调整 (Y方向)
-            if abs(left_error) > self.position_tolerance:
-                cmd.linear.y = self.kp_linear * left_error   # 左侧：正误差→左移
+            if abs(side_error) > self.position_tolerance:
+                self.apply_final_axis_cmd(
+                    cmd, side_axis, self.kp_linear * side_sign * side_error)
             
-            # 前后移动调整 (X方向)
-            if abs(back_error) > self.position_tolerance:
-                cmd.linear.x = -self.kp_linear * back_error
+            if abs(depth_error) > self.position_tolerance:
+                self.apply_final_axis_cmd(
+                    cmd, depth_axis, self.kp_linear * depth_sign * depth_error)
             
             # 航向角调整 (Z轴旋转)
             if abs(yaw_error) > self.yaw_tolerance:
@@ -745,8 +769,8 @@ class navigation_demo:
             self.pub.publish(cmd)
             
             # 检查是否完成校准
-            position_ok = (abs(left_error) < self.position_tolerance and 
-                          abs(back_error) < self.position_tolerance)
+            position_ok = (abs(side_error) < self.position_tolerance and
+                          abs(depth_error) < self.position_tolerance)
             yaw_ok = abs(yaw_error) < self.yaw_tolerance
             
             if position_ok and yaw_ok:
