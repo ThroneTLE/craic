@@ -1,8 +1,8 @@
-prefix=/home/abot/craic/devel
+prefix=/home/abot/throne_craic/devel
 
 Name: abot_rpp
 Description: Description of abot_rpp
 Version: 0.0.0
-Cflags: -I/home/abot/craic/src/abot_rpp/include
+Cflags: -I/home/abot/throne_craic/src/abot_rpp/include
 Libs: -L${prefix}/lib -labot_rpp
 Requires: base_local_planner costmap_2d nav_core pluginlib roscpp tf2_ros

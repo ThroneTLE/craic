@@ -28,7 +28,7 @@ GAP_SECONDS = 0.5        # 两次录音间隔（秒）
 WAKE_WORD = "比赛开始"
 
 # 提示音
-START_GAME_WAV = "/home/abot/craic/src/robot_slam/resources/startGame.wav"
+START_GAME_WAV = "/home/abot/throne_craic/src/robot_slam/resources/startGame.wav"
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 

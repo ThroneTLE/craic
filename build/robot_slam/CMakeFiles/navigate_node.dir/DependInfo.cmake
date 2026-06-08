@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/abot/craic/src/robot_slam/src/navigate.cpp" "/home/abot/craic/build/robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o"
+  "/home/abot/throne_craic/src/robot_slam/src/navigate.cpp" "/home/abot/throne_craic/build/robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -17,8 +17,7 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/home/abot/craic/devel/include"
-  "/home/abot/craic/src/robot_slam/include"
+  "/home/abot/throne_craic/devel/include"
   "/opt/ros/melodic/include"
   "/opt/ros/melodic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
   "/opt/ros/melodic/share/orocos_kdl/cmake/../../../include"

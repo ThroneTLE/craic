@@ -2,7 +2,7 @@
 
 message(STATUS "find_object_2d: 2 messages, 0 services")
 
-set(MSG_I_FLAGS "-Ifind_object_2d:/home/abot/craic/src/abot_find/msg;-Istd_msgs:/opt/ros/melodic/share/std_msgs/cmake/../msg;-Isensor_msgs:/opt/ros/melodic/share/sensor_msgs/cmake/../msg;-Igeometry_msgs:/opt/ros/melodic/share/geometry_msgs/cmake/../msg")
+set(MSG_I_FLAGS "-Ifind_object_2d:/home/abot/throne_craic/src/abot_find/msg;-Istd_msgs:/opt/ros/melodic/share/std_msgs/cmake/../msg;-Isensor_msgs:/opt/ros/melodic/share/sensor_msgs/cmake/../msg;-Igeometry_msgs:/opt/ros/melodic/share/geometry_msgs/cmake/../msg")
 
 # Find all generators
 find_package(gencpp REQUIRED)
@@ -17,14 +17,14 @@ add_custom_target(find_object_2d_generate_messages ALL)
 
 
 
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
 add_custom_target(_find_object_2d_generate_messages_check_deps_${_filename}
-  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "find_object_2d" "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg" "std_msgs/String:std_msgs/Float32MultiArray:std_msgs/Int32:std_msgs/MultiArrayLayout:std_msgs/Header:std_msgs/MultiArrayDimension"
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "find_object_2d" "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg" "std_msgs/String:std_msgs/Float32MultiArray:std_msgs/Int32:std_msgs/MultiArrayLayout:std_msgs/Header:std_msgs/MultiArrayDimension"
 )
 
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
 add_custom_target(_find_object_2d_generate_messages_check_deps_${_filename}
-  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "find_object_2d" "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg" "std_msgs/MultiArrayLayout:std_msgs/Float32MultiArray:std_msgs/MultiArrayDimension:std_msgs/Header"
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "find_object_2d" "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg" "std_msgs/MultiArrayLayout:std_msgs/Float32MultiArray:std_msgs/MultiArrayDimension:std_msgs/Header"
 )
 
 #
@@ -34,13 +34,13 @@ add_custom_target(_find_object_2d_generate_messages_check_deps_${_filename}
 ### Section generating for lang: gencpp
 ### Generating Messages
 _generate_msg_cpp(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/String.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Int32.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg"
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/find_object_2d
 )
 _generate_msg_cpp(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/find_object_2d
@@ -60,9 +60,9 @@ add_custom_target(find_object_2d_generate_messages_cpp
 add_dependencies(find_object_2d_generate_messages find_object_2d_generate_messages_cpp)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_cpp _find_object_2d_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_cpp _find_object_2d_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility
@@ -75,13 +75,13 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS find_object_2d_generate_messages_cp
 ### Section generating for lang: geneus
 ### Generating Messages
 _generate_msg_eus(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/String.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Int32.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg"
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/find_object_2d
 )
 _generate_msg_eus(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/find_object_2d
@@ -101,9 +101,9 @@ add_custom_target(find_object_2d_generate_messages_eus
 add_dependencies(find_object_2d_generate_messages find_object_2d_generate_messages_eus)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_eus _find_object_2d_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_eus _find_object_2d_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility
@@ -116,13 +116,13 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS find_object_2d_generate_messages_eu
 ### Section generating for lang: genlisp
 ### Generating Messages
 _generate_msg_lisp(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/String.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Int32.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg"
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/find_object_2d
 )
 _generate_msg_lisp(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/find_object_2d
@@ -142,9 +142,9 @@ add_custom_target(find_object_2d_generate_messages_lisp
 add_dependencies(find_object_2d_generate_messages find_object_2d_generate_messages_lisp)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_lisp _find_object_2d_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_lisp _find_object_2d_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility
@@ -157,13 +157,13 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS find_object_2d_generate_messages_li
 ### Section generating for lang: gennodejs
 ### Generating Messages
 _generate_msg_nodejs(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/String.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Int32.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg"
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/find_object_2d
 )
 _generate_msg_nodejs(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/find_object_2d
@@ -183,9 +183,9 @@ add_custom_target(find_object_2d_generate_messages_nodejs
 add_dependencies(find_object_2d_generate_messages find_object_2d_generate_messages_nodejs)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_nodejs _find_object_2d_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_nodejs _find_object_2d_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility
@@ -198,13 +198,13 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS find_object_2d_generate_messages_no
 ### Section generating for lang: genpy
 ### Generating Messages
 _generate_msg_py(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/String.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Int32.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg"
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/find_object_2d
 )
 _generate_msg_py(find_object_2d
-  "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg"
+  "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg"
   "${MSG_I_FLAGS}"
   "/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayLayout.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Float32MultiArray.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/MultiArrayDimension.msg;/opt/ros/melodic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/find_object_2d
@@ -224,9 +224,9 @@ add_custom_target(find_object_2d_generate_messages_py
 add_dependencies(find_object_2d_generate_messages find_object_2d_generate_messages_py)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/DetectionInfo.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_py _find_object_2d_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_find/msg/ObjectsStamped.msg" NAME_WE)
 add_dependencies(find_object_2d_generate_messages_py _find_object_2d_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility

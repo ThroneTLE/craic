@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/throne_craic/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/throne_craic/build
 
 # Utility rule file for abot_vlm_geneus.
 
@@ -63,10 +63,10 @@ abot_vlm/CMakeFiles/abot_vlm_geneus.dir/build: abot_vlm_geneus
 .PHONY : abot_vlm/CMakeFiles/abot_vlm_geneus.dir/build
 
 abot_vlm/CMakeFiles/abot_vlm_geneus.dir/clean:
-	cd /home/abot/craic/build/abot_vlm && $(CMAKE_COMMAND) -P CMakeFiles/abot_vlm_geneus.dir/cmake_clean.cmake
+	cd /home/abot/throne_craic/build/abot_vlm && $(CMAKE_COMMAND) -P CMakeFiles/abot_vlm_geneus.dir/cmake_clean.cmake
 .PHONY : abot_vlm/CMakeFiles/abot_vlm_geneus.dir/clean
 
 abot_vlm/CMakeFiles/abot_vlm_geneus.dir/depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/craic/src /home/abot/craic/src/abot_vlm /home/abot/craic/build /home/abot/craic/build/abot_vlm /home/abot/craic/build/abot_vlm/CMakeFiles/abot_vlm_geneus.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/abot/throne_craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/throne_craic/src /home/abot/throne_craic/src/abot_vlm /home/abot/throne_craic/build /home/abot/throne_craic/build/abot_vlm /home/abot/throne_craic/build/abot_vlm/CMakeFiles/abot_vlm_geneus.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : abot_vlm/CMakeFiles/abot_vlm_geneus.dir/depend
 

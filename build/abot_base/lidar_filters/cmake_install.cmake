@@ -1,8 +1,8 @@
-# Install script for directory: /home/abot/craic/src/abot_base/lidar_filters
+# Install script for directory: /home/abot/throne_craic/src/abot_base/lidar_filters
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/abot/craic/install")
+  set(CMAKE_INSTALL_PREFIX "/home/abot/throne_craic/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,17 +38,17 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/craic/build/abot_base/lidar_filters/catkin_generated/installspace/lidar_filters.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/throne_craic/build/abot_base/lidar_filters/catkin_generated/installspace/lidar_filters.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/lidar_filters/cmake" TYPE FILE FILES
-    "/home/abot/craic/build/abot_base/lidar_filters/catkin_generated/installspace/lidar_filtersConfig.cmake"
-    "/home/abot/craic/build/abot_base/lidar_filters/catkin_generated/installspace/lidar_filtersConfig-version.cmake"
+    "/home/abot/throne_craic/build/abot_base/lidar_filters/catkin_generated/installspace/lidar_filtersConfig.cmake"
+    "/home/abot/throne_craic/build/abot_base/lidar_filters/catkin_generated/installspace/lidar_filtersConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/lidar_filters" TYPE FILE FILES "/home/abot/craic/src/abot_base/lidar_filters/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/lidar_filters" TYPE FILE FILES "/home/abot/throne_craic/src/abot_base/lidar_filters/package.xml")
 endif()
 

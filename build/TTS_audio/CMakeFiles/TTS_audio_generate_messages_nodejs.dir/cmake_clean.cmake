@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/TTS_audio_generate_messages_nodejs"
-  "/home/abot/craic/devel/share/gennodejs/ros/TTS_audio/srv/StringService.js"
-  "/home/abot/craic/devel/share/gennodejs/ros/TTS_audio/srv/TTS.js"
-  "/home/abot/craic/devel/share/gennodejs/ros/TTS_audio/srv/TextToSpeech.js"
+  "/home/abot/throne_craic/devel/share/gennodejs/ros/TTS_audio/srv/StringService.js"
+  "/home/abot/throne_craic/devel/share/gennodejs/ros/TTS_audio/srv/TTS.js"
+  "/home/abot/throne_craic/devel/share/gennodejs/ros/TTS_audio/srv/TextToSpeech.js"
 )
 
 # Per-language clean rules from dependency scanning.

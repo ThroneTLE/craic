@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/abot/craic/src/robot_slam/src/navigate.cpp
+/home/abot/throne_craic/src/robot_slam/src/navigate.cpp
 ros/ros.h
 -
 actionlib_msgs/GoalStatusArray.h

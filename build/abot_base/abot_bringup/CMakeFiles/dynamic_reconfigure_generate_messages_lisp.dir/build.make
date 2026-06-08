@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/throne_craic/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/throne_craic/build
 
 # Utility rule file for dynamic_reconfigure_generate_messages_lisp.
 
@@ -63,10 +63,10 @@ abot_base/abot_bringup/CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir
 .PHONY : abot_base/abot_bringup/CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/build
 
 abot_base/abot_bringup/CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/clean:
-	cd /home/abot/craic/build/abot_base/abot_bringup && $(CMAKE_COMMAND) -P CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/cmake_clean.cmake
+	cd /home/abot/throne_craic/build/abot_base/abot_bringup && $(CMAKE_COMMAND) -P CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/cmake_clean.cmake
 .PHONY : abot_base/abot_bringup/CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/clean
 
 abot_base/abot_bringup/CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/craic/src /home/abot/craic/src/abot_base/abot_bringup /home/abot/craic/build /home/abot/craic/build/abot_base/abot_bringup /home/abot/craic/build/abot_base/abot_bringup/CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/abot/throne_craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/throne_craic/src /home/abot/throne_craic/src/abot_base/abot_bringup /home/abot/throne_craic/build /home/abot/throne_craic/build/abot_base/abot_bringup /home/abot/throne_craic/build/abot_base/abot_bringup/CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : abot_base/abot_bringup/CMakeFiles/dynamic_reconfigure_generate_messages_lisp.dir/depend
 

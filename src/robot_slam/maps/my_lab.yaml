@@ -1,4 +1,4 @@
-image: /home/abot/craic/src/robot_slam/maps/my_lab.pgm
+image: /home/abot/throne_craic/src/robot_slam/maps/my_lab.pgm
 resolution: 0.020000
 origin: [-1.000000, -1.000000, 0.000000]
 negate: 0

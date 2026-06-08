@@ -6,11 +6,11 @@
 
 #IncludeRegexTransform: 
 
-/home/abot/craic/src/abot_find/src/../include/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/Camera.h
 find_object/Header.h
 -
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 opencv2/highgui/highgui.hpp
 -
 QtCore/QObject
@@ -20,7 +20,7 @@ QtCore/QTimer
 QtGui/QImage
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/DetectionInfo.h
 QtCore/QMultiMap
 -
 QtGui/QTransform
@@ -34,15 +34,15 @@ opencv2/features2d/features2d.hpp
 vector
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/FindObject.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/FindObject.h
 find_object/Header.h
 -
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/Settings.h
 QtCore/QObject
 -
 QtCore/QString
@@ -64,21 +64,21 @@ opencv2/opencv.hpp
 vector
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/FindObjectExp.h
 
-/home/abot/craic/src/abot_find/src/../include/find_object/Header.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/Header.h
 stdint.h
 -
 QString
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/MainWindow.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/MainWindow.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
 find_object/Header.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/Header.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/Header.h
 QMainWindow
 -
 QtCore/QSet
@@ -94,11 +94,11 @@ QtCore/QByteArray
 opencv2/opencv.hpp
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/Settings.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 find_object/Version.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/Version.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/Version.h
 QtCore/QMap
 -
 QtCore/QVariant
@@ -108,13 +108,13 @@ QtCore/QByteArray
 opencv2/features2d/features2d.hpp
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/Version.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/Version.h
 
-/home/abot/craic/src/abot_find/src/ParametersToolBox.h
+/home/abot/throne_craic/src/abot_find/src/ParametersToolBox.h
 QToolBox
 -
 
-/home/abot/craic/src/abot_find/src/ros/CameraROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/CameraROS.h
 ros/ros.h
 -
 ros/spinner.h
@@ -138,11 +138,11 @@ sensor_msgs/CameraInfo.h
 sensor_msgs/Image.h
 -
 find_object/Camera.h
-/home/abot/craic/src/abot_find/src/ros/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object/Camera.h
 QtCore/QStringList
 -
 
-/home/abot/craic/src/abot_find/src/ros/FindObjectROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/FindObjectROS.h
 ros/ros.h
 -
 cv_bridge/cv_bridge.h
@@ -150,7 +150,7 @@ cv_bridge/cv_bridge.h
 tf/transform_broadcaster.h
 -
 find_object/FindObject.h
-/home/abot/craic/src/abot_find/src/ros/find_object/FindObject.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object/FindObject.h
 QtCore/QObject
 -
 QtCore/QMultiMap
@@ -162,21 +162,21 @@ QtCore/QRect
 QtGui/QTransform
 -
 
-/home/abot/craic/src/abot_find/src/ros/find_object_2d_node.cpp
+/home/abot/throne_craic/src/abot_find/src/ros/find_object_2d_node.cpp
 CameraROS.h
-/home/abot/craic/src/abot_find/src/ros/CameraROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/CameraROS.h
 FindObjectROS.h
-/home/abot/craic/src/abot_find/src/ros/FindObjectROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/FindObjectROS.h
 QApplication
 -
 QDir
 -
 find_object/MainWindow.h
-/home/abot/craic/src/abot_find/src/ros/find_object/MainWindow.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object/MainWindow.h
 ParametersToolBox.h
-/home/abot/craic/src/abot_find/src/ros/ParametersToolBox.h
+/home/abot/throne_craic/src/abot_find/src/ros/ParametersToolBox.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/ros/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object/Settings.h
 signal.h
 -
 

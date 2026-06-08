@@ -11,11 +11,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  message_generation
   actionlib_msgs
   geometry_msgs
   nav_msgs
   tf
   tf2_ros
+  tf2_msgs
   tf_conversions
 )
 
@@ -65,10 +67,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
  )
 
-# 4. 声明运行依赖
- catkin_package(
-  CATKIN_DEPENDS std_msgs geometry_msgs message_runtime
- ) 
 ## Generate services in the 'srv' folder
 # add_service_files(
 #   FILES
@@ -119,9 +117,18 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES robot_slam
-  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS
+    roscpp
+    rospy
+    std_msgs
+    message_runtime
+    actionlib_msgs
+    geometry_msgs
+    nav_msgs
+    tf
+    tf2_ros
+    tf2_msgs
+    tf_conversions
 #  DEPENDS system_lib
 )
 
@@ -132,7 +139,6 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -152,6 +158,7 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/robot_slam_node.cpp)
 
 add_executable(navigate_node src/navigate.cpp)
+add_dependencies(navigate_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(navigate_node
    ${catkin_LIBRARIES}
 )

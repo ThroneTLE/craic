@@ -12,7 +12,7 @@ catkin_make
 source devel/setup.bash
 
 # Source a different workspace location (as used by some scripts)
-source ~/demo/devel/setup.bash
+source ~/throne_craic/devel/setup.bash
 ```
 
 ## Launch / Run
@@ -143,8 +143,8 @@ API keys and endpoints are in `abot_vlm/scripts/API_KEY.py` (not tracked in git,
 
 ### Important Paths (hardcoded in scripts)
 
-Several Python scripts hardcode paths under `/home/abot/demo/` (separate from this workspace root `/home/abot/craic/`):
-- VLM temp images: `/home/abot/demo/src/abot_vlm/temp/`
-- OCR temp images: `/home/abot/demo/src/ocr_detect/temp/`
-- Voice model: `/home/abot/demo/src/robot_slam/resources/models/start.pmdl`
+Several Python scripts hardcode paths under `/home/abot/throne_craic/` (separate from this workspace root `/home/abot/throne_craic/`):
+- VLM temp images: `/home/abot/throne_craic/src/abot_vlm/temp/`
+- OCR temp images: `/home/abot/throne_craic/src/ocr_detect/temp/`
+- Voice model: `/home/abot/throne_craic/src/robot_slam/resources/models/start.pmdl`
 - TTS output: `output.mp3` (in workspace root)

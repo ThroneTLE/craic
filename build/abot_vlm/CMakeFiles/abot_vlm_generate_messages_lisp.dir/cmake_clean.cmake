@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_vlm_generate_messages_lisp"
-  "/home/abot/craic/devel/share/common-lisp/ros/abot_vlm/srv/VisionResult.lisp"
-  "/home/abot/craic/devel/share/common-lisp/ros/abot_vlm/srv/LLMQuery.lisp"
+  "/home/abot/throne_craic/devel/share/common-lisp/ros/abot_vlm/srv/VisionResult.lisp"
+  "/home/abot/throne_craic/devel/share/common-lisp/ros/abot_vlm/srv/LLMQuery.lisp"
 )
 
 # Per-language clean rules from dependency scanning.

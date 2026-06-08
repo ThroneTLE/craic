@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/ar_track.dir/src/ar_track.cpp.o"
-  "/home/abot/craic/devel/lib/track_tag/ar_track.pdb"
-  "/home/abot/craic/devel/lib/track_tag/ar_track"
+  "/home/abot/throne_craic/devel/lib/track_tag/ar_track.pdb"
+  "/home/abot/throne_craic/devel/lib/track_tag/ar_track"
 )
 
 # Per-language clean rules from dependency scanning.

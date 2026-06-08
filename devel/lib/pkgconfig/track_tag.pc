@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/devel
+prefix=/home/abot/throne_craic/devel
 
 Name: track_tag
 Description: Description of track_tag

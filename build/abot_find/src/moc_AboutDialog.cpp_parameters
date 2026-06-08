@@ -1,4 +1,4 @@
--I/home/abot/craic/devel/include
+-I/home/abot/throne_craic/devel/include
 -DROS_BUILD_SHARED_LIBS=1
 -DROS_BUILD_SHARED_LIBS=1
 -DPROJECT_PREFIX="find_object"
@@ -8,5 +8,5 @@
 -DROS_PACKAGE_NAME="find_object_2d"
 -DROSCONSOLE_BACKEND_LOG4CXX
 -o
-/home/abot/craic/build/abot_find/src/moc_AboutDialog.cpp
-/home/abot/craic/src/abot_find/src/AboutDialog.h
+/home/abot/throne_craic/build/abot_find/src/moc_AboutDialog.cpp
+/home/abot/throne_craic/src/abot_find/src/AboutDialog.h

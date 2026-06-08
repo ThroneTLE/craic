@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/abot/craic/devel/include/find_object_2d/ObjectsStamped.h
+/home/abot/throne_craic/devel/include/find_object_2d/ObjectsStamped.h
 string
 -
 vector
@@ -26,7 +26,7 @@ std_msgs/Header.h
 std_msgs/Float32MultiArray.h
 -
 
-/home/abot/craic/src/abot_find/src/ros/print_objects_detected_node.cpp
+/home/abot/throne_craic/src/abot_find/src/ros/print_objects_detected_node.cpp
 ros/ros.h
 -
 geometry_msgs/Point.h

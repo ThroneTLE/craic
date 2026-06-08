@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/throne_craic/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/throne_craic/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -137,14 +137,14 @@ install/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/abot/craic/build/CMakeFiles /home/abot/craic/build/track_tag/CMakeFiles/progress.marks
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/abot/craic/build/CMakeFiles 0
+	cd /home/abot/throne_craic/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/abot/throne_craic/build/CMakeFiles /home/abot/throne_craic/build/track_tag/CMakeFiles/progress.marks
+	cd /home/abot/throne_craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/abot/throne_craic/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/clean
+	cd /home/abot/throne_craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/clean
 .PHONY : clean
 
 # The main clean target
@@ -154,22 +154,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/preinstall
+	cd /home/abot/throne_craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/preinstall
+	cd /home/abot/throne_craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/abot/throne_craic/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 track_tag/CMakeFiles/ar_track.dir/rule:
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/CMakeFiles/ar_track.dir/rule
+	cd /home/abot/throne_craic/build && $(MAKE) -f CMakeFiles/Makefile2 track_tag/CMakeFiles/ar_track.dir/rule
 .PHONY : track_tag/CMakeFiles/ar_track.dir/rule
 
 # Convenience name for target.
@@ -179,7 +179,7 @@ ar_track: track_tag/CMakeFiles/ar_track.dir/rule
 
 # fast build rule for target.
 ar_track/fast:
-	cd /home/abot/craic/build && $(MAKE) -f track_tag/CMakeFiles/ar_track.dir/build.make track_tag/CMakeFiles/ar_track.dir/build
+	cd /home/abot/throne_craic/build && $(MAKE) -f track_tag/CMakeFiles/ar_track.dir/build.make track_tag/CMakeFiles/ar_track.dir/build
 .PHONY : ar_track/fast
 
 src/ar_track.o: src/ar_track.cpp.o
@@ -188,7 +188,7 @@ src/ar_track.o: src/ar_track.cpp.o
 
 # target to build an object file
 src/ar_track.cpp.o:
-	cd /home/abot/craic/build && $(MAKE) -f track_tag/CMakeFiles/ar_track.dir/build.make track_tag/CMakeFiles/ar_track.dir/src/ar_track.cpp.o
+	cd /home/abot/throne_craic/build && $(MAKE) -f track_tag/CMakeFiles/ar_track.dir/build.make track_tag/CMakeFiles/ar_track.dir/src/ar_track.cpp.o
 .PHONY : src/ar_track.cpp.o
 
 src/ar_track.i: src/ar_track.cpp.i
@@ -197,7 +197,7 @@ src/ar_track.i: src/ar_track.cpp.i
 
 # target to preprocess a source file
 src/ar_track.cpp.i:
-	cd /home/abot/craic/build && $(MAKE) -f track_tag/CMakeFiles/ar_track.dir/build.make track_tag/CMakeFiles/ar_track.dir/src/ar_track.cpp.i
+	cd /home/abot/throne_craic/build && $(MAKE) -f track_tag/CMakeFiles/ar_track.dir/build.make track_tag/CMakeFiles/ar_track.dir/src/ar_track.cpp.i
 .PHONY : src/ar_track.cpp.i
 
 src/ar_track.s: src/ar_track.cpp.s
@@ -206,7 +206,7 @@ src/ar_track.s: src/ar_track.cpp.s
 
 # target to generate assembly for a file
 src/ar_track.cpp.s:
-	cd /home/abot/craic/build && $(MAKE) -f track_tag/CMakeFiles/ar_track.dir/build.make track_tag/CMakeFiles/ar_track.dir/src/ar_track.cpp.s
+	cd /home/abot/throne_craic/build && $(MAKE) -f track_tag/CMakeFiles/ar_track.dir/build.make track_tag/CMakeFiles/ar_track.dir/src/ar_track.cpp.s
 .PHONY : src/ar_track.cpp.s
 
 # Help Target
@@ -237,6 +237,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/abot/throne_craic/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

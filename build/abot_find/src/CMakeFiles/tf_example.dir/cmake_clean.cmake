@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/tf_example.dir/ros/tf_example_node.cpp.o"
-  "/home/abot/craic/devel/lib/find_object_2d/tf_example.pdb"
-  "/home/abot/craic/devel/lib/find_object_2d/tf_example"
+  "/home/abot/throne_craic/devel/lib/find_object_2d/tf_example.pdb"
+  "/home/abot/throne_craic/devel/lib/find_object_2d/tf_example"
 )
 
 # Per-language clean rules from dependency scanning.

@@ -1,8 +1,8 @@
-# Install script for directory: /home/abot/craic/src/abot_vlm
+# Install script for directory: /home/abot/throne_craic/src/abot_vlm
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/abot/craic/install")
+  set(CMAKE_INSTALL_PREFIX "/home/abot/throne_craic/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -39,55 +39,55 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/abot_vlm/srv" TYPE FILE FILES
-    "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv"
-    "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv"
+    "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv"
+    "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/abot_vlm/cmake" TYPE FILE FILES "/home/abot/craic/build/abot_vlm/catkin_generated/installspace/abot_vlm-msg-paths.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/abot_vlm/cmake" TYPE FILE FILES "/home/abot/throne_craic/build/abot_vlm/catkin_generated/installspace/abot_vlm-msg-paths.cmake")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "/home/abot/craic/devel/include/abot_vlm")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/include/abot_vlm")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/roseus/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/roseus/ros/abot_vlm")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/roseus/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/roseus/ros/abot_vlm")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/common-lisp/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/common-lisp/ros/abot_vlm")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/common-lisp/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/common-lisp/ros/abot_vlm")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gennodejs/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/gennodejs/ros/abot_vlm")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gennodejs/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/gennodejs/ros/abot_vlm")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  execute_process(COMMAND "/usr/bin/python2" -m compileall "/home/abot/craic/devel/lib/python2.7/dist-packages/abot_vlm")
+  execute_process(COMMAND "/usr/bin/python2" -m compileall "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/abot_vlm")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages" TYPE DIRECTORY FILES "/home/abot/craic/devel/lib/python2.7/dist-packages/abot_vlm")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/abot_vlm")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/craic/build/abot_vlm/catkin_generated/installspace/abot_vlm.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/throne_craic/build/abot_vlm/catkin_generated/installspace/abot_vlm.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/abot_vlm/cmake" TYPE FILE FILES "/home/abot/craic/build/abot_vlm/catkin_generated/installspace/abot_vlm-msg-extras.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/abot_vlm/cmake" TYPE FILE FILES "/home/abot/throne_craic/build/abot_vlm/catkin_generated/installspace/abot_vlm-msg-extras.cmake")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/abot_vlm/cmake" TYPE FILE FILES
-    "/home/abot/craic/build/abot_vlm/catkin_generated/installspace/abot_vlmConfig.cmake"
-    "/home/abot/craic/build/abot_vlm/catkin_generated/installspace/abot_vlmConfig-version.cmake"
+    "/home/abot/throne_craic/build/abot_vlm/catkin_generated/installspace/abot_vlmConfig.cmake"
+    "/home/abot/throne_craic/build/abot_vlm/catkin_generated/installspace/abot_vlmConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/abot_vlm" TYPE FILE FILES "/home/abot/craic/src/abot_vlm/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/abot_vlm" TYPE FILE FILES "/home/abot/throne_craic/src/abot_vlm/package.xml")
 endif()
 

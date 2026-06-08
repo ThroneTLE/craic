@@ -48,7 +48,7 @@ if __name__ == '__main__':
     rospy.init_node('game_node', anonymous=True)
     
     # 设置模型路径
-    model = '/home/abot/craic/src/robot_slam/resources/models/start.pmdl'
+    model = '/home/abot/throne_craic/src/robot_slam/resources/models/start.pmdl'
     
     # 捕获SIGINT信号，例如Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)

@@ -67,14 +67,14 @@ set(ocr_detect_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("FALSE" STREQUAL "TRUE")
-  set(ocr_detect_SOURCE_PREFIX /home/abot/craic/src/ocr_detect)
-  set(ocr_detect_DEVEL_PREFIX /home/abot/craic/devel)
+  set(ocr_detect_SOURCE_PREFIX /home/abot/throne_craic/src/ocr_detect)
+  set(ocr_detect_DEVEL_PREFIX /home/abot/throne_craic/devel)
   set(ocr_detect_INSTALL_PREFIX "")
   set(ocr_detect_PREFIX ${ocr_detect_DEVEL_PREFIX})
 else()
   set(ocr_detect_SOURCE_PREFIX "")
   set(ocr_detect_DEVEL_PREFIX "")
-  set(ocr_detect_INSTALL_PREFIX /home/abot/craic/install)
+  set(ocr_detect_INSTALL_PREFIX /home/abot/throne_craic/install)
   set(ocr_detect_PREFIX ${ocr_detect_INSTALL_PREFIX})
 endif()
 
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/abot/craic/install/lib;/opt/ros/melodic/lib)
+    foreach(path /home/abot/throne_craic/install/lib;/opt/ros/melodic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)

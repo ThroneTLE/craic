@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_imu_generate_messages_cpp"
-  "/home/abot/craic/devel/include/abot_imu/RawImu.h"
+  "/home/abot/throne_craic/devel/include/abot_imu/RawImu.h"
 )
 
 # Per-language clean rules from dependency scanning.

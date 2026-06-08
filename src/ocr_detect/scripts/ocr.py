@@ -43,7 +43,7 @@ def Draw_OCRResult(blank_img, pt1, pt2, text):
     #绘制矩形框
     draw.rectangle([pt1, pt2], outline=(255, 255, 0), width=3)
     #加载中文字体（指定字体路径、大小和编码）
-    fontStyle = ImageFont.truetype("/home/abot/demo/src/ocr_detect/ChineseFonts/simsun.ttc", size=21, encoding="utf-8")
+    fontStyle = ImageFont.truetype("/home/abot/throne_craic/src/ocr_detect/ChineseFonts/simsun.ttc", size=21, encoding="utf-8")
     #计算文本绘制位置（在矩形框左上角偏移5像素处）
     (x, y) = pt1
     #绘制文本（黑色字体）
@@ -53,7 +53,7 @@ def Draw_OCRResult(blank_img, pt1, pt2, text):
 
 def ocr_detect():
     rospy.init_node('ocr_detect', anonymous=True)
-    img_path = rospy.get_param('image_path', "/home/abot/demo/src/ocr_detect/image/11.jpg")
+    img_path = rospy.get_param('image_path', "/home/abot/throne_craic/src/ocr_detect/image/11.jpg")
     
     while not rospy.is_shutdown():
         im = cv2.imread(img_path)
@@ -83,7 +83,7 @@ def ocr_detect():
         # 提取文件名部分
         base_name = os.path.basename(img_path)
         file_name, _ = os.path.splitext(base_name)
-        save_path = f'/home/abot/demo/src/ocr_detect/result/OCR_result_{file_name}.jpg'
+        save_path = f'/home/abot/throne_craic/src/ocr_detect/result/OCR_result_{file_name}.jpg'
         cv2.imwrite(save_path, images)
         
         # 等待新的图片路径更新

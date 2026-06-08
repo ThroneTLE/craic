@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/TTS_audio_generate_messages_cpp"
-  "/home/abot/craic/devel/include/TTS_audio/StringService.h"
-  "/home/abot/craic/devel/include/TTS_audio/TTS.h"
-  "/home/abot/craic/devel/include/TTS_audio/TextToSpeech.h"
+  "/home/abot/throne_craic/devel/include/TTS_audio/StringService.h"
+  "/home/abot/throne_craic/devel/include/TTS_audio/TTS.h"
+  "/home/abot/throne_craic/devel/include/TTS_audio/TextToSpeech.h"
 )
 
 # Per-language clean rules from dependency scanning.

@@ -58,7 +58,7 @@ def top_view_shot(image_msg):
     
     if detect == 1:
         # 保存图像
-        save_path = '/home/abot/craic/src/abot_vlm/temp2/vl_now.jpg'
+        save_path = '/home/abot/throne_craic/src/abot_vlm/temp2/vl_now.jpg'
         rospy.loginfo(f'保存至{save_path}')
         cv2.imwrite(save_path, img_bgr)
         # 重置detect
@@ -73,7 +73,7 @@ def yi_vision_api(
     # 强化Prompt：要求最后一行只输出答案数字
     PROMPT='图中有一道数学题，答案一个阿拉伯数字。请先完整解题，最后一行只输出这个答案数字（仅数字，无任何其他字符）；若没有符合条件的数字，最后一行只输出“无”。',
     # PROMPT='你看到了色什么',
-    img_path='/home/abot/craic/src/abot_vlm/temp2/vl_now.jpg',
+    img_path='/home/abot/throne_craic/src/abot_vlm/temp2/vl_now.jpg',
     max_retry=3  # 最大重试次数，避免无限循环
 ):
     '''

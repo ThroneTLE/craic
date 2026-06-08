@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/abot/craic/src/abot_rpp/include/abot_rpp/rpp_controller.h
+/home/abot/throne_craic/src/abot_rpp/include/abot_rpp/rpp_controller.h
 ros/ros.h
 -
 nav_core/base_local_planner.h
@@ -26,9 +26,9 @@ nav_msgs/Odometry.h
 visualization_msgs/Marker.h
 -
 abot_rpp/rpp_math.h
-/home/abot/craic/src/abot_rpp/include/abot_rpp/abot_rpp/rpp_math.h
+/home/abot/throne_craic/src/abot_rpp/include/abot_rpp/abot_rpp/rpp_math.h
 
-/home/abot/craic/src/abot_rpp/include/abot_rpp/rpp_math.h
+/home/abot/throne_craic/src/abot_rpp/include/abot_rpp/rpp_math.h
 cmath
 -
 vector
@@ -36,7 +36,7 @@ vector
 algorithm
 -
 
-/home/abot/craic/src/abot_rpp/src/rpp_controller.cpp
+/home/abot/throne_craic/src/abot_rpp/src/rpp_controller.cpp
 pluginlib/class_list_macros.h
 -
 tf2/utils.h
@@ -44,7 +44,7 @@ tf2/utils.h
 glog/logging.h
 -
 abot_rpp/rpp_controller.h
-/home/abot/craic/src/abot_rpp/src/abot_rpp/rpp_controller.h
+/home/abot/throne_craic/src/abot_rpp/src/abot_rpp/rpp_controller.h
 
 /opt/ros/melodic/include/base_local_planner/odometry_helper_ros.h
 nav_msgs/Odometry.h

@@ -72,7 +72,7 @@ class ocr:
         if ocr_det == 1:
             # 保存图像
             rospy.loginfo('保存至temp/ocr_now.jpg')
-            cv2.imwrite('/home/abot/demo/src/ocr_detect/temp/ocr_now.jpg', self.img_bgr)
+            cv2.imwrite('/home/abot/throne_craic/src/ocr_detect/temp/ocr_now.jpg', self.img_bgr)
             # 将ocr_det重置为255
             rospy.set_param('/ocr_det', 255)
             # # 屏幕上展示图像
@@ -80,13 +80,13 @@ class ocr:
             cv2.waitKey(1)
             # 调用ocr模型识别
             #ocr_detection()
-    def ocr_detection( self,img_path='/home/abot/demo/src/ocr_detect/temp/ocr_now.jpg'):
+    def ocr_detection( self,img_path='/home/abot/throne_craic/src/ocr_detect/temp/ocr_now.jpg'):
             global ocr1
             while True:
-                if self.is_image_complete('/home/abot/demo/src/ocr_detect/temp/ocr_now.jpg'):
+                if self.is_image_complete('/home/abot/throne_craic/src/ocr_detect/temp/ocr_now.jpg'):
                     break
                 else:
-                    cv2.imwrite('/home/abot/demo/src/ocr_detect/temp/ocr_now.jpg', self.img_bgr)
+                    cv2.imwrite('/home/abot/throne_craic/src/ocr_detect/temp/ocr_now.jpg', self.img_bgr)
             result = ocr1.ocr(img_path)
             combined_text = ""  # 创建一个空字符串来存储所有句子
             count = 0  # 初始化计数器

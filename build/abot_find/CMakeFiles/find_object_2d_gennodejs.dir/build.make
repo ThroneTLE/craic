@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/throne_craic/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/throne_craic/build
 
 # Utility rule file for find_object_2d_gennodejs.
 
@@ -63,10 +63,10 @@ abot_find/CMakeFiles/find_object_2d_gennodejs.dir/build: find_object_2d_gennodej
 .PHONY : abot_find/CMakeFiles/find_object_2d_gennodejs.dir/build
 
 abot_find/CMakeFiles/find_object_2d_gennodejs.dir/clean:
-	cd /home/abot/craic/build/abot_find && $(CMAKE_COMMAND) -P CMakeFiles/find_object_2d_gennodejs.dir/cmake_clean.cmake
+	cd /home/abot/throne_craic/build/abot_find && $(CMAKE_COMMAND) -P CMakeFiles/find_object_2d_gennodejs.dir/cmake_clean.cmake
 .PHONY : abot_find/CMakeFiles/find_object_2d_gennodejs.dir/clean
 
 abot_find/CMakeFiles/find_object_2d_gennodejs.dir/depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/craic/src /home/abot/craic/src/abot_find /home/abot/craic/build /home/abot/craic/build/abot_find /home/abot/craic/build/abot_find/CMakeFiles/find_object_2d_gennodejs.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/abot/throne_craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/throne_craic/src /home/abot/throne_craic/src/abot_find /home/abot/throne_craic/build /home/abot/throne_craic/build/abot_find /home/abot/throne_craic/build/abot_find/CMakeFiles/find_object_2d_gennodejs.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : abot_find/CMakeFiles/find_object_2d_gennodejs.dir/depend
 

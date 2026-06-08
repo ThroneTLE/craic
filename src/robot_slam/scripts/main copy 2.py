@@ -30,10 +30,10 @@ points=[10, 11, 12, 13]
 task_numbers = []
 # 点位语音文件映射(未使用，代码中用的是文本播报)
 point_audio = {
-    12: "/home/abot/demo/src/robot_slam/mp3/01.mp3",
-    13: "/home/abot/demo/src/robot_slam/mp3/02.mp3",
-    14: "/home/abot/demo/src/robot_slam/mp3/03.mp3",
-    15: "/home/abot/demo/src/robot_slam/mp3/04.mp3"
+    12: "/home/abot/throne_craic/src/robot_slam/mp3/01.mp3",
+    13: "/home/abot/throne_craic/src/robot_slam/mp3/02.mp3",
+    14: "/home/abot/throne_craic/src/robot_slam/mp3/03.mp3",
+    15: "/home/abot/throne_craic/src/robot_slam/mp3/04.mp3"
 }
 
 # =================== 核心导航类定义 ===================

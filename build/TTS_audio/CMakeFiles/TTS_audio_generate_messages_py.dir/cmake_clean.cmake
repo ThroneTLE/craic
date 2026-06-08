@@ -1,9 +1,9 @@
 file(REMOVE_RECURSE
   "CMakeFiles/TTS_audio_generate_messages_py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/TTS_audio/srv/_StringService.py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/TTS_audio/srv/_TTS.py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/TTS_audio/srv/_TextToSpeech.py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/TTS_audio/srv/__init__.py"
+  "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/TTS_audio/srv/_StringService.py"
+  "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/TTS_audio/srv/_TTS.py"
+  "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/TTS_audio/srv/_TextToSpeech.py"
+  "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/TTS_audio/srv/__init__.py"
 )
 
 # Per-language clean rules from dependency scanning.

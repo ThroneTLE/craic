@@ -1,8 +1,8 @@
-# Install script for directory: /home/abot/craic/src/robot_slam
+# Install script for directory: /home/abot/throne_craic/src/robot_slam
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/abot/craic/install")
+  set(CMAKE_INSTALL_PREFIX "/home/abot/throne_craic/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,72 +38,53 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/msg" TYPE FILE FILES "/home/abot/craic/src/robot_slam/msg/NavCmd.msg")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/msg" TYPE FILE FILES "/home/abot/throne_craic/src/robot_slam/msg/NavCmd.msg")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/cmake" TYPE FILE FILES "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slam-msg-paths.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/cmake" TYPE FILE FILES "/home/abot/throne_craic/build/robot_slam/catkin_generated/installspace/robot_slam-msg-paths.cmake")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "/home/abot/craic/devel/include/robot_slam")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/include/robot_slam")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/roseus/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/roseus/ros/robot_slam")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/roseus/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/roseus/ros/robot_slam")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/common-lisp/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/common-lisp/ros/robot_slam")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/common-lisp/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/common-lisp/ros/robot_slam")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gennodejs/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/gennodejs/ros/robot_slam")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gennodejs/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/gennodejs/ros/robot_slam")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  execute_process(COMMAND "/usr/bin/python2" -m compileall "/home/abot/craic/devel/lib/python2.7/dist-packages/robot_slam")
+  execute_process(COMMAND "/usr/bin/python2" -m compileall "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/robot_slam")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages" TYPE DIRECTORY FILES "/home/abot/craic/devel/lib/python2.7/dist-packages/robot_slam")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/robot_slam")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slam.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/throne_craic/build/robot_slam/catkin_generated/installspace/robot_slam.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/cmake" TYPE FILE FILES "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slam-msg-extras.cmake")
-endif()
-
-if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/cmake" TYPE FILE FILES
-    "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slamConfig.cmake"
-    "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slamConfig-version.cmake"
-    )
-endif()
-
-if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam" TYPE FILE FILES "/home/abot/craic/src/robot_slam/package.xml")
-endif()
-
-if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slam.pc")
-endif()
-
-if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/cmake" TYPE FILE FILES "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slam-msg-extras.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/cmake" TYPE FILE FILES "/home/abot/throne_craic/build/robot_slam/catkin_generated/installspace/robot_slam-msg-extras.cmake")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam/cmake" TYPE FILE FILES
-    "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slamConfig.cmake"
-    "/home/abot/craic/build/robot_slam/catkin_generated/installspace/robot_slamConfig-version.cmake"
+    "/home/abot/throne_craic/build/robot_slam/catkin_generated/installspace/robot_slamConfig.cmake"
+    "/home/abot/throne_craic/build/robot_slam/catkin_generated/installspace/robot_slamConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam" TYPE FILE FILES "/home/abot/craic/src/robot_slam/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_slam" TYPE FILE FILES "/home/abot/throne_craic/src/robot_slam/package.xml")
 endif()
 

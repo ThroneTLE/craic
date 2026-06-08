@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/find_object_2d_generate_messages_py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/find_object_2d/msg/_DetectionInfo.py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/find_object_2d/msg/_ObjectsStamped.py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/find_object_2d/msg/__init__.py"
+  "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/find_object_2d/msg/_DetectionInfo.py"
+  "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/find_object_2d/msg/_ObjectsStamped.py"
+  "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/find_object_2d/msg/__init__.py"
 )
 
 # Per-language clean rules from dependency scanning.

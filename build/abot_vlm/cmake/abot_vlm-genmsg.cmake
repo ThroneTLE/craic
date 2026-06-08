@@ -17,14 +17,14 @@ add_custom_target(abot_vlm_generate_messages ALL)
 
 
 
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
 add_custom_target(_abot_vlm_generate_messages_check_deps_${_filename}
-  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "abot_vlm" "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv" ""
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "abot_vlm" "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv" ""
 )
 
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
 add_custom_target(_abot_vlm_generate_messages_check_deps_${_filename}
-  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "abot_vlm" "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv" ""
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "abot_vlm" "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv" ""
 )
 
 #
@@ -36,13 +36,13 @@ add_custom_target(_abot_vlm_generate_messages_check_deps_${_filename}
 
 ### Generating Services
 _generate_srv_cpp(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/abot_vlm
 )
 _generate_srv_cpp(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/abot_vlm
@@ -60,9 +60,9 @@ add_custom_target(abot_vlm_generate_messages_cpp
 add_dependencies(abot_vlm_generate_messages abot_vlm_generate_messages_cpp)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_cpp _abot_vlm_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_cpp _abot_vlm_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility
@@ -77,13 +77,13 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS abot_vlm_generate_messages_cpp)
 
 ### Generating Services
 _generate_srv_eus(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/abot_vlm
 )
 _generate_srv_eus(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/abot_vlm
@@ -101,9 +101,9 @@ add_custom_target(abot_vlm_generate_messages_eus
 add_dependencies(abot_vlm_generate_messages abot_vlm_generate_messages_eus)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_eus _abot_vlm_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_eus _abot_vlm_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility
@@ -118,13 +118,13 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS abot_vlm_generate_messages_eus)
 
 ### Generating Services
 _generate_srv_lisp(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/abot_vlm
 )
 _generate_srv_lisp(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/abot_vlm
@@ -142,9 +142,9 @@ add_custom_target(abot_vlm_generate_messages_lisp
 add_dependencies(abot_vlm_generate_messages abot_vlm_generate_messages_lisp)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_lisp _abot_vlm_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_lisp _abot_vlm_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility
@@ -159,13 +159,13 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS abot_vlm_generate_messages_lisp)
 
 ### Generating Services
 _generate_srv_nodejs(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/abot_vlm
 )
 _generate_srv_nodejs(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/abot_vlm
@@ -183,9 +183,9 @@ add_custom_target(abot_vlm_generate_messages_nodejs
 add_dependencies(abot_vlm_generate_messages abot_vlm_generate_messages_nodejs)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_nodejs _abot_vlm_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_nodejs _abot_vlm_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility
@@ -200,13 +200,13 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS abot_vlm_generate_messages_nodejs)
 
 ### Generating Services
 _generate_srv_py(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/abot_vlm
 )
 _generate_srv_py(abot_vlm
-  "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv"
+  "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/abot_vlm
@@ -224,9 +224,9 @@ add_custom_target(abot_vlm_generate_messages_py
 add_dependencies(abot_vlm_generate_messages abot_vlm_generate_messages_py)
 
 # add dependencies to all check dependencies targets
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/VisionResult.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_py _abot_vlm_generate_messages_check_deps_${_filename})
-get_filename_component(_filename "/home/abot/craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
+get_filename_component(_filename "/home/abot/throne_craic/src/abot_vlm/srv/LLMQuery.srv" NAME_WE)
 add_dependencies(abot_vlm_generate_messages_py _abot_vlm_generate_messages_check_deps_${_filename})
 
 # target for backward compatibility

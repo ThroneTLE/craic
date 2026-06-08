@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_vlm_generate_messages_cpp"
-  "/home/abot/craic/devel/include/abot_vlm/VisionResult.h"
-  "/home/abot/craic/devel/include/abot_vlm/LLMQuery.h"
+  "/home/abot/throne_craic/devel/include/abot_vlm/VisionResult.h"
+  "/home/abot/throne_craic/devel/include/abot_vlm/LLMQuery.h"
 )
 
 # Per-language clean rules from dependency scanning.

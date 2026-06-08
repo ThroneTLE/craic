@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_vlm_generate_messages_nodejs"
-  "/home/abot/craic/devel/share/gennodejs/ros/abot_vlm/srv/VisionResult.js"
-  "/home/abot/craic/devel/share/gennodejs/ros/abot_vlm/srv/LLMQuery.js"
+  "/home/abot/throne_craic/devel/share/gennodejs/ros/abot_vlm/srv/VisionResult.js"
+  "/home/abot/throne_craic/devel/share/gennodejs/ros/abot_vlm/srv/LLMQuery.js"
 )
 
 # Per-language clean rules from dependency scanning.

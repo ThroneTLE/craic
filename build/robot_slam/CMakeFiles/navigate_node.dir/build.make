@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/throne_craic/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/throne_craic/build
 
 # Include any dependencies generated for this target.
 include robot_slam/CMakeFiles/navigate_node.dir/depend.make
@@ -58,17 +58,17 @@ include robot_slam/CMakeFiles/navigate_node.dir/progress.make
 include robot_slam/CMakeFiles/navigate_node.dir/flags.make
 
 robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o: robot_slam/CMakeFiles/navigate_node.dir/flags.make
-robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o: /home/abot/craic/src/robot_slam/src/navigate.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/abot/craic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o"
-	cd /home/abot/craic/build/robot_slam && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/navigate_node.dir/src/navigate.cpp.o -c /home/abot/craic/src/robot_slam/src/navigate.cpp
+robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o: /home/abot/throne_craic/src/robot_slam/src/navigate.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/abot/throne_craic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o"
+	cd /home/abot/throne_craic/build/robot_slam && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/navigate_node.dir/src/navigate.cpp.o -c /home/abot/throne_craic/src/robot_slam/src/navigate.cpp
 
 robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/navigate_node.dir/src/navigate.cpp.i"
-	cd /home/abot/craic/build/robot_slam && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/abot/craic/src/robot_slam/src/navigate.cpp > CMakeFiles/navigate_node.dir/src/navigate.cpp.i
+	cd /home/abot/throne_craic/build/robot_slam && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/abot/throne_craic/src/robot_slam/src/navigate.cpp > CMakeFiles/navigate_node.dir/src/navigate.cpp.i
 
 robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/navigate_node.dir/src/navigate.cpp.s"
-	cd /home/abot/craic/build/robot_slam && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/abot/craic/src/robot_slam/src/navigate.cpp -o CMakeFiles/navigate_node.dir/src/navigate.cpp.s
+	cd /home/abot/throne_craic/build/robot_slam && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/abot/throne_craic/src/robot_slam/src/navigate.cpp -o CMakeFiles/navigate_node.dir/src/navigate.cpp.s
 
 robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o.requires:
 
@@ -88,40 +88,40 @@ navigate_node_OBJECTS = \
 # External object files for target navigate_node
 navigate_node_EXTERNAL_OBJECTS =
 
-/home/abot/craic/devel/lib/robot_slam/navigate_node: robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o
-/home/abot/craic/devel/lib/robot_slam/navigate_node: robot_slam/CMakeFiles/navigate_node.dir/build.make
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libtf_conversions.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libkdl_conversions.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/liborocos-kdl.so.1.4.0
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libtf.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libtf2_ros.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libactionlib.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libmessage_filters.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libroscpp.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_filesystem.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libxmlrpcpp.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libtf2.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libroscpp_serialization.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/librosconsole.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/librosconsole_log4cxx.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/librosconsole_backend_interface.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/liblog4cxx.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_regex.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/librostime.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libcpp_common.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_system.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_thread.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_chrono.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_date_time.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_atomic.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libpthread.so
-/home/abot/craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libconsole_bridge.so.0.4
-/home/abot/craic/devel/lib/robot_slam/navigate_node: robot_slam/CMakeFiles/navigate_node.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/abot/craic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /home/abot/craic/devel/lib/robot_slam/navigate_node"
-	cd /home/abot/craic/build/robot_slam && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/navigate_node.dir/link.txt --verbose=$(VERBOSE)
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: robot_slam/CMakeFiles/navigate_node.dir/src/navigate.cpp.o
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: robot_slam/CMakeFiles/navigate_node.dir/build.make
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libtf_conversions.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libkdl_conversions.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/liborocos-kdl.so.1.4.0
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libtf.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libtf2_ros.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libactionlib.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libmessage_filters.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libroscpp.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_filesystem.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libxmlrpcpp.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libtf2.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libroscpp_serialization.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/librosconsole.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/librosconsole_log4cxx.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/librosconsole_backend_interface.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/liblog4cxx.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_regex.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/librostime.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /opt/ros/melodic/lib/libcpp_common.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_system.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_thread.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_chrono.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_date_time.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libboost_atomic.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libpthread.so
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: /usr/lib/x86_64-linux-gnu/libconsole_bridge.so.0.4
+/home/abot/throne_craic/devel/lib/robot_slam/navigate_node: robot_slam/CMakeFiles/navigate_node.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/abot/throne_craic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /home/abot/throne_craic/devel/lib/robot_slam/navigate_node"
+	cd /home/abot/throne_craic/build/robot_slam && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/navigate_node.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-robot_slam/CMakeFiles/navigate_node.dir/build: /home/abot/craic/devel/lib/robot_slam/navigate_node
+robot_slam/CMakeFiles/navigate_node.dir/build: /home/abot/throne_craic/devel/lib/robot_slam/navigate_node
 
 .PHONY : robot_slam/CMakeFiles/navigate_node.dir/build
 
@@ -130,10 +130,10 @@ robot_slam/CMakeFiles/navigate_node.dir/requires: robot_slam/CMakeFiles/navigate
 .PHONY : robot_slam/CMakeFiles/navigate_node.dir/requires
 
 robot_slam/CMakeFiles/navigate_node.dir/clean:
-	cd /home/abot/craic/build/robot_slam && $(CMAKE_COMMAND) -P CMakeFiles/navigate_node.dir/cmake_clean.cmake
+	cd /home/abot/throne_craic/build/robot_slam && $(CMAKE_COMMAND) -P CMakeFiles/navigate_node.dir/cmake_clean.cmake
 .PHONY : robot_slam/CMakeFiles/navigate_node.dir/clean
 
 robot_slam/CMakeFiles/navigate_node.dir/depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/craic/src /home/abot/craic/src/robot_slam /home/abot/craic/build /home/abot/craic/build/robot_slam /home/abot/craic/build/robot_slam/CMakeFiles/navigate_node.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/abot/throne_craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/throne_craic/src /home/abot/throne_craic/src/robot_slam /home/abot/throne_craic/build /home/abot/throne_craic/build/robot_slam /home/abot/throne_craic/build/robot_slam/CMakeFiles/navigate_node.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : robot_slam/CMakeFiles/navigate_node.dir/depend
 

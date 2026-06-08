@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_imu_generate_messages_lisp"
-  "/home/abot/craic/devel/share/common-lisp/ros/abot_imu/msg/RawImu.lisp"
+  "/home/abot/throne_craic/devel/share/common-lisp/ros/abot_imu/msg/RawImu.lisp"
 )
 
 # Per-language clean rules from dependency scanning.

@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/devel
+prefix=/home/abot/throne_craic/devel
 
 Name: abot_model
 Description: Description of abot_model

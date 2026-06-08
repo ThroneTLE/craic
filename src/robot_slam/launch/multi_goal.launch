@@ -28,7 +28,7 @@
       <param name="use_fixed_task_positions" value="false"/>
       <param name="fixed_task_ids" value="31,49,50,51"/>
 
-      <param name="task_nav_timeout" value="2.0"/>
+      <param name="task_nav_timeout" value="8.0"/>
       <param name="task_nav_retry_timeout" value="5.0"/>
       <param name="task_nav_accept_dist" value="0.55"/>
 

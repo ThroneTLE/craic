@@ -6,123 +6,123 @@
 
 #IncludeRegexTransform: 
 
-/home/abot/craic/build/abot_find/src/__/include/find_object/moc_Camera.cpp
+/home/abot/throne_craic/build/abot_find/src/__/include/find_object/moc_Camera.cpp
 ../../../../../../src/abot_find/include/find_object/Camera.h
-/home/abot/craic/src/abot_find/include/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/include/find_object/Camera.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/__/include/find_object/moc_FindObject.cpp
+/home/abot/throne_craic/build/abot_find/src/__/include/find_object/moc_FindObject.cpp
 ../../../../../../src/abot_find/include/find_object/FindObject.h
-/home/abot/craic/src/abot_find/include/find_object/FindObject.h
+/home/abot/throne_craic/src/abot_find/include/find_object/FindObject.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/__/include/find_object/moc_MainWindow.cpp
+/home/abot/throne_craic/build/abot_find/src/__/include/find_object/moc_MainWindow.cpp
 ../../../../../../src/abot_find/include/find_object/MainWindow.h
-/home/abot/craic/src/abot_find/include/find_object/MainWindow.h
+/home/abot/throne_craic/src/abot_find/include/find_object/MainWindow.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/__/include/find_object/moc_ObjWidget.cpp
+/home/abot/throne_craic/build/abot_find/src/__/include/find_object/moc_ObjWidget.cpp
 ../../../../../../src/abot_find/include/find_object/ObjWidget.h
-/home/abot/craic/src/abot_find/include/find_object/ObjWidget.h
+/home/abot/throne_craic/src/abot_find/include/find_object/ObjWidget.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/__/include/find_object/moc_TcpServer.cpp
+/home/abot/throne_craic/build/abot_find/src/__/include/find_object/moc_TcpServer.cpp
 ../../../../../../src/abot_find/include/find_object/TcpServer.h
-/home/abot/craic/src/abot_find/include/find_object/TcpServer.h
+/home/abot/throne_craic/src/abot_find/include/find_object/TcpServer.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/moc_AboutDialog.cpp
+/home/abot/throne_craic/build/abot_find/src/moc_AboutDialog.cpp
 ../../../src/abot_find/src/AboutDialog.h
-/home/abot/craic/src/abot_find/src/AboutDialog.h
+/home/abot/throne_craic/src/abot_find/src/AboutDialog.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/moc_AddObjectDialog.cpp
+/home/abot/throne_craic/build/abot_find/src/moc_AddObjectDialog.cpp
 ../../../src/abot_find/src/AddObjectDialog.h
-/home/abot/craic/src/abot_find/src/AddObjectDialog.h
+/home/abot/throne_craic/src/abot_find/src/AddObjectDialog.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/moc_CameraTcpServer.cpp
+/home/abot/throne_craic/build/abot_find/src/moc_CameraTcpServer.cpp
 ../../../src/abot_find/src/CameraTcpServer.h
-/home/abot/craic/src/abot_find/src/CameraTcpServer.h
+/home/abot/throne_craic/src/abot_find/src/CameraTcpServer.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/moc_ImageDropWidget.cpp
+/home/abot/throne_craic/build/abot_find/src/moc_ImageDropWidget.cpp
 ../../../src/abot_find/src/ImageDropWidget.h
-/home/abot/craic/src/abot_find/src/ImageDropWidget.h
+/home/abot/throne_craic/src/abot_find/src/ImageDropWidget.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/moc_ParametersToolBox.cpp
+/home/abot/throne_craic/build/abot_find/src/moc_ParametersToolBox.cpp
 ../../../src/abot_find/src/ParametersToolBox.h
-/home/abot/craic/src/abot_find/src/ParametersToolBox.h
+/home/abot/throne_craic/src/abot_find/src/ParametersToolBox.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/moc_RectItem.cpp
+/home/abot/throne_craic/build/abot_find/src/moc_RectItem.cpp
 ../../../src/abot_find/src/RectItem.h
-/home/abot/craic/src/abot_find/src/RectItem.h
+/home/abot/throne_craic/src/abot_find/src/RectItem.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/qrc_resources.cpp
+/home/abot/throne_craic/build/abot_find/src/qrc_resources.cpp
 
-/home/abot/craic/build/abot_find/src/ros/moc_CameraROS.cpp
+/home/abot/throne_craic/build/abot_find/src/ros/moc_CameraROS.cpp
 ../../../../src/abot_find/src/ros/CameraROS.h
-/home/abot/craic/src/abot_find/src/ros/CameraROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/CameraROS.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/ros/moc_FindObjectROS.cpp
+/home/abot/throne_craic/build/abot_find/src/ros/moc_FindObjectROS.cpp
 ../../../../src/abot_find/src/ros/FindObjectROS.h
-/home/abot/craic/src/abot_find/src/ros/FindObjectROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/FindObjectROS.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/rtabmap/moc_PdfPlot.cpp
+/home/abot/throne_craic/build/abot_find/src/rtabmap/moc_PdfPlot.cpp
 ../../../../src/abot_find/src/rtabmap/PdfPlot.h
-/home/abot/craic/src/abot_find/src/rtabmap/PdfPlot.h
+/home/abot/throne_craic/src/abot_find/src/rtabmap/PdfPlot.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
 -
 
-/home/abot/craic/build/abot_find/src/utilite/moc_UPlot.cpp
+/home/abot/throne_craic/build/abot_find/src/utilite/moc_UPlot.cpp
 ../../../../src/abot_find/src/utilite/UPlot.h
-/home/abot/craic/src/abot_find/src/utilite/UPlot.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UPlot.h
 QtCore/qbytearray.h
 -
 QtCore/qmetatype.h
@@ -130,7 +130,7 @@ QtCore/qmetatype.h
 QtCore/QVector
 -
 
-/home/abot/craic/devel/include/find_object_2d/DetectionInfo.h
+/home/abot/throne_craic/devel/include/find_object_2d/DetectionInfo.h
 string
 -
 vector
@@ -162,7 +162,7 @@ std_msgs/Int32.h
 std_msgs/Float32MultiArray.h
 -
 
-/home/abot/craic/devel/include/find_object_2d/ObjectsStamped.h
+/home/abot/throne_craic/devel/include/find_object_2d/ObjectsStamped.h
 string
 -
 vector
@@ -182,11 +182,11 @@ std_msgs/Header.h
 std_msgs/Float32MultiArray.h
 -
 
-/home/abot/craic/src/abot_find/include/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/include/find_object/Camera.h
 find_object/Header.h
 -
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
 opencv2/highgui/highgui.hpp
 -
 QtCore/QObject
@@ -196,15 +196,15 @@ QtCore/QTimer
 QtGui/QImage
 -
 
-/home/abot/craic/src/abot_find/include/find_object/FindObject.h
+/home/abot/throne_craic/src/abot_find/include/find_object/FindObject.h
 find_object/Header.h
 -
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/DetectionInfo.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/Settings.h
 QtCore/QObject
 -
 QtCore/QString
@@ -226,13 +226,13 @@ opencv2/opencv.hpp
 vector
 -
 
-/home/abot/craic/src/abot_find/include/find_object/MainWindow.h
+/home/abot/throne_craic/src/abot_find/include/find_object/MainWindow.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/DetectionInfo.h
 find_object/Header.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/Header.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/Header.h
 QMainWindow
 -
 QtCore/QSet
@@ -248,9 +248,9 @@ QtCore/QByteArray
 opencv2/opencv.hpp
 -
 
-/home/abot/craic/src/abot_find/include/find_object/ObjWidget.h
+/home/abot/throne_craic/src/abot_find/include/find_object/ObjWidget.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
 opencv2/features2d/features2d.hpp
 -
 QWidget
@@ -258,21 +258,21 @@ QWidget
 QtCore/QMultiMap
 -
 
-/home/abot/craic/src/abot_find/include/find_object/TcpServer.h
+/home/abot/throne_craic/src/abot_find/include/find_object/TcpServer.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/include/find_object/find_object/DetectionInfo.h
 opencv2/opencv.hpp
 -
 QtNetwork/QTcpServer
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/Camera.h
 find_object/Header.h
 -
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 opencv2/highgui/highgui.hpp
 -
 QtCore/QObject
@@ -282,7 +282,7 @@ QtCore/QTimer
 QtGui/QImage
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/DetectionInfo.h
 QtCore/QMultiMap
 -
 QtGui/QTransform
@@ -296,15 +296,15 @@ opencv2/features2d/features2d.hpp
 vector
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/FindObject.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/FindObject.h
 find_object/Header.h
 -
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/Settings.h
 QtCore/QObject
 -
 QtCore/QString
@@ -326,27 +326,27 @@ opencv2/opencv.hpp
 vector
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/FindObjectExp.h
 
-/home/abot/craic/src/abot_find/src/../include/find_object/Header.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/Header.h
 stdint.h
 -
 QString
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/JsonWriter.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/JsonWriter.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
 
-/home/abot/craic/src/abot_find/src/../include/find_object/MainWindow.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/MainWindow.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
 find_object/Header.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/Header.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/Header.h
 QMainWindow
 -
 QtCore/QSet
@@ -362,9 +362,9 @@ QtCore/QByteArray
 opencv2/opencv.hpp
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/ObjWidget.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/ObjWidget.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 opencv2/features2d/features2d.hpp
 -
 QWidget
@@ -372,19 +372,19 @@ QWidget
 QtCore/QMultiMap
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/QtOpenCV.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/QtOpenCV.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 QtGui/QImage
 -
 opencv2/core/core.hpp
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/Settings.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 find_object/Version.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/Version.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/Version.h
 QtCore/QMap
 -
 QtCore/QVariant
@@ -394,27 +394,27 @@ QtCore/QByteArray
 opencv2/features2d/features2d.hpp
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/TcpServer.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/TcpServer.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/FindObjectExp.h
 find_object/DetectionInfo.h
-/home/abot/craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/find_object/DetectionInfo.h
 opencv2/opencv.hpp
 -
 QtNetwork/QTcpServer
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/Version.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/Version.h
 
-/home/abot/craic/src/abot_find/src/../include/find_object/utilite/UDestroyer.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/utilite/UDestroyer.h
 
-/home/abot/craic/src/abot_find/src/../include/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/utilite/ULogger.h
 find_object/FindObjectExp.h
-/home/abot/craic/src/abot_find/src/../include/find_object/utilite/find_object/FindObjectExp.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/utilite/find_object/FindObjectExp.h
 find_object/utilite/UMutex.h
-/home/abot/craic/src/abot_find/src/../include/find_object/utilite/find_object/utilite/UMutex.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/utilite/find_object/utilite/UMutex.h
 find_object/utilite/UDestroyer.h
-/home/abot/craic/src/abot_find/src/../include/find_object/utilite/find_object/utilite/UDestroyer.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/utilite/find_object/utilite/UDestroyer.h
 stdio.h
 -
 time.h
@@ -426,53 +426,53 @@ vector
 stdarg.h
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/utilite/UMutex.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/utilite/UMutex.h
 errno.h
 -
 find_object/utilite/UWin32.h
-/home/abot/craic/src/abot_find/src/../include/find_object/utilite/find_object/utilite/UWin32.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/utilite/find_object/utilite/UWin32.h
 pthread.h
 -
 
-/home/abot/craic/src/abot_find/src/../include/find_object/utilite/UWin32.h
+/home/abot/throne_craic/src/abot_find/src/../include/find_object/utilite/UWin32.h
 windows.h
 -
 
-/home/abot/craic/src/abot_find/src/AboutDialog.cpp
+/home/abot/throne_craic/src/abot_find/src/AboutDialog.cpp
 AboutDialog.h
-/home/abot/craic/src/abot_find/src/AboutDialog.h
+/home/abot/throne_craic/src/abot_find/src/AboutDialog.h
 ui_aboutDialog.h
-/home/abot/craic/src/abot_find/src/ui_aboutDialog.h
+/home/abot/throne_craic/src/abot_find/src/ui_aboutDialog.h
 opencv2/core/version.hpp
 -
 find_object/Version.h
-/home/abot/craic/src/abot_find/src/find_object/Version.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Version.h
 
-/home/abot/craic/src/abot_find/src/AboutDialog.h
+/home/abot/throne_craic/src/abot_find/src/AboutDialog.h
 QDialog
 -
 QtCore/QUrl
 -
 
-/home/abot/craic/src/abot_find/src/AddObjectDialog.cpp
+/home/abot/throne_craic/src/abot_find/src/AddObjectDialog.cpp
 find_object/Camera.h
-/home/abot/craic/src/abot_find/src/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Camera.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 find_object/ObjWidget.h
-/home/abot/craic/src/abot_find/src/find_object/ObjWidget.h
+/home/abot/throne_craic/src/abot_find/src/find_object/ObjWidget.h
 find_object/QtOpenCV.h
-/home/abot/craic/src/abot_find/src/find_object/QtOpenCV.h
+/home/abot/throne_craic/src/abot_find/src/find_object/QtOpenCV.h
 AddObjectDialog.h
-/home/abot/craic/src/abot_find/src/AddObjectDialog.h
+/home/abot/throne_craic/src/abot_find/src/AddObjectDialog.h
 ui_addObjectDialog.h
-/home/abot/craic/src/abot_find/src/ui_addObjectDialog.h
+/home/abot/throne_craic/src/abot_find/src/ui_addObjectDialog.h
 KeypointItem.h
-/home/abot/craic/src/abot_find/src/KeypointItem.h
+/home/abot/throne_craic/src/abot_find/src/KeypointItem.h
 ObjSignature.h
-/home/abot/craic/src/abot_find/src/ObjSignature.h
+/home/abot/throne_craic/src/abot_find/src/ObjSignature.h
 stdio.h
 -
 QGraphicsScene
@@ -488,7 +488,7 @@ opencv2/highgui/highgui.hpp
 opencv2/imgproc/imgproc_c.h
 -
 
-/home/abot/craic/src/abot_find/src/AddObjectDialog.h
+/home/abot/throne_craic/src/abot_find/src/AddObjectDialog.h
 QDialog
 -
 QtCore/QTimer
@@ -498,17 +498,17 @@ opencv2/features2d/features2d.hpp
 opencv2/core/core.hpp
 -
 find_object/Header.h
-/home/abot/craic/src/abot_find/src/find_object/Header.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Header.h
 
-/home/abot/craic/src/abot_find/src/Camera.cpp
+/home/abot/throne_craic/src/abot_find/src/Camera.cpp
 find_object/Camera.h
-/home/abot/craic/src/abot_find/src/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Camera.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 find_object/QtOpenCV.h
-/home/abot/craic/src/abot_find/src/find_object/QtOpenCV.h
+/home/abot/throne_craic/src/abot_find/src/find_object/QtOpenCV.h
 stdio.h
 -
 opencv2/imgproc/imgproc.hpp
@@ -518,17 +518,17 @@ opencv2/videoio/videoio_c.h
 QtCore/QFile
 -
 utilite/UDirectory.h
-/home/abot/craic/src/abot_find/src/utilite/UDirectory.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UDirectory.h
 CameraTcpServer.h
-/home/abot/craic/src/abot_find/src/CameraTcpServer.h
+/home/abot/throne_craic/src/abot_find/src/CameraTcpServer.h
 
-/home/abot/craic/src/abot_find/src/CameraTcpServer.cpp
+/home/abot/throne_craic/src/abot_find/src/CameraTcpServer.cpp
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 CameraTcpServer.h
-/home/abot/craic/src/abot_find/src/CameraTcpServer.h
+/home/abot/throne_craic/src/abot_find/src/CameraTcpServer.h
 QtNetwork/QTcpSocket
 -
 QtNetwork/QNetworkInterface
@@ -536,7 +536,7 @@ QtNetwork/QNetworkInterface
 QtCore/QDataStream
 -
 
-/home/abot/craic/src/abot_find/src/CameraTcpServer.h
+/home/abot/throne_craic/src/abot_find/src/CameraTcpServer.h
 QtGlobal
 -
 QtNetwork/QTcpServer
@@ -544,33 +544,33 @@ QtNetwork/QTcpServer
 opencv2/opencv.hpp
 -
 
-/home/abot/craic/src/abot_find/src/Compression.cpp
+/home/abot/throne_craic/src/abot_find/src/Compression.cpp
 Compression.h
 -
 zlib.h
 -
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 
-/home/abot/craic/src/abot_find/src/Compression.h
+/home/abot/throne_craic/src/abot_find/src/Compression.h
 opencv2/opencv.hpp
 -
 
-/home/abot/craic/src/abot_find/src/FindObject.cpp
+/home/abot/throne_craic/src/abot_find/src/FindObject.cpp
 find_object/FindObject.h
-/home/abot/craic/src/abot_find/src/find_object/FindObject.h
+/home/abot/throne_craic/src/abot_find/src/find_object/FindObject.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 utilite/UConversion.h
-/home/abot/craic/src/abot_find/src/utilite/UConversion.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UConversion.h
 ObjSignature.h
-/home/abot/craic/src/abot_find/src/ObjSignature.h
+/home/abot/throne_craic/src/abot_find/src/ObjSignature.h
 utilite/UDirectory.h
-/home/abot/craic/src/abot_find/src/utilite/UDirectory.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UDirectory.h
 Vocabulary.h
-/home/abot/craic/src/abot_find/src/Vocabulary.h
+/home/abot/throne_craic/src/abot_find/src/Vocabulary.h
 QtCore/QThread
 -
 QtCore/QFileInfo
@@ -588,7 +588,7 @@ stdio.h
 opencv2/core/types_c.h
 -
 
-/home/abot/craic/src/abot_find/src/ImageDropWidget.cpp
+/home/abot/throne_craic/src/abot_find/src/ImageDropWidget.cpp
 ImageDropWidget.h
 -
 find_object/Settings.h
@@ -602,15 +602,15 @@ QtCore/QUrl
 QMimeData
 -
 
-/home/abot/craic/src/abot_find/src/ImageDropWidget.h
+/home/abot/throne_craic/src/abot_find/src/ImageDropWidget.h
 QWidget
 -
 
-/home/abot/craic/src/abot_find/src/JsonWriter.cpp
+/home/abot/throne_craic/src/abot_find/src/JsonWriter.cpp
 find_object/JsonWriter.h
-/home/abot/craic/src/abot_find/src/find_object/JsonWriter.h
+/home/abot/throne_craic/src/abot_find/src/find_object/JsonWriter.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 QtCore/QFile
 -
 QtCore/QTextStream
@@ -618,11 +618,11 @@ QtCore/QTextStream
 QtCore/QFileInfo
 -
 json/json.h
-/home/abot/craic/src/abot_find/src/json/json.h
+/home/abot/throne_craic/src/abot_find/src/json/json.h
 
-/home/abot/craic/src/abot_find/src/KeypointItem.cpp
+/home/abot/throne_craic/src/abot_find/src/KeypointItem.cpp
 KeypointItem.h
-/home/abot/craic/src/abot_find/src/KeypointItem.h
+/home/abot/throne_craic/src/abot_find/src/KeypointItem.h
 QtGui/QPen
 -
 QtGui/QBrush
@@ -630,7 +630,7 @@ QtGui/QBrush
 QGraphicsScene
 -
 
-/home/abot/craic/src/abot_find/src/KeypointItem.h
+/home/abot/throne_craic/src/abot_find/src/KeypointItem.h
 QGraphicsEllipseItem
 -
 QGraphicsTextItem
@@ -642,49 +642,49 @@ QtGui/QBrush
 opencv2/features2d/features2d.hpp
 -
 
-/home/abot/craic/src/abot_find/src/MainWindow.cpp
+/home/abot/throne_craic/src/abot_find/src/MainWindow.cpp
 find_object/MainWindow.h
-/home/abot/craic/src/abot_find/src/find_object/MainWindow.h
+/home/abot/throne_craic/src/abot_find/src/find_object/MainWindow.h
 find_object/Camera.h
-/home/abot/craic/src/abot_find/src/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Camera.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 find_object/TcpServer.h
-/home/abot/craic/src/abot_find/src/find_object/TcpServer.h
+/home/abot/throne_craic/src/abot_find/src/find_object/TcpServer.h
 find_object/FindObject.h
-/home/abot/craic/src/abot_find/src/find_object/FindObject.h
+/home/abot/throne_craic/src/abot_find/src/find_object/FindObject.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 find_object/ObjWidget.h
-/home/abot/craic/src/abot_find/src/find_object/ObjWidget.h
+/home/abot/throne_craic/src/abot_find/src/find_object/ObjWidget.h
 find_object/QtOpenCV.h
-/home/abot/craic/src/abot_find/src/find_object/QtOpenCV.h
+/home/abot/throne_craic/src/abot_find/src/find_object/QtOpenCV.h
 AddObjectDialog.h
-/home/abot/craic/src/abot_find/src/AddObjectDialog.h
+/home/abot/throne_craic/src/abot_find/src/AddObjectDialog.h
 ui_mainWindow.h
-/home/abot/craic/src/abot_find/src/ui_mainWindow.h
+/home/abot/throne_craic/src/abot_find/src/ui_mainWindow.h
 KeypointItem.h
-/home/abot/craic/src/abot_find/src/KeypointItem.h
+/home/abot/throne_craic/src/abot_find/src/KeypointItem.h
 RectItem.h
-/home/abot/craic/src/abot_find/src/RectItem.h
+/home/abot/throne_craic/src/abot_find/src/RectItem.h
 ParametersToolBox.h
-/home/abot/craic/src/abot_find/src/ParametersToolBox.h
+/home/abot/throne_craic/src/abot_find/src/ParametersToolBox.h
 AboutDialog.h
-/home/abot/craic/src/abot_find/src/AboutDialog.h
+/home/abot/throne_craic/src/abot_find/src/AboutDialog.h
 rtabmap/PdfPlot.h
-/home/abot/craic/src/abot_find/src/rtabmap/PdfPlot.h
+/home/abot/throne_craic/src/abot_find/src/rtabmap/PdfPlot.h
 Vocabulary.h
-/home/abot/craic/src/abot_find/src/Vocabulary.h
+/home/abot/throne_craic/src/abot_find/src/Vocabulary.h
 ObjSignature.h
-/home/abot/craic/src/abot_find/src/ObjSignature.h
+/home/abot/throne_craic/src/abot_find/src/ObjSignature.h
 iostream
 -
 stdio.h
 -
 opencv2/calib3d/calib3d.hpp
-/home/abot/craic/src/abot_find/src/opencv2/calib3d/calib3d.hpp
+/home/abot/throne_craic/src/abot_find/src/opencv2/calib3d/calib3d.hpp
 opencv2/imgproc/imgproc.hpp
-/home/abot/craic/src/abot_find/src/opencv2/imgproc/imgproc.hpp
+/home/abot/throne_craic/src/abot_find/src/opencv2/imgproc/imgproc.hpp
 opencv2/opencv_modules.hpp
 -
 opencv2/gpu/gpu.hpp
@@ -724,9 +724,9 @@ QScrollBar
 QInputDialog
 -
 utilite/UDirectory.h
-/home/abot/craic/src/abot_find/src/utilite/UDirectory.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UDirectory.h
 
-/home/abot/craic/src/abot_find/src/ObjSignature.h
+/home/abot/throne_craic/src/abot_find/src/ObjSignature.h
 opencv2/opencv.hpp
 -
 QtCore/QString
@@ -744,17 +744,17 @@ QtCore/QFileInfo
 Compression.h
 -
 
-/home/abot/craic/src/abot_find/src/ObjWidget.cpp
+/home/abot/throne_craic/src/abot_find/src/ObjWidget.cpp
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 find_object/ObjWidget.h
-/home/abot/craic/src/abot_find/src/find_object/ObjWidget.h
+/home/abot/throne_craic/src/abot_find/src/find_object/ObjWidget.h
 find_object/QtOpenCV.h
-/home/abot/craic/src/abot_find/src/find_object/QtOpenCV.h
+/home/abot/throne_craic/src/abot_find/src/find_object/QtOpenCV.h
 KeypointItem.h
-/home/abot/craic/src/abot_find/src/KeypointItem.h
+/home/abot/throne_craic/src/abot_find/src/KeypointItem.h
 opencv2/highgui/highgui.hpp
 -
 QWidget
@@ -788,11 +788,11 @@ QtCore/QDir
 stdio.h
 -
 
-/home/abot/craic/src/abot_find/src/ParametersToolBox.cpp
+/home/abot/throne_craic/src/abot_find/src/ParametersToolBox.cpp
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 ParametersToolBox.h
-/home/abot/craic/src/abot_find/src/ParametersToolBox.h
+/home/abot/throne_craic/src/abot_find/src/ParametersToolBox.h
 QComboBox
 -
 QDoubleSpinBox
@@ -812,25 +812,25 @@ QMessageBox
 stdio.h
 -
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 opencv2/opencv_modules.hpp
 -
 
-/home/abot/craic/src/abot_find/src/ParametersToolBox.h
+/home/abot/throne_craic/src/abot_find/src/ParametersToolBox.h
 QToolBox
 -
 
-/home/abot/craic/src/abot_find/src/QtOpenCV.cpp
+/home/abot/throne_craic/src/abot_find/src/QtOpenCV.cpp
 find_object/QtOpenCV.h
-/home/abot/craic/src/abot_find/src/find_object/QtOpenCV.h
+/home/abot/throne_craic/src/abot_find/src/find_object/QtOpenCV.h
 opencv2/core/core_c.h
 -
 stdio.h
 -
 
-/home/abot/craic/src/abot_find/src/RectItem.cpp
+/home/abot/throne_craic/src/abot_find/src/RectItem.cpp
 RectItem.h
-/home/abot/craic/src/abot_find/src/RectItem.h
+/home/abot/throne_craic/src/abot_find/src/RectItem.h
 QtGui/QPen
 -
 QtGui/QBrush
@@ -838,7 +838,7 @@ QtGui/QBrush
 QGraphicsScene
 -
 
-/home/abot/craic/src/abot_find/src/RectItem.h
+/home/abot/throne_craic/src/abot_find/src/RectItem.h
 QGraphicsRectItem
 -
 QGraphicsTextItem
@@ -848,13 +848,13 @@ QtGui/QPen
 QtGui/QBrush
 -
 
-/home/abot/craic/src/abot_find/src/Settings.cpp
+/home/abot/throne_craic/src/abot_find/src/Settings.cpp
 find_object/Camera.h
-/home/abot/craic/src/abot_find/src/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Camera.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 QtCore/QSettings
 -
 QtCore/QStringList
@@ -882,13 +882,13 @@ opencv2/xfeatures2d.hpp
 opencv2/xfeatures2d/cuda.hpp
 -
 superpoint_torch/SuperPoint.h
-/home/abot/craic/src/abot_find/src/superpoint_torch/SuperPoint.h
+/home/abot/throne_craic/src/abot_find/src/superpoint_torch/SuperPoint.h
 
-/home/abot/craic/src/abot_find/src/TcpServer.cpp
+/home/abot/throne_craic/src/abot_find/src/TcpServer.cpp
 find_object/TcpServer.h
-/home/abot/craic/src/abot_find/src/find_object/TcpServer.h
+/home/abot/throne_craic/src/abot_find/src/find_object/TcpServer.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 QtNetwork/QNetworkInterface
 -
 QtNetwork/QTcpSocket
@@ -898,15 +898,15 @@ QtGui/QTransform
 opencv2/highgui/highgui.hpp
 -
 
-/home/abot/craic/src/abot_find/src/Vocabulary.cpp
+/home/abot/throne_craic/src/abot_find/src/Vocabulary.cpp
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/find_object/Settings.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/find_object/utilite/ULogger.h
 Compression.h
-/home/abot/craic/src/abot_find/src/Compression.h
+/home/abot/throne_craic/src/abot_find/src/Compression.h
 Vocabulary.h
-/home/abot/craic/src/abot_find/src/Vocabulary.h
+/home/abot/throne_craic/src/abot_find/src/Vocabulary.h
 QtCore/QVector
 -
 QDataStream
@@ -922,7 +922,7 @@ opencv2/core/cuda.hpp
 opencv2/cudafeatures2d.hpp
 -
 
-/home/abot/craic/src/abot_find/src/Vocabulary.h
+/home/abot/throne_craic/src/abot_find/src/Vocabulary.h
 QtCore/QMultiMap
 -
 QtCore/QVector
@@ -930,15 +930,15 @@ QtCore/QVector
 opencv2/opencv.hpp
 -
 
-/home/abot/craic/src/abot_find/src/json/json.h
+/home/abot/throne_craic/src/abot_find/src/json/json.h
 cpptl/config.h
 -
 config.h
-/home/abot/craic/src/abot_find/src/json/config.h
+/home/abot/throne_craic/src/abot_find/src/json/config.h
 forwards.h
-/home/abot/craic/src/abot_find/src/json/forwards.h
+/home/abot/throne_craic/src/abot_find/src/json/forwards.h
 forwards.h
-/home/abot/craic/src/abot_find/src/json/forwards.h
+/home/abot/throne_craic/src/abot_find/src/json/forwards.h
 string
 -
 vector
@@ -950,9 +950,9 @@ cpptl/smallmap.h
 cpptl/forwards.h
 -
 features.h
-/home/abot/craic/src/abot_find/src/json/features.h
+/home/abot/throne_craic/src/abot_find/src/json/features.h
 value.h
-/home/abot/craic/src/abot_find/src/json/value.h
+/home/abot/throne_craic/src/abot_find/src/json/value.h
 deque
 -
 stack
@@ -962,7 +962,7 @@ string
 iostream
 -
 value.h
-/home/abot/craic/src/abot_find/src/json/value.h
+/home/abot/throne_craic/src/abot_find/src/json/value.h
 vector
 -
 string
@@ -970,7 +970,7 @@ string
 iostream
 -
 
-/home/abot/craic/src/abot_find/src/json/jsoncpp.cpp
+/home/abot/throne_craic/src/abot_find/src/json/jsoncpp.cpp
 json/json.h
 -
 json/reader.h
@@ -978,7 +978,7 @@ json/reader.h
 json/value.h
 -
 json_tool.h
-/home/abot/craic/src/abot_find/src/json/json_tool.h
+/home/abot/throne_craic/src/abot_find/src/json/json_tool.h
 utility
 -
 cstdio
@@ -1000,7 +1000,7 @@ json/value.h
 json/writer.h
 -
 json_batchallocator.h
-/home/abot/craic/src/abot_find/src/json/json_batchallocator.h
+/home/abot/throne_craic/src/abot_find/src/json/json_batchallocator.h
 iostream
 -
 utility
@@ -1016,15 +1016,15 @@ cpptl/conststring.h
 cstddef
 -
 json_internalarray.inl
-/home/abot/craic/src/abot_find/src/json/json_internalarray.inl
+/home/abot/throne_craic/src/abot_find/src/json/json_internalarray.inl
 json_internalmap.inl
-/home/abot/craic/src/abot_find/src/json/json_internalmap.inl
+/home/abot/throne_craic/src/abot_find/src/json/json_internalmap.inl
 json_valueiterator.inl
-/home/abot/craic/src/abot_find/src/json/json_valueiterator.inl
+/home/abot/throne_craic/src/abot_find/src/json/json_valueiterator.inl
 json/writer.h
 -
 json_tool.h
-/home/abot/craic/src/abot_find/src/json/json_tool.h
+/home/abot/throne_craic/src/abot_find/src/json/json_tool.h
 utility
 -
 assert.h
@@ -1040,17 +1040,17 @@ sstream
 iomanip
 -
 
-/home/abot/craic/src/abot_find/src/ros/CameraROS.cpp
+/home/abot/throne_craic/src/abot_find/src/ros/CameraROS.cpp
 CameraROS.h
-/home/abot/craic/src/abot_find/src/ros/CameraROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/CameraROS.h
 find_object/Settings.h
-/home/abot/craic/src/abot_find/src/ros/find_object/Settings.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object/Settings.h
 opencv2/imgproc/imgproc.hpp
 -
 sensor_msgs/image_encodings.h
 -
 
-/home/abot/craic/src/abot_find/src/ros/CameraROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/CameraROS.h
 ros/ros.h
 -
 ros/spinner.h
@@ -1074,23 +1074,23 @@ sensor_msgs/CameraInfo.h
 sensor_msgs/Image.h
 -
 find_object/Camera.h
-/home/abot/craic/src/abot_find/src/ros/find_object/Camera.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object/Camera.h
 QtCore/QStringList
 -
 
-/home/abot/craic/src/abot_find/src/ros/FindObjectROS.cpp
+/home/abot/throne_craic/src/abot_find/src/ros/FindObjectROS.cpp
 FindObjectROS.h
-/home/abot/craic/src/abot_find/src/ros/FindObjectROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/FindObjectROS.h
 std_msgs/Float32MultiArray.h
 -
 find_object_2d/ObjectsStamped.h
-/home/abot/craic/src/abot_find/src/ros/find_object_2d/ObjectsStamped.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object_2d/ObjectsStamped.h
 find_object_2d/DetectionInfo.h
-/home/abot/craic/src/abot_find/src/ros/find_object_2d/DetectionInfo.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object_2d/DetectionInfo.h
 cmath
 -
 
-/home/abot/craic/src/abot_find/src/ros/FindObjectROS.h
+/home/abot/throne_craic/src/abot_find/src/ros/FindObjectROS.h
 ros/ros.h
 -
 cv_bridge/cv_bridge.h
@@ -1098,7 +1098,7 @@ cv_bridge/cv_bridge.h
 tf/transform_broadcaster.h
 -
 find_object/FindObject.h
-/home/abot/craic/src/abot_find/src/ros/find_object/FindObject.h
+/home/abot/throne_craic/src/abot_find/src/ros/find_object/FindObject.h
 QtCore/QObject
 -
 QtCore/QMultiMap
@@ -1110,17 +1110,17 @@ QtCore/QRect
 QtGui/QTransform
 -
 
-/home/abot/craic/src/abot_find/src/rtabmap/PdfPlot.cpp
+/home/abot/throne_craic/src/abot_find/src/rtabmap/PdfPlot.cpp
 PdfPlot.h
-/home/abot/craic/src/abot_find/src/rtabmap/PdfPlot.h
+/home/abot/throne_craic/src/abot_find/src/rtabmap/PdfPlot.h
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/rtabmap/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/rtabmap/find_object/utilite/ULogger.h
 
-/home/abot/craic/src/abot_find/src/rtabmap/PdfPlot.h
+/home/abot/throne_craic/src/abot_find/src/rtabmap/PdfPlot.h
 utilite/UPlot.h
-/home/abot/craic/src/abot_find/src/rtabmap/utilite/UPlot.h
+/home/abot/throne_craic/src/abot_find/src/rtabmap/utilite/UPlot.h
 
-/home/abot/craic/src/abot_find/src/superpoint_torch/SuperPoint.h
+/home/abot/throne_craic/src/abot_find/src/superpoint_torch/SuperPoint.h
 torch/torch.h
 -
 opencv2/opencv.hpp
@@ -1128,9 +1128,9 @@ opencv2/opencv.hpp
 vector
 -
 
-/home/abot/craic/src/abot_find/src/utilite/UConversion.cpp
+/home/abot/throne_craic/src/abot_find/src/utilite/UConversion.cpp
 utilite/UConversion.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UConversion.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UConversion.h
 sstream
 -
 string.h
@@ -1140,7 +1140,7 @@ stdio.h
 windows.h
 -
 
-/home/abot/craic/src/abot_find/src/utilite/UConversion.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UConversion.h
 string
 -
 vector
@@ -1148,9 +1148,9 @@ vector
 stdarg.h
 -
 
-/home/abot/craic/src/abot_find/src/utilite/UDirectory.cpp
+/home/abot/throne_craic/src/abot_find/src/utilite/UDirectory.cpp
 utilite/UDirectory.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UDirectory.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UDirectory.h
 Windows.h
 -
 direct.h
@@ -1176,15 +1176,15 @@ stdlib.h
 string.h
 -
 utilite/UStl.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UStl.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UStl.h
 utilite/UFile.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UFile.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UFile.h
 utilite/UDirectory.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UDirectory.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UDirectory.h
 utilite/UConversion.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UConversion.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UConversion.h
 
-/home/abot/craic/src/abot_find/src/utilite/UDirectory.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UDirectory.h
 string
 -
 vector
@@ -1192,29 +1192,29 @@ vector
 list
 -
 
-/home/abot/craic/src/abot_find/src/utilite/UFile.cpp
+/home/abot/throne_craic/src/abot_find/src/utilite/UFile.cpp
 utilite/UFile.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UFile.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UFile.h
 fstream
 -
 utilite/UStl.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UStl.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UStl.h
 
-/home/abot/craic/src/abot_find/src/utilite/UFile.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UFile.h
 utilite/UDirectory.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UDirectory.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UDirectory.h
 string
 -
 
-/home/abot/craic/src/abot_find/src/utilite/ULogger.cpp
+/home/abot/throne_craic/src/abot_find/src/utilite/ULogger.cpp
 find_object/utilite/ULogger.h
-/home/abot/craic/src/abot_find/src/utilite/find_object/utilite/ULogger.h
+/home/abot/throne_craic/src/abot_find/src/utilite/find_object/utilite/ULogger.h
 utilite/UConversion.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UConversion.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UConversion.h
 utilite/UFile.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UFile.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UFile.h
 utilite/UStl.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UStl.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UStl.h
 fstream
 -
 string
@@ -1226,9 +1226,9 @@ sys/time.h
 Windows.h
 -
 
-/home/abot/craic/src/abot_find/src/utilite/UPlot.cpp
+/home/abot/throne_craic/src/abot_find/src/utilite/UPlot.cpp
 utilite/UPlot.h
-/home/abot/craic/src/abot_find/src/utilite/utilite/UPlot.h
+/home/abot/throne_craic/src/abot_find/src/utilite/utilite/UPlot.h
 QGraphicsScene
 -
 QGraphicsView
@@ -1272,7 +1272,7 @@ QtSvg/QSvgGenerator
 cmath
 -
 
-/home/abot/craic/src/abot_find/src/utilite/UPlot.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UPlot.h
 QFrame
 -
 QtCore/QList
@@ -1294,7 +1294,7 @@ QPushButton
 QtCore/QTime
 -
 
-/home/abot/craic/src/abot_find/src/utilite/UStl.h
+/home/abot/throne_craic/src/abot_find/src/utilite/UStl.h
 list
 -
 map

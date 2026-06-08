@@ -1,8 +1,8 @@
 # generated from catkin/cmake/template/pkg.context.pc.in
 CATKIN_PACKAGE_PREFIX = ""
-PROJECT_PKG_CONFIG_INCLUDE_DIRS = "/home/abot/craic/src/abot_rpp/include".split(';') if "/home/abot/craic/src/abot_rpp/include" != "" else []
+PROJECT_PKG_CONFIG_INCLUDE_DIRS = "/home/abot/throne_craic/src/abot_rpp/include".split(';') if "/home/abot/throne_craic/src/abot_rpp/include" != "" else []
 PROJECT_CATKIN_DEPENDS = "base_local_planner;costmap_2d;nav_core;pluginlib;roscpp;tf2_ros".replace(';', ' ')
 PKG_CONFIG_LIBRARIES_WITH_PREFIX = "-labot_rpp".split(';') if "-labot_rpp" != "" else []
 PROJECT_NAME = "abot_rpp"
-PROJECT_SPACE_DIR = "/home/abot/craic/devel"
+PROJECT_SPACE_DIR = "/home/abot/throne_craic/devel"
 PROJECT_VERSION = "0.0.0"

@@ -1,8 +1,8 @@
-# Install script for directory: /home/abot/craic/src/TTS_audio
+# Install script for directory: /home/abot/throne_craic/src/TTS_audio
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/abot/craic/install")
+  set(CMAKE_INSTALL_PREFIX "/home/abot/throne_craic/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -39,56 +39,56 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/TTS_audio/srv" TYPE FILE FILES
-    "/home/abot/craic/src/TTS_audio/srv/TTS.srv"
-    "/home/abot/craic/src/TTS_audio/srv/StringService.srv"
-    "/home/abot/craic/src/TTS_audio/srv/TextToSpeech.srv"
+    "/home/abot/throne_craic/src/TTS_audio/srv/TTS.srv"
+    "/home/abot/throne_craic/src/TTS_audio/srv/StringService.srv"
+    "/home/abot/throne_craic/src/TTS_audio/srv/TextToSpeech.srv"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/TTS_audio/cmake" TYPE FILE FILES "/home/abot/craic/build/TTS_audio/catkin_generated/installspace/TTS_audio-msg-paths.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/TTS_audio/cmake" TYPE FILE FILES "/home/abot/throne_craic/build/TTS_audio/catkin_generated/installspace/TTS_audio-msg-paths.cmake")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "/home/abot/craic/devel/include/TTS_audio")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/include/TTS_audio")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/roseus/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/roseus/ros/TTS_audio")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/roseus/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/roseus/ros/TTS_audio")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/common-lisp/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/common-lisp/ros/TTS_audio")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/common-lisp/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/common-lisp/ros/TTS_audio")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gennodejs/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/gennodejs/ros/TTS_audio")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gennodejs/ros" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/share/gennodejs/ros/TTS_audio")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  execute_process(COMMAND "/usr/bin/python2" -m compileall "/home/abot/craic/devel/lib/python2.7/dist-packages/TTS_audio")
+  execute_process(COMMAND "/usr/bin/python2" -m compileall "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/TTS_audio")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages" TYPE DIRECTORY FILES "/home/abot/craic/devel/lib/python2.7/dist-packages/TTS_audio")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages" TYPE DIRECTORY FILES "/home/abot/throne_craic/devel/lib/python2.7/dist-packages/TTS_audio")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/craic/build/TTS_audio/catkin_generated/installspace/TTS_audio.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/throne_craic/build/TTS_audio/catkin_generated/installspace/TTS_audio.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/TTS_audio/cmake" TYPE FILE FILES "/home/abot/craic/build/TTS_audio/catkin_generated/installspace/TTS_audio-msg-extras.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/TTS_audio/cmake" TYPE FILE FILES "/home/abot/throne_craic/build/TTS_audio/catkin_generated/installspace/TTS_audio-msg-extras.cmake")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/TTS_audio/cmake" TYPE FILE FILES
-    "/home/abot/craic/build/TTS_audio/catkin_generated/installspace/TTS_audioConfig.cmake"
-    "/home/abot/craic/build/TTS_audio/catkin_generated/installspace/TTS_audioConfig-version.cmake"
+    "/home/abot/throne_craic/build/TTS_audio/catkin_generated/installspace/TTS_audioConfig.cmake"
+    "/home/abot/throne_craic/build/TTS_audio/catkin_generated/installspace/TTS_audioConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/TTS_audio" TYPE FILE FILES "/home/abot/craic/src/TTS_audio/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/TTS_audio" TYPE FILE FILES "/home/abot/throne_craic/src/TTS_audio/package.xml")
 endif()
 

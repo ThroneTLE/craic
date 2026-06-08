@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/navigate_node.dir/src/navigate.cpp.o"
-  "/home/abot/craic/devel/lib/robot_slam/navigate_node.pdb"
-  "/home/abot/craic/devel/lib/robot_slam/navigate_node"
+  "/home/abot/throne_craic/devel/lib/robot_slam/navigate_node.pdb"
+  "/home/abot/throne_craic/devel/lib/robot_slam/navigate_node"
 )
 
 # Per-language clean rules from dependency scanning.

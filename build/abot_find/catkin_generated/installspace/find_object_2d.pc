@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/install
+prefix=/home/abot/throne_craic/install
 
 Name: find_object_2d
 Description: Description of find_object_2d

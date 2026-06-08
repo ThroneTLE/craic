@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/find_object_2d_generate_messages_nodejs"
-  "/home/abot/craic/devel/share/gennodejs/ros/find_object_2d/msg/DetectionInfo.js"
-  "/home/abot/craic/devel/share/gennodejs/ros/find_object_2d/msg/ObjectsStamped.js"
+  "/home/abot/throne_craic/devel/share/gennodejs/ros/find_object_2d/msg/DetectionInfo.js"
+  "/home/abot/throne_craic/devel/share/gennodejs/ros/find_object_2d/msg/ObjectsStamped.js"
 )
 
 # Per-language clean rules from dependency scanning.

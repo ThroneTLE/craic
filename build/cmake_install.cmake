@@ -1,8 +1,8 @@
-# Install script for directory: /home/abot/craic/src
+# Install script for directory: /home/abot/throne_craic/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/abot/craic/install")
+  set(CMAKE_INSTALL_PREFIX "/home/abot/throne_craic/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -49,89 +49,100 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-   "/home/abot/craic/install/_setup_util.py")
+   "/home/abot/throne_craic/install/_setup_util.py")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
-file(INSTALL DESTINATION "/home/abot/craic/install" TYPE PROGRAM FILES "/home/abot/craic/build/catkin_generated/installspace/_setup_util.py")
+file(INSTALL DESTINATION "/home/abot/throne_craic/install" TYPE PROGRAM FILES "/home/abot/throne_craic/build/catkin_generated/installspace/_setup_util.py")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-   "/home/abot/craic/install/env.sh")
+   "/home/abot/throne_craic/install/env.sh")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
-file(INSTALL DESTINATION "/home/abot/craic/install" TYPE PROGRAM FILES "/home/abot/craic/build/catkin_generated/installspace/env.sh")
+file(INSTALL DESTINATION "/home/abot/throne_craic/install" TYPE PROGRAM FILES "/home/abot/throne_craic/build/catkin_generated/installspace/env.sh")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-   "/home/abot/craic/install/setup.bash;/home/abot/craic/install/local_setup.bash")
+   "/home/abot/throne_craic/install/setup.bash;/home/abot/throne_craic/install/local_setup.bash")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
-file(INSTALL DESTINATION "/home/abot/craic/install" TYPE FILE FILES
-    "/home/abot/craic/build/catkin_generated/installspace/setup.bash"
-    "/home/abot/craic/build/catkin_generated/installspace/local_setup.bash"
+file(INSTALL DESTINATION "/home/abot/throne_craic/install" TYPE FILE FILES
+    "/home/abot/throne_craic/build/catkin_generated/installspace/setup.bash"
+    "/home/abot/throne_craic/build/catkin_generated/installspace/local_setup.bash"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-   "/home/abot/craic/install/setup.sh;/home/abot/craic/install/local_setup.sh")
+   "/home/abot/throne_craic/install/setup.sh;/home/abot/throne_craic/install/local_setup.sh")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
-file(INSTALL DESTINATION "/home/abot/craic/install" TYPE FILE FILES
-    "/home/abot/craic/build/catkin_generated/installspace/setup.sh"
-    "/home/abot/craic/build/catkin_generated/installspace/local_setup.sh"
+file(INSTALL DESTINATION "/home/abot/throne_craic/install" TYPE FILE FILES
+    "/home/abot/throne_craic/build/catkin_generated/installspace/setup.sh"
+    "/home/abot/throne_craic/build/catkin_generated/installspace/local_setup.sh"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-   "/home/abot/craic/install/setup.zsh;/home/abot/craic/install/local_setup.zsh")
+   "/home/abot/throne_craic/install/setup.zsh;/home/abot/throne_craic/install/local_setup.zsh")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
-file(INSTALL DESTINATION "/home/abot/craic/install" TYPE FILE FILES
-    "/home/abot/craic/build/catkin_generated/installspace/setup.zsh"
-    "/home/abot/craic/build/catkin_generated/installspace/local_setup.zsh"
+file(INSTALL DESTINATION "/home/abot/throne_craic/install" TYPE FILE FILES
+    "/home/abot/throne_craic/build/catkin_generated/installspace/setup.zsh"
+    "/home/abot/throne_craic/build/catkin_generated/installspace/local_setup.zsh"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-   "/home/abot/craic/install/.rosinstall")
+   "/home/abot/throne_craic/install/.rosinstall")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
-file(INSTALL DESTINATION "/home/abot/craic/install" TYPE FILE FILES "/home/abot/craic/build/catkin_generated/installspace/.rosinstall")
+file(INSTALL DESTINATION "/home/abot/throne_craic/install" TYPE FILE FILES "/home/abot/throne_craic/build/catkin_generated/installspace/.rosinstall")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/abot/craic/build/gtest/cmake_install.cmake")
-  include("/home/abot/craic/build/abot_rpp/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/gtest/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/nav_command/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/TTS_audio/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/abot_base/abot_imu/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/abot_base/abot_bringup/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/abot_vlm/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/abot_base/lidar_filters/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/abot_base/abot_model/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/ocr_detect/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/abot_find/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/robot_slam/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/track_tag/cmake_install.cmake")
+  include("/home/abot/throne_craic/build/abot_rpp/cmake_install.cmake")
 
 endif()
 
@@ -143,5 +154,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/abot/craic/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/abot/throne_craic/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -7,7 +7,7 @@ Author:Zachary
 '''
 from cnocr import CnOcr
 
-img_path = '/home/abot/demo/src/ocr_detect/image/11.jpg'
+img_path = '/home/abot/throne_craic/src/ocr_detect/image/11.jpg'
 ocr = CnOcr() 
 result = ocr.ocr(img_path)
 #print(result)

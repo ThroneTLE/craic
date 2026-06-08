@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/throne_craic/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/throne_craic/build
 
 # Utility rule file for geometry_msgs_generate_messages_lisp.
 
@@ -63,10 +63,10 @@ nav_command/CMakeFiles/geometry_msgs_generate_messages_lisp.dir/build: geometry_
 .PHONY : nav_command/CMakeFiles/geometry_msgs_generate_messages_lisp.dir/build
 
 nav_command/CMakeFiles/geometry_msgs_generate_messages_lisp.dir/clean:
-	cd /home/abot/craic/build/nav_command && $(CMAKE_COMMAND) -P CMakeFiles/geometry_msgs_generate_messages_lisp.dir/cmake_clean.cmake
+	cd /home/abot/throne_craic/build/nav_command && $(CMAKE_COMMAND) -P CMakeFiles/geometry_msgs_generate_messages_lisp.dir/cmake_clean.cmake
 .PHONY : nav_command/CMakeFiles/geometry_msgs_generate_messages_lisp.dir/clean
 
 nav_command/CMakeFiles/geometry_msgs_generate_messages_lisp.dir/depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/craic/src /home/abot/craic/src/nav_command /home/abot/craic/build /home/abot/craic/build/nav_command /home/abot/craic/build/nav_command/CMakeFiles/geometry_msgs_generate_messages_lisp.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/abot/throne_craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/throne_craic/src /home/abot/throne_craic/src/nav_command /home/abot/throne_craic/build /home/abot/throne_craic/build/nav_command /home/abot/throne_craic/build/nav_command/CMakeFiles/geometry_msgs_generate_messages_lisp.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : nav_command/CMakeFiles/geometry_msgs_generate_messages_lisp.dir/depend
 

@@ -43,10 +43,10 @@ points=[10, 11, 12, 13]
 task_numbers = []
 # 点位语音文件映射(未使用，代码中用的是文本播报)
 point_audio = {
-    12: "/home/abot/demo/src/robot_slam/mp3/01.mp3",
-    13: "/home/abot/demo/src/robot_slam/mp3/02.mp3",
-    14: "/home/abot/demo/src/robot_slam/mp3/03.mp3",
-    15: "/home/abot/demo/src/robot_slam/mp3/04.mp3"
+    12: "/home/abot/throne_craic/src/robot_slam/mp3/01.mp3",
+    13: "/home/abot/throne_craic/src/robot_slam/mp3/02.mp3",
+    14: "/home/abot/throne_craic/src/robot_slam/mp3/03.mp3",
+    15: "/home/abot/throne_craic/src/robot_slam/mp3/04.mp3"
 }
 
 # =================== 核心导航类定义 ===================
@@ -1015,7 +1015,7 @@ if __name__ == "__main__":
     rospy.sleep(5)
 
     # 7. 播报离线音频并开始任务
-    os.system('ffplay -nodisp -autoexit -loglevel quiet /home/abot/craic/src/robot_slam/resources/startGame.wav')
+    os.system('ffplay -nodisp -autoexit -loglevel quiet /home/abot/throne_craic/src/robot_slam/resources/startGame.wav')
     # navi.adjust_position(side_target=2.352, back_target=0.600) 
     navi.start24()
     navi.execute_mission()

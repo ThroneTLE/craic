@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_imu.dir/src/abot_imu.cpp.o"
   "CMakeFiles/abot_imu.dir/src/abot_imu_node.cpp.o"
-  "/home/abot/craic/devel/lib/abot_imu/abot_imu.pdb"
-  "/home/abot/craic/devel/lib/abot_imu/abot_imu"
+  "/home/abot/throne_craic/devel/lib/abot_imu/abot_imu.pdb"
+  "/home/abot/throne_craic/devel/lib/abot_imu/abot_imu"
 )
 
 # Per-language clean rules from dependency scanning.

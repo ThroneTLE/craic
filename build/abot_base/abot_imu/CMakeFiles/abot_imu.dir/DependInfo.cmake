@@ -4,8 +4,8 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/abot/craic/src/abot_base/abot_imu/src/abot_imu.cpp" "/home/abot/craic/build/abot_base/abot_imu/CMakeFiles/abot_imu.dir/src/abot_imu.cpp.o"
-  "/home/abot/craic/src/abot_base/abot_imu/src/abot_imu_node.cpp" "/home/abot/craic/build/abot_base/abot_imu/CMakeFiles/abot_imu.dir/src/abot_imu_node.cpp.o"
+  "/home/abot/throne_craic/src/abot_base/abot_imu/src/abot_imu.cpp" "/home/abot/throne_craic/build/abot_base/abot_imu/CMakeFiles/abot_imu.dir/src/abot_imu.cpp.o"
+  "/home/abot/throne_craic/src/abot_base/abot_imu/src/abot_imu_node.cpp" "/home/abot/throne_craic/build/abot_base/abot_imu/CMakeFiles/abot_imu.dir/src/abot_imu_node.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -18,11 +18,11 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/home/abot/craic/devel/include"
-  "/home/abot/craic/src/abot_base/abot_imu/include"
+  "/home/abot/throne_craic/devel/include"
+  "/home/abot/throne_craic/src/abot_base/abot_imu/include"
   "/opt/ros/melodic/include"
   "/opt/ros/melodic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
-  "/home/abot/craic/src/abot_base/abot_imu/include/abot_imu"
+  "/home/abot/throne_craic/src/abot_base/abot_imu/include/abot_imu"
   )
 
 # Targets to which this target links.

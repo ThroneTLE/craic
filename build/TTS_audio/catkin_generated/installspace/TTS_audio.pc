@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/install
+prefix=/home/abot/throne_craic/install
 
 Name: TTS_audio
 Description: Description of TTS_audio

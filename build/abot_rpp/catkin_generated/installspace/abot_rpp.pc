@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/install
+prefix=/home/abot/throne_craic/install
 
 Name: abot_rpp
 Description: Description of abot_rpp
