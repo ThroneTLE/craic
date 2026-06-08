@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/EIU0US/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/EIU0US/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -137,14 +137,14 @@ install/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/abot/craic/build/CMakeFiles /home/abot/craic/build/ocr_detect/CMakeFiles/progress.marks
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 ocr_detect/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/abot/craic/build/CMakeFiles 0
+	cd /home/abot/EIU0US/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/abot/EIU0US/build/CMakeFiles /home/abot/EIU0US/build/ocr_detect/CMakeFiles/progress.marks
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 ocr_detect/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/abot/EIU0US/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 ocr_detect/clean
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 ocr_detect/clean
 .PHONY : clean
 
 # The main clean target
@@ -154,17 +154,17 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 ocr_detect/preinstall
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 ocr_detect/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/abot/craic/build && $(MAKE) -f CMakeFiles/Makefile2 ocr_detect/preinstall
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 ocr_detect/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/abot/EIU0US/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Help Target
@@ -191,6 +191,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/abot/EIU0US/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

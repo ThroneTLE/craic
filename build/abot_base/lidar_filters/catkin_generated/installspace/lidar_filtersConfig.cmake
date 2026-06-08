@@ -67,14 +67,14 @@ set(lidar_filters_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("FALSE" STREQUAL "TRUE")
-  set(lidar_filters_SOURCE_PREFIX /home/abot/craic/src/abot_base/lidar_filters)
-  set(lidar_filters_DEVEL_PREFIX /home/abot/craic/devel)
+  set(lidar_filters_SOURCE_PREFIX /home/abot/EIU0US/src/abot_base/lidar_filters)
+  set(lidar_filters_DEVEL_PREFIX /home/abot/EIU0US/devel)
   set(lidar_filters_INSTALL_PREFIX "")
   set(lidar_filters_PREFIX ${lidar_filters_DEVEL_PREFIX})
 else()
   set(lidar_filters_SOURCE_PREFIX "")
   set(lidar_filters_DEVEL_PREFIX "")
-  set(lidar_filters_INSTALL_PREFIX /home/abot/craic/install)
+  set(lidar_filters_INSTALL_PREFIX /home/abot/EIU0US/install)
   set(lidar_filters_PREFIX ${lidar_filters_INSTALL_PREFIX})
 endif()
 
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/abot/craic/install/lib;/opt/ros/melodic/lib)
+    foreach(path /home/abot/EIU0US/install/lib;/opt/ros/melodic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)

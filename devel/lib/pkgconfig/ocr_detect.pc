@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/devel
+prefix=/home/abot/EIU0US/devel
 
 Name: ocr_detect
 Description: Description of ocr_detect

@@ -17,7 +17,7 @@
 
       <!-- 终点导航只粗到位，最后由激光闭环贴边 -->
       <param name="final_nav_timeout" value="13.0"/>
-      <param name="final_yaw_align_timeout" value="3.0"/>
+      <param name="final_yaw_align_timeout" value="8.0"/>
       <param name="final_yaw_tolerance" value="0.05"/>
       <param name="final_yaw_kp" value="1.2"/>
       <param name="final_yaw_min_vel" value="0.08"/>
@@ -27,9 +27,14 @@
       <!-- 调试/固定任务点模式：true时跳过10-13检测扫描，直接按fixed_task_ids泊车 -->
       <param name="use_fixed_task_positions" value="false"/>
       <param name="fixed_task_ids" value="31,49,50,51"/>
-      <param name="task_nav_timeout" value="4.0"/>
-      <param name="task_nav_retry_timeout" value="5.0"/>
+
+
+      <param name="task_nav_timeout" value="18.0"/>
+      <param name="task_nav_retry_timeout" value="3.0"/>
       <param name="task_nav_accept_dist" value="0.45"/>
+      <param name="start_escape_turn_enabled" value="true"/>
+      <param name="start_escape_turn_speed" value="0.18"/>
+      <param name="start_escape_turn_duration" value="1.0"/>
 
       <!-- 相对格子泊车：按目标格子局部坐标检测四边障碍并选择入口 -->
       <param name="relative_parking_mode" value="true"/>
@@ -53,8 +58,9 @@
       <!-- 检测点10-13：先退一段同yaw预对准，再到原拍照点并低速修yaw -->
       <param name="detect_prealign_enabled" value="true"/>
       <param name="detect_prealign_mode" value="left"/>
-      <param name="detect_prealign_distance" value="0.03"/>
+      <param name="detect_prealign_distance" value="0.05"/>
       <param name="detect_prealign_timeout" value="15"/>
+
       <param name="detect_yaw_align_at_prealign" value="true"/>
       <param name="detect_final_timeout" value="15"/>
       <param name="detect_yaw_align_at_photo" value="true"/>

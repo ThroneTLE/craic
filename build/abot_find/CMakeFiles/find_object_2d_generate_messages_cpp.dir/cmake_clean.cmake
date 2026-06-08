@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/find_object_2d_generate_messages_cpp"
-  "/home/abot/craic/devel/include/find_object_2d/DetectionInfo.h"
-  "/home/abot/craic/devel/include/find_object_2d/ObjectsStamped.h"
+  "/home/abot/EIU0US/devel/include/find_object_2d/ObjectsStamped.h"
+  "/home/abot/EIU0US/devel/include/find_object_2d/DetectionInfo.h"
 )
 
 # Per-language clean rules from dependency scanning.

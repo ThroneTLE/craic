@@ -1,8 +1,8 @@
-# Install script for directory: /home/abot/craic/src/abot_find
+# Install script for directory: /home/abot/EIU0US/src/abot_find
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/abot/craic/install")
+  set(CMAKE_INSTALL_PREFIX "/home/abot/EIU0US/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -39,70 +39,70 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d/msg" TYPE FILE FILES
-    "/home/abot/craic/src/abot_find/msg/ObjectsStamped.msg"
-    "/home/abot/craic/src/abot_find/msg/DetectionInfo.msg"
+    "/home/abot/EIU0US/src/abot_find/msg/ObjectsStamped.msg"
+    "/home/abot/EIU0US/src/abot_find/msg/DetectionInfo.msg"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d/cmake" TYPE FILE FILES "/home/abot/craic/build/abot_find/catkin_generated/installspace/find_object_2d-msg-paths.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d/cmake" TYPE FILE FILES "/home/abot/EIU0US/build/abot_find/catkin_generated/installspace/find_object_2d-msg-paths.cmake")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "/home/abot/craic/devel/include/find_object_2d")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "/home/abot/EIU0US/devel/include/find_object_2d")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/roseus/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/roseus/ros/find_object_2d")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/roseus/ros" TYPE DIRECTORY FILES "/home/abot/EIU0US/devel/share/roseus/ros/find_object_2d")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/common-lisp/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/common-lisp/ros/find_object_2d")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/common-lisp/ros" TYPE DIRECTORY FILES "/home/abot/EIU0US/devel/share/common-lisp/ros/find_object_2d")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gennodejs/ros" TYPE DIRECTORY FILES "/home/abot/craic/devel/share/gennodejs/ros/find_object_2d")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gennodejs/ros" TYPE DIRECTORY FILES "/home/abot/EIU0US/devel/share/gennodejs/ros/find_object_2d")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  execute_process(COMMAND "/usr/bin/python2" -m compileall "/home/abot/craic/devel/lib/python2.7/dist-packages/find_object_2d")
+  execute_process(COMMAND "/usr/bin/python2" -m compileall "/home/abot/EIU0US/devel/lib/python2.7/dist-packages/find_object_2d")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages" TYPE DIRECTORY FILES "/home/abot/craic/devel/lib/python2.7/dist-packages/find_object_2d")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages" TYPE DIRECTORY FILES "/home/abot/EIU0US/devel/lib/python2.7/dist-packages/find_object_2d")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/craic/build/abot_find/catkin_generated/installspace/find_object_2d.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/EIU0US/build/abot_find/catkin_generated/installspace/find_object_2d.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d/cmake" TYPE FILE FILES "/home/abot/craic/build/abot_find/catkin_generated/installspace/find_object_2d-msg-extras.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d/cmake" TYPE FILE FILES "/home/abot/EIU0US/build/abot_find/catkin_generated/installspace/find_object_2d-msg-extras.cmake")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d/cmake" TYPE FILE FILES
-    "/home/abot/craic/build/abot_find/catkin_generated/installspace/find_object_2dConfig.cmake"
-    "/home/abot/craic/build/abot_find/catkin_generated/installspace/find_object_2dConfig-version.cmake"
+    "/home/abot/EIU0US/build/abot_find/catkin_generated/installspace/find_object_2dConfig.cmake"
+    "/home/abot/EIU0US/build/abot_find/catkin_generated/installspace/find_object_2dConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d" TYPE FILE FILES "/home/abot/craic/src/abot_find/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d" TYPE FILE FILES "/home/abot/EIU0US/src/abot_find/package.xml")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/find_object_2d/launch" TYPE FILE FILES
-    "/home/abot/craic/src/abot_find/launch/find_object_3d_kinect2.launch"
-    "/home/abot/craic/src/abot_find/launch/find_object_3d_zed.launch"
-    "/home/abot/craic/src/abot_find/launch/find_object_2d.launch"
-    "/home/abot/craic/src/abot_find/launch/find_object_3d.launch"
+    "/home/abot/EIU0US/src/abot_find/launch/find_object_3d_kinect2.launch"
+    "/home/abot/EIU0US/src/abot_find/launch/find_object_3d_zed.launch"
+    "/home/abot/EIU0US/src/abot_find/launch/find_object_2d.launch"
+    "/home/abot/EIU0US/src/abot_find/launch/find_object_3d.launch"
     )
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/abot/craic/build/abot_find/src/cmake_install.cmake")
+  include("/home/abot/EIU0US/build/abot_find/src/cmake_install.cmake")
 
 endif()
 

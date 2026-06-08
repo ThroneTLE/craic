@@ -5,7 +5,7 @@ Author:Zachary
 '''
 from sys import version_info as _swig_python_version_info
 import sys  # 添加sys模块导入
-sys.path.append('/home/abot/craic/src/robot_slam/resources')  # 添加路径
+sys.path.append('/home/abot/EIU0US/src/robot_slam/resources')  # 添加路径
 
 if _swig_python_version_info >= (2, 7, 0):
     def swig_import_helper():

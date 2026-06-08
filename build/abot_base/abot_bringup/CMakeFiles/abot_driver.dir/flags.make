@@ -6,5 +6,5 @@ CXX_FLAGS =
 
 CXX_DEFINES = -DROSCONSOLE_BACKEND_LOG4CXX -DROS_BUILD_SHARED_LIBS=1 -DROS_PACKAGE_NAME=\"abot_bringup\"
 
-CXX_INCLUDES = -I/home/abot/craic/devel/include -I/home/abot/craic/src/abot_base/abot_bringup/include -I/opt/ros/melodic/include -I/opt/ros/melodic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp -I/home/abot/craic/src/abot_base/abot_bringup/include/abot_bringup 
+CXX_INCLUDES = -I/home/abot/EIU0US/devel/include -I/home/abot/EIU0US/src/abot_base/abot_bringup/include -I/opt/ros/melodic/include -I/opt/ros/melodic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp -I/home/abot/EIU0US/src/abot_base/abot_bringup/include/abot_bringup 
 

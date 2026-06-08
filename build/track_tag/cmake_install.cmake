@@ -1,8 +1,8 @@
-# Install script for directory: /home/abot/craic/src/track_tag
+# Install script for directory: /home/abot/EIU0US/src/track_tag
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/abot/craic/install")
+  set(CMAKE_INSTALL_PREFIX "/home/abot/EIU0US/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,17 +38,17 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/craic/build/track_tag/catkin_generated/installspace/track_tag.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/EIU0US/build/track_tag/catkin_generated/installspace/track_tag.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/track_tag/cmake" TYPE FILE FILES
-    "/home/abot/craic/build/track_tag/catkin_generated/installspace/track_tagConfig.cmake"
-    "/home/abot/craic/build/track_tag/catkin_generated/installspace/track_tagConfig-version.cmake"
+    "/home/abot/EIU0US/build/track_tag/catkin_generated/installspace/track_tagConfig.cmake"
+    "/home/abot/EIU0US/build/track_tag/catkin_generated/installspace/track_tagConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/track_tag" TYPE FILE FILES "/home/abot/craic/src/track_tag/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/track_tag" TYPE FILE FILES "/home/abot/EIU0US/src/track_tag/package.xml")
 endif()
 

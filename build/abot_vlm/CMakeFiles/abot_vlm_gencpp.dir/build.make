@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/EIU0US/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/EIU0US/build
 
 # Utility rule file for abot_vlm_gencpp.
 
@@ -63,10 +63,10 @@ abot_vlm/CMakeFiles/abot_vlm_gencpp.dir/build: abot_vlm_gencpp
 .PHONY : abot_vlm/CMakeFiles/abot_vlm_gencpp.dir/build
 
 abot_vlm/CMakeFiles/abot_vlm_gencpp.dir/clean:
-	cd /home/abot/craic/build/abot_vlm && $(CMAKE_COMMAND) -P CMakeFiles/abot_vlm_gencpp.dir/cmake_clean.cmake
+	cd /home/abot/EIU0US/build/abot_vlm && $(CMAKE_COMMAND) -P CMakeFiles/abot_vlm_gencpp.dir/cmake_clean.cmake
 .PHONY : abot_vlm/CMakeFiles/abot_vlm_gencpp.dir/clean
 
 abot_vlm/CMakeFiles/abot_vlm_gencpp.dir/depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/craic/src /home/abot/craic/src/abot_vlm /home/abot/craic/build /home/abot/craic/build/abot_vlm /home/abot/craic/build/abot_vlm/CMakeFiles/abot_vlm_gencpp.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/abot/EIU0US/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/EIU0US/src /home/abot/EIU0US/src/abot_vlm /home/abot/EIU0US/build /home/abot/EIU0US/build/abot_vlm /home/abot/EIU0US/build/abot_vlm/CMakeFiles/abot_vlm_gencpp.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : abot_vlm/CMakeFiles/abot_vlm_gencpp.dir/depend
 

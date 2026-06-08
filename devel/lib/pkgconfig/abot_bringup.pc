@@ -1,8 +1,8 @@
-prefix=/home/abot/craic/devel
+prefix=/home/abot/EIU0US/devel
 
 Name: abot_bringup
 Description: Description of abot_bringup
 Version: 0.0.0
-Cflags: -I/home/abot/craic/devel/include
+Cflags: -I/home/abot/EIU0US/devel/include
 Libs: -L${prefix}/lib 
 Requires: 

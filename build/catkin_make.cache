@@ -1,2 +1,2 @@
-abot_rpp
--DCATKIN_DEVEL_PREFIX=/home/abot/craic/devel -DCMAKE_INSTALL_PREFIX=/home/abot/craic/install -DCATKIN_WHITELIST_PACKAGES=abot_rpp -G Unix Makefiles
+TTS_audio:abot_base/abot_bringup:abot_base/abot_imu:abot_base/abot_model:abot_base/lidar_filters:abot_find:abot_rpp:abot_vlm:nav_command:ocr_detect:robot_slam:track_tag
+-DCATKIN_DEVEL_PREFIX=/home/abot/EIU0US/devel -DCMAKE_INSTALL_PREFIX=/home/abot/EIU0US/install -G Unix Makefiles

@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/find_object_2d.dir/ros/find_object_2d_node.cpp.o"
-  "/home/abot/craic/devel/lib/find_object_2d/find_object_2d.pdb"
-  "/home/abot/craic/devel/lib/find_object_2d/find_object_2d"
+  "/home/abot/EIU0US/devel/lib/find_object_2d/find_object_2d.pdb"
+  "/home/abot/EIU0US/devel/lib/find_object_2d/find_object_2d"
 )
 
 # Per-language clean rules from dependency scanning.

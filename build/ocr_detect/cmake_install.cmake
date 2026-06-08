@@ -1,8 +1,8 @@
-# Install script for directory: /home/abot/craic/src/ocr_detect
+# Install script for directory: /home/abot/EIU0US/src/ocr_detect
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/abot/craic/install")
+  set(CMAKE_INSTALL_PREFIX "/home/abot/EIU0US/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,17 +38,17 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/craic/build/ocr_detect/catkin_generated/installspace/ocr_detect.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/abot/EIU0US/build/ocr_detect/catkin_generated/installspace/ocr_detect.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ocr_detect/cmake" TYPE FILE FILES
-    "/home/abot/craic/build/ocr_detect/catkin_generated/installspace/ocr_detectConfig.cmake"
-    "/home/abot/craic/build/ocr_detect/catkin_generated/installspace/ocr_detectConfig-version.cmake"
+    "/home/abot/EIU0US/build/ocr_detect/catkin_generated/installspace/ocr_detectConfig.cmake"
+    "/home/abot/EIU0US/build/ocr_detect/catkin_generated/installspace/ocr_detectConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ocr_detect" TYPE FILE FILES "/home/abot/craic/src/ocr_detect/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ocr_detect" TYPE FILE FILES "/home/abot/EIU0US/src/ocr_detect/package.xml")
 endif()
 

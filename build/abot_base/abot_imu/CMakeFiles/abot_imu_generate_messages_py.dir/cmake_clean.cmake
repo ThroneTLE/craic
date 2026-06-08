@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_imu_generate_messages_py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/abot_imu/msg/_RawImu.py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/abot_imu/msg/__init__.py"
+  "/home/abot/EIU0US/devel/lib/python2.7/dist-packages/abot_imu/msg/_RawImu.py"
+  "/home/abot/EIU0US/devel/lib/python2.7/dist-packages/abot_imu/msg/__init__.py"
 )
 
 # Per-language clean rules from dependency scanning.

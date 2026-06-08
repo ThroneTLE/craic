@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/abot/craic/src/abot_rpp/src/rpp_controller.cpp" "/home/abot/craic/build/abot_rpp/CMakeFiles/abot_rpp.dir/src/rpp_controller.cpp.o"
+  "/home/abot/EIU0US/src/abot_rpp/src/rpp_controller.cpp" "/home/abot/EIU0US/build/abot_rpp/CMakeFiles/abot_rpp.dir/src/rpp_controller.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -17,7 +17,7 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/home/abot/craic/src/abot_rpp/include"
+  "/home/abot/EIU0US/src/abot_rpp/include"
   "/opt/ros/melodic/include"
   "/opt/ros/melodic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
   "/opt/ros/melodic/share/orocos_kdl/cmake/../../../include"

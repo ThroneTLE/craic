@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/nav_command_generate_messages_cpp"
-  "/home/abot/craic/devel/include/nav_command/NavCmd.h"
+  "/home/abot/EIU0US/devel/include/nav_command/NavCmd.h"
 )
 
 # Per-language clean rules from dependency scanning.

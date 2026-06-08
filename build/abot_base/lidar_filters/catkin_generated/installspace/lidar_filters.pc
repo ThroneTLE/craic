@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/install
+prefix=/home/abot/EIU0US/install
 
 Name: lidar_filters
 Description: Description of lidar_filters

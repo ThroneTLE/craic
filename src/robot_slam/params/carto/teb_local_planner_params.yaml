@@ -33,9 +33,9 @@ TebLocalPlannerROS:
   # 比之前略稳，防止贴障碍时冲得太快s
   ############################################################
 
-  max_vel_x: 0.5
-  max_vel_x_backwards: 0.5
-  max_vel_y: 0.5
+  max_vel_x: 0.3
+  max_vel_x_backwards: 0.3
+  max_vel_y: 0.3
   max_vel_theta: 4.0
 
   acc_lim_x: 1.8
@@ -82,8 +82,8 @@ TebLocalPlannerROS:
   # 加大障碍物距离和权重，防止前轮缝隙卡挡板
   ############################################################
 
-  min_obstacle_dist: 0.06
-  inflation_dist: 0.18
+  min_obstacle_dist: 0.04
+  inflation_dist: 0.08
 
   include_costmap_obstacles: true
   costmap_obstacles_behind_robot_dist: 0.35

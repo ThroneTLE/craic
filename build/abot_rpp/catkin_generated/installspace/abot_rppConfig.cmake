@@ -67,14 +67,14 @@ set(abot_rpp_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("FALSE" STREQUAL "TRUE")
-  set(abot_rpp_SOURCE_PREFIX /home/abot/craic/src/abot_rpp)
-  set(abot_rpp_DEVEL_PREFIX /home/abot/craic/devel)
+  set(abot_rpp_SOURCE_PREFIX /home/abot/EIU0US/src/abot_rpp)
+  set(abot_rpp_DEVEL_PREFIX /home/abot/EIU0US/devel)
   set(abot_rpp_INSTALL_PREFIX "")
   set(abot_rpp_PREFIX ${abot_rpp_DEVEL_PREFIX})
 else()
   set(abot_rpp_SOURCE_PREFIX "")
   set(abot_rpp_DEVEL_PREFIX "")
-  set(abot_rpp_INSTALL_PREFIX /home/abot/craic/install)
+  set(abot_rpp_INSTALL_PREFIX /home/abot/EIU0US/install)
   set(abot_rpp_PREFIX ${abot_rpp_INSTALL_PREFIX})
 endif()
 
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/abot/craic/install/lib;/opt/ros/melodic/lib)
+    foreach(path /home/abot/EIU0US/install/lib;/opt/ros/melodic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)

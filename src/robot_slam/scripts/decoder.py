@@ -19,10 +19,10 @@ logger = logging.getLogger("snowboy")
 logger.setLevel(logging.INFO)
 TOP_DIR = os.path.dirname(os.path.abspath(__file__))
 
-RESOURCE_FILE = ("/home/abot/craic/src/robot_slam/resources/common.res")
+RESOURCE_FILE = ("/home/abot/EIU0US/src/robot_slam/resources/common.res")
 #DETECT_DING = os.path.join(TOP_DIR, "resources/ding.wav")
-DETECT_DING = ( "/home/abot/craic/src/robot_slam/resources/startGame.wav")
-DETECT_DONG = ("/home/abot/craic/src/robot_slam/resources/dong.wav")
+DETECT_DING = ( "/home/abot/EIU0US/src/robot_slam/resources/startGame.wav")
+DETECT_DONG = ("/home/abot/EIU0US/src/robot_slam/resources/dong.wav")
 
 def py_error_handler(filename, line, function, err, fmt):
     pass

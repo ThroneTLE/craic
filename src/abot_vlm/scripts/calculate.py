@@ -63,7 +63,7 @@ def top_view_shot(image_msg):
     if im_flag == 1:
         # 保存图像
         rospy.loginfo('保存至temp/vl_now.jpg')
-        cv2.imwrite('/home/abot/demo/src/abot_vlm/temp/vl_now.jpg', img_bgr)
+        cv2.imwrite('/home/abot/EIU0US/src/abot_vlm/temp/vl_now.jpg', img_bgr)
         # 将im_flag重置为255
         rospy.set_param('/im_flag', 255)
         # # 屏幕上展示图像
@@ -73,7 +73,7 @@ def top_view_shot(image_msg):
         # 调用视觉大模型API
         #yi_vision_api()
         result_str = doubao_vision_api()
-def doubao_vision_api(PROMPT='图片中有一个计算式，请计算一下结果并输出，例如：图中内容为1+1=，你输出为2。图中的内容为2+2=，你输出4。注意，你只输出结果，比如数字2,即最后的输出一定是一个数字，除了数字一定不要展示其他内容,我只要输出的数字格式为单个字符 例如8，在终端输出的格式为“结果：最终的数字”', img_path='/home/abot/demo/src/abot_vlm/temp/vl_now.jpg'):
+def doubao_vision_api(PROMPT='图片中有一个计算式，请计算一下结果并输出，例如：图中内容为1+1=，你输出为2。图中的内容为2+2=，你输出4。注意，你只输出结果，比如数字2,即最后的输出一定是一个数字，除了数字一定不要展示其他内容,我只要输出的数字格式为单个字符 例如8，在终端输出的格式为“结果：最终的数字”', img_path='/home/abot/EIU0US/src/abot_vlm/temp/vl_now.jpg'):
     '''
     零一万物大模型开放平台，yi-vision视觉语言多模态大模型API
     '''

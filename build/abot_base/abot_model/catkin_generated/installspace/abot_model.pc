@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/install
+prefix=/home/abot/EIU0US/install
 
 Name: abot_model
 Description: Description of abot_model

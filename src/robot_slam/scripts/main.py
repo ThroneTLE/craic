@@ -43,10 +43,10 @@ points=[10, 11, 12, 13]
 task_numbers = []
 # 点位语音文件映射(未使用，代码中用的是文本播报)
 point_audio = {
-    12: "/home/abot/demo/src/robot_slam/mp3/01.mp3",
-    13: "/home/abot/demo/src/robot_slam/mp3/02.mp3",
-    14: "/home/abot/demo/src/robot_slam/mp3/03.mp3",
-    15: "/home/abot/demo/src/robot_slam/mp3/04.mp3"
+    12: "/home/abot/EIU0US/src/robot_slam/mp3/01.mp3",
+    13: "/home/abot/EIU0US/src/robot_slam/mp3/02.mp3",
+    14: "/home/abot/EIU0US/src/robot_slam/mp3/03.mp3",
+    15: "/home/abot/EIU0US/src/robot_slam/mp3/04.mp3"
 }
 
 # =================== 核心导航类定义 ===================
@@ -131,6 +131,9 @@ class navigation_demo:
         self.task_nav_timeout = rospy.get_param("~task_nav_timeout", 8.0)
         self.task_nav_retry_timeout = rospy.get_param("~task_nav_retry_timeout", 5.0)
         self.task_nav_accept_dist = rospy.get_param("~task_nav_accept_dist", 0.45)
+        self.start_escape_turn_enabled = rospy.get_param("~start_escape_turn_enabled", True)
+        self.start_escape_turn_speed = rospy.get_param("~start_escape_turn_speed", 0.18)
+        self.start_escape_turn_duration = rospy.get_param("~start_escape_turn_duration", 1.0)
         self.last_move_base_state = None
         self.last_move_base_feedback = None
     
@@ -549,17 +552,23 @@ class navigation_demo:
 
     # ---------------- 机器人终点动作(2/4) ----------------
     def start24(self):
-        """起点动作，冲出障碍区：左上方直线斜移"""
+        """起点动作，冲出障碍区：左上方斜移，可叠加慢速左转"""
         global time_val
         msg = Twist()
         msg.linear.x = 0.25    # X轴：前进
         msg.linear.y = 0.1     # Y轴：左移
-        msg.angular.z = 0.0    # 无旋转
+        msg.angular.z = 0.0
         # 持续发布速度指令1.3秒
         while time_val <= 13:
+            elapsed = (time_val - 1) * 0.1
+            if self.start_escape_turn_enabled and elapsed < self.start_escape_turn_duration:
+                msg.angular.z = abs(self.start_escape_turn_speed)
+            else:
+                msg.angular.z = 0.0
             self.pub.publish(msg)
             rospy.sleep(0.1)
             time_val += 1
+        self.pub.publish(Twist())
 
     # ---------------- 机器人终点动作(1/3) ----------------
     def end13(self):
@@ -1006,7 +1015,7 @@ if __name__ == "__main__":
     rospy.sleep(5)
 
     # 7. 播报离线音频并开始任务
-    os.system('ffplay -nodisp -autoexit -loglevel quiet /home/abot/craic/src/robot_slam/resources/startGame.wav')
+    os.system('ffplay -nodisp -autoexit -loglevel quiet /home/abot/EIU0US/src/robot_slam/resources/startGame.wav')
     # navi.adjust_position(side_target=2.352, back_target=0.600) 
     navi.start24()
     navi.execute_mission()

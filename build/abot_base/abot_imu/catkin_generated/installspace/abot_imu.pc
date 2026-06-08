@@ -1,4 +1,4 @@
-prefix=/home/abot/craic/install
+prefix=/home/abot/EIU0US/install
 
 Name: abot_imu
 Description: Description of abot_imu

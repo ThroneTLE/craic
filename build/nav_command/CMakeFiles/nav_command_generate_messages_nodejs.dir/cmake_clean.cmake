@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/nav_command_generate_messages_nodejs"
-  "/home/abot/craic/devel/share/gennodejs/ros/nav_command/msg/NavCmd.js"
+  "/home/abot/EIU0US/devel/share/gennodejs/ros/nav_command/msg/NavCmd.js"
 )
 
 # Per-language clean rules from dependency scanning.

@@ -1,7 +1,7 @@
 # generated from genmsg/cmake/pkg-genmsg.context.in
 
 messages_str = ""
-services_str = "/home/abot/craic/src/TTS_audio/srv/TTS.srv;/home/abot/craic/src/TTS_audio/srv/StringService.srv;/home/abot/craic/src/TTS_audio/srv/TextToSpeech.srv"
+services_str = "/home/abot/EIU0US/src/TTS_audio/srv/TTS.srv;/home/abot/EIU0US/src/TTS_audio/srv/StringService.srv;/home/abot/EIU0US/src/TTS_audio/srv/TextToSpeech.srv"
 pkg_name = "TTS_audio"
 dependencies_str = "std_msgs"
 langs = "gencpp;geneus;genlisp;gennodejs;genpy"

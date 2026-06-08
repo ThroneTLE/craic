@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_imu_generate_messages_nodejs"
-  "/home/abot/craic/devel/share/gennodejs/ros/abot_imu/msg/RawImu.js"
+  "/home/abot/EIU0US/devel/share/gennodejs/ros/abot_imu/msg/RawImu.js"
 )
 
 # Per-language clean rules from dependency scanning.

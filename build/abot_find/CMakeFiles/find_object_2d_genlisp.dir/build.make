@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/EIU0US/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/EIU0US/build
 
 # Utility rule file for find_object_2d_genlisp.
 
@@ -63,10 +63,10 @@ abot_find/CMakeFiles/find_object_2d_genlisp.dir/build: find_object_2d_genlisp
 .PHONY : abot_find/CMakeFiles/find_object_2d_genlisp.dir/build
 
 abot_find/CMakeFiles/find_object_2d_genlisp.dir/clean:
-	cd /home/abot/craic/build/abot_find && $(CMAKE_COMMAND) -P CMakeFiles/find_object_2d_genlisp.dir/cmake_clean.cmake
+	cd /home/abot/EIU0US/build/abot_find && $(CMAKE_COMMAND) -P CMakeFiles/find_object_2d_genlisp.dir/cmake_clean.cmake
 .PHONY : abot_find/CMakeFiles/find_object_2d_genlisp.dir/clean
 
 abot_find/CMakeFiles/find_object_2d_genlisp.dir/depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/craic/src /home/abot/craic/src/abot_find /home/abot/craic/build /home/abot/craic/build/abot_find /home/abot/craic/build/abot_find/CMakeFiles/find_object_2d_genlisp.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/abot/EIU0US/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/EIU0US/src /home/abot/EIU0US/src/abot_find /home/abot/EIU0US/build /home/abot/EIU0US/build/abot_find /home/abot/EIU0US/build/abot_find/CMakeFiles/find_object_2d_genlisp.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : abot_find/CMakeFiles/find_object_2d_genlisp.dir/depend
 

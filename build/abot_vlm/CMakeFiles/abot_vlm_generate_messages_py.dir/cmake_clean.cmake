@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_vlm_generate_messages_py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/abot_vlm/srv/_VisionResult.py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/abot_vlm/srv/_LLMQuery.py"
-  "/home/abot/craic/devel/lib/python2.7/dist-packages/abot_vlm/srv/__init__.py"
+  "/home/abot/EIU0US/devel/lib/python2.7/dist-packages/abot_vlm/srv/_VisionResult.py"
+  "/home/abot/EIU0US/devel/lib/python2.7/dist-packages/abot_vlm/srv/_LLMQuery.py"
+  "/home/abot/EIU0US/devel/lib/python2.7/dist-packages/abot_vlm/srv/__init__.py"
 )
 
 # Per-language clean rules from dependency scanning.

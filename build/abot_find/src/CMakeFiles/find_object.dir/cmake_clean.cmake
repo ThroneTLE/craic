@@ -60,8 +60,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/find_object.dir/qrc_resources.cpp.o"
   "CMakeFiles/find_object.dir/ros/CameraROS.cpp.o"
   "CMakeFiles/find_object.dir/ros/FindObjectROS.cpp.o"
-  "/home/abot/craic/devel/lib/libfind_object_2d.pdb"
-  "/home/abot/craic/devel/lib/libfind_object_2d.so"
+  "/home/abot/EIU0US/devel/lib/libfind_object_2d.pdb"
+  "/home/abot/EIU0US/devel/lib/libfind_object_2d.so"
 )
 
 # Per-language clean rules from dependency scanning.

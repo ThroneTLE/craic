@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_vlm_generate_messages_eus"
-  "/home/abot/craic/devel/share/roseus/ros/abot_vlm/srv/VisionResult.l"
-  "/home/abot/craic/devel/share/roseus/ros/abot_vlm/srv/LLMQuery.l"
-  "/home/abot/craic/devel/share/roseus/ros/abot_vlm/manifest.l"
+  "/home/abot/EIU0US/devel/share/roseus/ros/abot_vlm/srv/VisionResult.l"
+  "/home/abot/EIU0US/devel/share/roseus/ros/abot_vlm/srv/LLMQuery.l"
+  "/home/abot/EIU0US/devel/share/roseus/ros/abot_vlm/manifest.l"
 )
 
 # Per-language clean rules from dependency scanning.

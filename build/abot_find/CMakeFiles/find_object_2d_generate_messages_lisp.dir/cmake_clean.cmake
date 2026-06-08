@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/find_object_2d_generate_messages_lisp"
-  "/home/abot/craic/devel/share/common-lisp/ros/find_object_2d/msg/DetectionInfo.lisp"
-  "/home/abot/craic/devel/share/common-lisp/ros/find_object_2d/msg/ObjectsStamped.lisp"
+  "/home/abot/EIU0US/devel/share/common-lisp/ros/find_object_2d/msg/ObjectsStamped.lisp"
+  "/home/abot/EIU0US/devel/share/common-lisp/ros/find_object_2d/msg/DetectionInfo.lisp"
 )
 
 # Per-language clean rules from dependency scanning.

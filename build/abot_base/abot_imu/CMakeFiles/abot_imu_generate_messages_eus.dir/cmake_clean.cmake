@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/abot_imu_generate_messages_eus"
-  "/home/abot/craic/devel/share/roseus/ros/abot_imu/msg/RawImu.l"
-  "/home/abot/craic/devel/share/roseus/ros/abot_imu/manifest.l"
+  "/home/abot/EIU0US/devel/share/roseus/ros/abot_imu/msg/RawImu.l"
+  "/home/abot/EIU0US/devel/share/roseus/ros/abot_imu/manifest.l"
 )
 
 # Per-language clean rules from dependency scanning.

@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/abot/craic/src
+CMAKE_SOURCE_DIR = /home/abot/EIU0US/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/abot/craic/build
+CMAKE_BINARY_DIR = /home/abot/EIU0US/build
 
 # Utility rule file for robot_slam_gencpp.
 
@@ -63,10 +63,10 @@ robot_slam/CMakeFiles/robot_slam_gencpp.dir/build: robot_slam_gencpp
 .PHONY : robot_slam/CMakeFiles/robot_slam_gencpp.dir/build
 
 robot_slam/CMakeFiles/robot_slam_gencpp.dir/clean:
-	cd /home/abot/craic/build/robot_slam && $(CMAKE_COMMAND) -P CMakeFiles/robot_slam_gencpp.dir/cmake_clean.cmake
+	cd /home/abot/EIU0US/build/robot_slam && $(CMAKE_COMMAND) -P CMakeFiles/robot_slam_gencpp.dir/cmake_clean.cmake
 .PHONY : robot_slam/CMakeFiles/robot_slam_gencpp.dir/clean
 
 robot_slam/CMakeFiles/robot_slam_gencpp.dir/depend:
-	cd /home/abot/craic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/craic/src /home/abot/craic/src/robot_slam /home/abot/craic/build /home/abot/craic/build/robot_slam /home/abot/craic/build/robot_slam/CMakeFiles/robot_slam_gencpp.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/abot/EIU0US/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/abot/EIU0US/src /home/abot/EIU0US/src/robot_slam /home/abot/EIU0US/build /home/abot/EIU0US/build/robot_slam /home/abot/EIU0US/build/robot_slam/CMakeFiles/robot_slam_gencpp.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : robot_slam/CMakeFiles/robot_slam_gencpp.dir/depend
 
