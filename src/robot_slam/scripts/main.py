@@ -8,7 +8,7 @@ import actionlib
 import numpy as np
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from nav_msgs.msg import Path, Odometry
+from nav_msgs.msg import Path, Odometry, OccupancyGrid
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from math import pi
@@ -17,6 +17,7 @@ from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import LaserScan, Imu
+from rosgraph_msgs.msg import Log
 import sys, os, time
 import dynamic_reconfigure.client
 from std_srvs.srv import Trigger, TriggerRequest
@@ -131,15 +132,138 @@ class navigation_demo:
         self.task_nav_timeout = rospy.get_param("~task_nav_timeout", 8.0)
         self.task_nav_retry_timeout = rospy.get_param("~task_nav_retry_timeout", 5.0)
         self.task_nav_accept_dist = rospy.get_param("~task_nav_accept_dist", 0.45)
+        self.task_nav_use_approach_goal = rospy.get_param("~task_nav_use_approach_goal", True)
+        self.task_nav_approach_offset = rospy.get_param("~task_nav_approach_offset", 0.30)
+        self.task_nav_approach_modes = rospy.get_param(
+            "~task_nav_approach_modes",
+            "back,back_left,left,front_left,front,front_right,right,back_right")
+        self.task_nav_approach_filter_costmap = rospy.get_param("~task_nav_approach_filter_costmap", True)
+        self.task_nav_approach_costmap_topic = rospy.get_param(
+            "~task_nav_approach_costmap_topic", "/move_base/global_costmap/costmap")
+        self.task_nav_approach_cost_threshold = int(rospy.get_param("~task_nav_approach_cost_threshold", 98))
+        self.task_nav_approach_reject_unknown = rospy.get_param("~task_nav_approach_reject_unknown", True)
+        self.task_nav_approach_costmap_wait = rospy.get_param("~task_nav_approach_costmap_wait", 0.5)
+        self.task_nav_approach_fallback_to_target = rospy.get_param("~task_nav_approach_fallback_to_target", False)
+        self.task_nav_target_accept_yaw = rospy.get_param("~task_nav_target_accept_yaw", 0.5)
+        self.task_nav_approach_score_radius = rospy.get_param("~task_nav_approach_score_radius", 0.20)
+        self.task_nav_no_progress_enabled = rospy.get_param("~task_nav_no_progress_enabled", True)
+        self.task_nav_no_progress_timeout = rospy.get_param("~task_nav_no_progress_timeout", 3.0)
+        self.task_nav_no_progress_min_delta = rospy.get_param("~task_nav_no_progress_min_delta", 0.05)
+        self.task_nav_plan_fail_cancel_enabled = rospy.get_param("~task_nav_plan_fail_cancel_enabled", True)
+        self.task_nav_plan_fail_count = int(rospy.get_param("~task_nav_plan_fail_count", 5))
+        self.task_nav_plan_fail_window = rospy.get_param("~task_nav_plan_fail_window", 1.0)
+        self.force_escape_after_approach_nav = rospy.get_param("~force_escape_after_approach_nav", True)
+        self.parking_phase_global_inflation_enabled = rospy.get_param(
+            "~parking_phase_global_inflation_enabled", True)
+        self.parking_phase_global_inflation_radius = rospy.get_param(
+            "~parking_phase_global_inflation_radius", 0.06)
+        self.cruise_global_inflation_radius = rospy.get_param(
+            "~cruise_global_inflation_radius", 0.15)
+        self.global_inflation_layer_name = rospy.get_param(
+            "~global_inflation_layer_name", "move_base/global_costmap/inflation_layer")
+        self.global_inflation_client = None
         self.start_escape_turn_enabled = rospy.get_param("~start_escape_turn_enabled", True)
         self.start_escape_turn_speed = rospy.get_param("~start_escape_turn_speed", 0.18)
         self.start_escape_turn_duration = rospy.get_param("~start_escape_turn_duration", 1.0)
+        self.global_costmap = None
+        rospy.Subscriber(self.task_nav_approach_costmap_topic, OccupancyGrid, self.global_costmap_callback)
+        self.task_nav_goal_active = False
+        self.task_nav_plan_fail_cancel_requested = False
+        self.task_nav_plan_fail_seen = 0
+        self.task_nav_plan_fail_window_start = rospy.Time(0)
+        self.task_nav_plan_fail_label = ""
+        self.task_nav_plan_fail_mode = ""
+        rospy.Subscriber("/rosout", Log, self.rosout_callback)
         self.last_move_base_state = None
         self.last_move_base_feedback = None
     
     def scan_callback(self, msg):
         """存储最新的激光雷达数据"""
         self.scan_data = msg
+
+    def global_costmap_callback(self, msg):
+        self.global_costmap = msg
+
+    def rosout_callback(self, msg):
+        if (not self.task_nav_plan_fail_cancel_enabled
+                or not self.task_nav_goal_active):
+            return
+        if msg.name != "/move_base":
+            return
+        if "Failed to get a plan" not in msg.msg:
+            return
+
+        now = rospy.Time.now()
+        if (self.task_nav_plan_fail_window_start == rospy.Time(0)
+                or (now - self.task_nav_plan_fail_window_start).to_sec() > self.task_nav_plan_fail_window):
+            self.task_nav_plan_fail_window_start = now
+            self.task_nav_plan_fail_seen = 0
+
+        self.task_nav_plan_fail_seen += 1
+        if self.task_nav_plan_fail_seen >= self.task_nav_plan_fail_count:
+            self.task_nav_plan_fail_cancel_requested = True
+            rospy.logwarn(
+                "[TASK_NAV][PLAN_FAIL_CANCEL_REQUEST] label=%s mode=%s count=%d window=%.2fs msg=%s",
+                self.task_nav_plan_fail_label,
+                self.task_nav_plan_fail_mode,
+                self.task_nav_plan_fail_seen,
+                self.task_nav_plan_fail_window,
+                msg.msg
+            )
+
+    def get_global_inflation_client(self):
+        if self.global_inflation_client is not None:
+            return self.global_inflation_client
+        try:
+            self.global_inflation_client = dynamic_reconfigure.client.Client(
+                self.global_inflation_layer_name,
+                timeout=2.0
+            )
+            return self.global_inflation_client
+        except Exception as e:
+            rospy.logwarn(
+                "[COSTMAP_PHASE][CLIENT_FAILED] name=%s error=%s",
+                self.global_inflation_layer_name,
+                str(e)
+            )
+            return None
+
+    def set_global_inflation_radius(self, radius, reason):
+        if not self.parking_phase_global_inflation_enabled:
+            rospy.loginfo("[COSTMAP_PHASE][SKIP] reason=%s enabled=false", reason)
+            return False
+        client = self.get_global_inflation_client()
+        if client is None:
+            return False
+        try:
+            client.update_configuration({"inflation_radius": float(radius)})
+            self.global_costmap = None
+            rospy.loginfo(
+                "[COSTMAP_PHASE][SET] reason=%s global_inflation_radius=%.3f",
+                reason,
+                radius
+            )
+            return True
+        except Exception as e:
+            rospy.logwarn(
+                "[COSTMAP_PHASE][SET_FAILED] reason=%s radius=%.3f error=%s",
+                reason,
+                radius,
+                str(e)
+            )
+            return False
+
+    def set_parking_phase_costmap(self):
+        return self.set_global_inflation_radius(
+            self.parking_phase_global_inflation_radius,
+            "parking_phase"
+        )
+
+    def restore_cruise_costmap(self):
+        return self.set_global_inflation_radius(
+            self.cruise_global_inflation_radius,
+            "return_to_final"
+        )
 
     def odom_callback(self, msg):
         """从里程计提取当前航向角"""
@@ -198,6 +322,343 @@ class navigation_demo:
                 self.task_nav_accept_dist
             )
         return nav_reached, nav_dist
+
+    def yaw_error_to_goal(self, target):
+        target_yaw = target[2] / 180.0 * pi
+        return self.normalize_angle(target_yaw - self.current_yaw)
+
+    def make_task_approach_goals(self, target):
+        """生成给 move_base 使用的多个墙外预到达点，泊车仍使用原目标点。"""
+        if self.task_nav_approach_offset <= 0.0:
+            return [("target", list(target))]
+
+        yaw_rad = target[2] / 180.0 * pi
+        forward_x = np.cos(yaw_rad)
+        forward_y = np.sin(yaw_rad)
+        left_x = -np.sin(yaw_rad)
+        left_y = np.cos(yaw_rad)
+        diag = 1.0 / np.sqrt(2.0)
+        mode_vectors = {
+            "back": (-forward_x, -forward_y),
+            "front": (forward_x, forward_y),
+            "left": (left_x, left_y),
+            "right": (-left_x, -left_y),
+            "back_left": ((-forward_x + left_x) * diag, (-forward_y + left_y) * diag),
+            "back_right": ((-forward_x - left_x) * diag, (-forward_y - left_y) * diag),
+            "front_left": ((forward_x + left_x) * diag, (forward_y + left_y) * diag),
+            "front_right": ((forward_x - left_x) * diag, (forward_y - left_y) * diag),
+            "left_back": ((-forward_x + left_x) * diag, (-forward_y + left_y) * diag),
+            "right_back": ((-forward_x - left_x) * diag, (-forward_y - left_y) * diag),
+            "left_front": ((forward_x + left_x) * diag, (forward_y + left_y) * diag),
+            "right_front": ((forward_x - left_x) * diag, (forward_y - left_y) * diag),
+        }
+
+        goals_out = []
+        seen = set()
+        modes = [m.strip().lower() for m in str(self.task_nav_approach_modes).split(",") if m.strip()]
+        for mode in modes:
+            if mode not in mode_vectors:
+                rospy.logwarn("[TASK_NAV][APPROACH_MODE_UNKNOWN] mode=%s", mode)
+                continue
+            vx, vy = mode_vectors[mode]
+            approach = [
+                target[0] + vx * self.task_nav_approach_offset,
+                target[1] + vy * self.task_nav_approach_offset,
+                target[2]
+            ]
+            key = (round(approach[0], 3), round(approach[1], 3), round(approach[2], 1))
+            if key in seen:
+                continue
+            seen.add(key)
+            goals_out.append((mode, approach))
+            rospy.loginfo(
+                "[TASK_NAV][APPROACH_CANDIDATE] mode=%s target=(%.3f,%.3f,%.1f) approach=(%.3f,%.3f,%.1f) offset=%.3f",
+                mode, target[0], target[1], target[2],
+                approach[0], approach[1], approach[2],
+                self.task_nav_approach_offset
+            )
+
+        goals_out.append(("target", list(target)))
+        return goals_out
+
+    def get_global_costmap_for_approach(self):
+        if self.global_costmap is not None:
+            return self.global_costmap
+        try:
+            self.global_costmap = rospy.wait_for_message(
+                self.task_nav_approach_costmap_topic,
+                OccupancyGrid,
+                timeout=self.task_nav_approach_costmap_wait)
+        except Exception as e:
+            rospy.logwarn(
+                "[TASK_NAV][APPROACH_COSTMAP_WAIT_FAILED] topic=%s timeout=%.2f error=%s",
+                self.task_nav_approach_costmap_topic,
+                self.task_nav_approach_costmap_wait,
+                str(e)
+            )
+        return self.global_costmap
+
+    def costmap_cost_at(self, costmap, x, y):
+        info = costmap.info
+        if info.resolution <= 0.0 or info.width <= 0 or info.height <= 0:
+            return None, "bad_costmap_info"
+        mx = int((x - info.origin.position.x) / info.resolution)
+        my = int((y - info.origin.position.y) / info.resolution)
+        if mx < 0 or my < 0 or mx >= info.width or my >= info.height:
+            return None, "out_of_map"
+        idx = my * info.width + mx
+        if idx < 0 or idx >= len(costmap.data):
+            return None, "bad_index"
+        return int(costmap.data[idx]), "ok"
+
+    def costmap_score_near(self, costmap, x, y, radius):
+        info = costmap.info
+        if info.resolution <= 0.0 or info.width <= 0 or info.height <= 0:
+            return None, "bad_costmap_info"
+        mx = int((x - info.origin.position.x) / info.resolution)
+        my = int((y - info.origin.position.y) / info.resolution)
+        if mx < 0 or my < 0 or mx >= info.width or my >= info.height:
+            return None, "out_of_map"
+
+        radius_cells = int(np.ceil(max(0.0, radius) / info.resolution))
+        max_cost = 0
+        total_cost = 0
+        count = 0
+        unknown_count = 0
+        for dy in range(-radius_cells, radius_cells + 1):
+            for dx in range(-radius_cells, radius_cells + 1):
+                if dx * dx + dy * dy > radius_cells * radius_cells:
+                    continue
+                sx = mx + dx
+                sy = my + dy
+                if sx < 0 or sy < 0 or sx >= info.width or sy >= info.height:
+                    unknown_count += 1
+                    continue
+                idx = sy * info.width + sx
+                if idx < 0 or idx >= len(costmap.data):
+                    unknown_count += 1
+                    continue
+                cost = int(costmap.data[idx])
+                if cost < 0:
+                    unknown_count += 1
+                    cost = 100
+                max_cost = max(max_cost, cost)
+                total_cost += cost
+                count += 1
+
+        if count <= 0:
+            return None, "no_score_cells"
+        avg_cost = float(total_cost) / float(count)
+        return (max_cost, avg_cost, unknown_count), "ok"
+
+    def evaluate_task_approach_goal(self, mode, nav_target, costmap=None, costmap_checked=False):
+        if not self.task_nav_approach_filter_costmap or mode == "target":
+            return True, "filter_disabled_or_target", (0, 0.0, 0)
+
+        if not costmap_checked:
+            costmap = self.get_global_costmap_for_approach()
+        if costmap is None:
+            return True, "no_costmap_allow", (0, 0.0, 0)
+
+        cost, detail = self.costmap_cost_at(costmap, nav_target[0], nav_target[1])
+        if cost is None:
+            return False, detail, (999, 999.0, 999)
+        if cost < 0:
+            if self.task_nav_approach_reject_unknown:
+                return False, "unknown", (999, 999.0, 999)
+            return True, "unknown_allowed", (100, 100.0, 1)
+        if cost > self.task_nav_approach_cost_threshold:
+            return False, "cost=%d>threshold=%d" % (
+                cost, self.task_nav_approach_cost_threshold), (cost, float(cost), 0)
+
+        score, detail = self.costmap_score_near(
+            costmap, nav_target[0], nav_target[1], self.task_nav_approach_score_radius)
+        if score is None:
+            score = (cost, float(cost), 0)
+            score_text = "score_unavailable=%s" % detail
+        else:
+            score_text = "score=max:%d avg:%.1f unk:%d radius:%.2f" % (
+                score[0], score[1], score[2], self.task_nav_approach_score_radius)
+        return True, "cost=%d %s" % (cost, score_text), score
+
+    def is_task_approach_goal_clear(self, mode, nav_target):
+        clear, reason, _ = self.evaluate_task_approach_goal(mode, nav_target)
+        return clear, reason
+
+    def select_task_approach_goal(self, target, skipped_modes=None):
+        if skipped_modes is None:
+            skipped_modes = set()
+        candidates = self.make_task_approach_goals(target)
+        if not self.task_nav_use_approach_goal and "target" not in skipped_modes:
+            return "target", list(target)
+
+        target_fallback = None
+        clear_candidates = []
+        costmap = None
+        costmap_checked = False
+        if self.task_nav_approach_filter_costmap:
+            costmap = self.get_global_costmap_for_approach()
+            costmap_checked = True
+        for mode, nav_target in candidates:
+            if mode == "target":
+                if mode not in skipped_modes:
+                    target_fallback = (mode, nav_target)
+                continue
+            if mode in skipped_modes:
+                rospy.loginfo("[TASK_NAV][APPROACH_SKIP_FAILED] mode=%s", mode)
+                continue
+            clear, reason, score = self.evaluate_task_approach_goal(
+                mode, nav_target, costmap=costmap, costmap_checked=costmap_checked)
+            rospy.loginfo(
+                "[TASK_NAV][APPROACH_CHECK] mode=%s nav_target=(%.3f,%.3f,%.1f) clear=%s reason=%s",
+                mode, nav_target[0], nav_target[1], nav_target[2],
+                str(clear), reason
+            )
+            if clear:
+                clear_candidates.append((score, mode, nav_target, reason))
+
+        if clear_candidates:
+            clear_candidates.sort(key=lambda item: (item[0][2], item[0][0], item[0][1]))
+            score, mode, nav_target, reason = clear_candidates[0]
+            rospy.loginfo(
+                "[TASK_NAV][APPROACH_SELECTED] mode=%s nav_target=(%.3f,%.3f,%.1f) score=max:%d avg:%.1f unk:%d reason=%s",
+                mode, nav_target[0], nav_target[1], nav_target[2],
+                score[0], score[1], score[2], reason
+            )
+            return mode, nav_target
+
+        rospy.logwarn("[TASK_NAV][APPROACH_NO_CLEAR] target=%s", str(target))
+        if self.task_nav_approach_fallback_to_target and target_fallback is not None:
+            rospy.logwarn("[TASK_NAV][APPROACH_FALLBACK_TARGET] nav_target=%s", str(target_fallback[1]))
+            return target_fallback
+        return None, None
+
+    def goto_task_approach(self, target, timeout, label, skipped_modes=None):
+        mode, nav_target = self.select_task_approach_goal(target, skipped_modes)
+        if nav_target is None:
+            return False, False, None, None
+        rospy.loginfo("[TASK_NAV][TRY_%s] mode=%s nav_target=%s", label, mode, nav_target)
+        nav_ok = self.goto_task_nav_goal(nav_target, timeout=timeout, label=label, mode=mode)
+        nav_reached, approach_dist = self.nav_reached_by_state_and_distance(nav_ok, nav_target)
+        nav_dist = self.distance_to_goal_xy(target)
+        if nav_reached:
+            yaw_err = self.yaw_error_to_goal(target)
+            if mode == "target" and not nav_ok and abs(yaw_err) > self.task_nav_target_accept_yaw:
+                rospy.logwarn(
+                    "[TASK_NAV][TARGET_DISTANCE_ACCEPT_REJECT_YAW] dist=%s yaw_err=%.3f accept_yaw=%.3f",
+                    "%.3f" % approach_dist if approach_dist is not None else "None",
+                    yaw_err,
+                    self.task_nav_target_accept_yaw
+                )
+                nav_reached = False
+            elif mode != "target" and abs(yaw_err) > self.task_nav_target_accept_yaw:
+                rospy.logwarn(
+                    "[TASK_NAV][APPROACH_REACHED_REJECT_YAW] mode=%s approach_dist=%s target_dist=%s yaw_err=%.3f accept_yaw=%.3f",
+                    mode,
+                    "%.3f" % approach_dist if approach_dist is not None else "None",
+                    "%.3f" % nav_dist if nav_dist is not None else "None",
+                    yaw_err,
+                    self.task_nav_target_accept_yaw
+                )
+                nav_reached = False
+        if mode != "target" and nav_ok and not nav_reached:
+            rospy.logwarn(
+                "[TASK_NAV][APPROACH_STATE_DISTANCE_MISMATCH] mode=%s approach_dist=%s accept=%.3f",
+                mode,
+                "%.3f" % approach_dist if approach_dist is not None else "None",
+                self.task_nav_accept_dist
+            )
+        rospy.loginfo(
+            "[TASK_NAV][TRY_%s_DONE] mode=%s ok=%s target_dist=%s approach_dist=%s reached=%s state=%s",
+            label, mode, str(nav_ok),
+            "%.3f" % nav_dist if nav_dist is not None else "None",
+            "%.3f" % approach_dist if approach_dist is not None else "None",
+            str(nav_reached), str(self.last_move_base_state)
+        )
+        return nav_ok, nav_reached, nav_dist, mode
+
+    def mark_failed_approach_mode(self, idx, task_id, mode, failed_approach_modes):
+        if mode is None:
+            return
+        failed_approach_modes.add(mode)
+        rospy.logwarn(
+            "[TASK_NAV][APPROACH_MARK_FAILED] idx=%d task_id=%d mode=%s failed_modes=%s",
+            idx + 1, task_id, str(mode),
+            ",".join(sorted(failed_approach_modes))
+        )
+
+    def navigate_task_with_all_approaches(self, idx, task_id, target, last_parking, last_task_id):
+        failed_approach_modes = set()
+        nav_ok = False
+        nav_reached = False
+        nav_dist = None
+        nav_mode = None
+        escaped_after_abort = False
+        attempt = 0
+
+        while not rospy.is_shutdown():
+            attempt += 1
+            label = "MAIN" if attempt == 1 else "RETRY_%d" % (attempt - 1)
+            timeout = self.task_nav_timeout if attempt == 1 else self.task_nav_retry_timeout
+            nav_start_time = rospy.Time.now()
+            nav_ok, nav_reached, nav_dist, nav_mode = self.goto_task_approach(
+                target, timeout, label, failed_approach_modes)
+            rospy.loginfo(
+                "[TASK_TIME][NAV_ATTEMPT] idx=%d task_id=%d label=%s dt=%.2fs ok=%s target_dist=%s reached=%s state=%s mode=%s",
+                idx + 1, task_id, label,
+                (rospy.Time.now() - nav_start_time).to_sec(),
+                str(nav_ok),
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                str(nav_reached), str(self.last_move_base_state), str(nav_mode)
+            )
+
+            if nav_reached:
+                break
+
+            self.mark_failed_approach_mode(idx, task_id, nav_mode, failed_approach_modes)
+
+            if (not escaped_after_abort and not nav_ok
+                    and self.last_move_base_state == GoalStatus.ABORTED
+                    and last_parking is not None):
+                rospy.logwarn(
+                    "[TASK_TIME][NAV_ABORTED_ESCAPE] idx=%d task_id=%d prev_task_id=%s state=%s",
+                    idx + 1, task_id, str(last_task_id), str(self.last_move_base_state)
+                )
+                escape_retry_start = rospy.Time.now()
+                force_escape = self.should_force_escape_after_approach(last_parking, True)
+                if force_escape:
+                    last_parking.escape(force=True, reason="next_nav_aborted")
+                else:
+                    last_parking.escape()
+                rospy.loginfo(
+                    "[TASK_TIME][NAV_ABORTED_ESCAPE_DONE] idx=%d task_id=%d dt=%.2fs forced=%s",
+                    idx + 1, task_id,
+                    (rospy.Time.now() - escape_retry_start).to_sec(),
+                    str(force_escape)
+                )
+                escaped_after_abort = True
+
+            if nav_mode is None:
+                break
+
+            rospy.logwarn(
+                "[TASK_TIME][NAV_NOT_REACHED_RETRY] idx=%d task_id=%d target_dist=%s accept=%.3f next_failed_modes=%s",
+                idx + 1, task_id,
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                self.task_nav_accept_dist,
+                ",".join(sorted(failed_approach_modes))
+            )
+
+        return nav_ok, nav_reached, nav_dist, nav_mode
+
+    def should_force_escape_after_approach(self, parking, approach_nav_used):
+        if not self.force_escape_after_approach_nav or not approach_nav_used:
+            return False
+        if parking is None:
+            return False
+        blocked_names = getattr(parking, "relative_blocked_names", [])
+        return len(blocked_names) > 0
+
 
     def fallback_odom_distance_to_goal_xy(self, target):
         try:
@@ -684,6 +1145,102 @@ class navigation_demo:
                           (p, state))
             return False
 
+    def goto_task_nav_goal(self, p, timeout=60, label="", mode=""):
+        """
+        任务点导航专用：在常规 timeout 外，检测规划失败和目标距离长时间没有变近。
+        这样目标点在墙里/局部规划卡住时，可以更快切换到 approach 或下一个 approach。
+        """
+        rospy.loginfo(
+            "[TASK_NAV][GOTO_START] label=%s mode=%s target=%s timeout=%.1fs no_progress=%s no_progress_timeout=%.1fs min_delta=%.3f",
+            label, mode, str(p), timeout,
+            str(self.task_nav_no_progress_enabled),
+            self.task_nav_no_progress_timeout,
+            self.task_nav_no_progress_min_delta
+        )
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = 'map'
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose.position.x = p[0]
+        goal.target_pose.pose.position.y = p[1]
+        q = quaternion_from_euler(0.0, 0.0, p[2] / 180.0 * pi)
+        goal.target_pose.pose.orientation.x = q[0]
+        goal.target_pose.pose.orientation.y = q[1]
+        goal.target_pose.pose.orientation.z = q[2]
+        goal.target_pose.pose.orientation.w = q[3]
+
+        self.reset_nav_feedback()
+        self.task_nav_goal_active = True
+        self.task_nav_plan_fail_cancel_requested = False
+        self.task_nav_plan_fail_seen = 0
+        self.task_nav_plan_fail_window_start = rospy.Time(0)
+        self.task_nav_plan_fail_label = label
+        self.task_nav_plan_fail_mode = mode
+        self.move_base.send_goal(goal, self._done_cb, self._active_cb, self._feedback_cb)
+
+        start_time = rospy.Time.now()
+        best_dist = None
+        last_progress_time = start_time
+        rate = rospy.Rate(5)
+        try:
+            while not rospy.is_shutdown():
+                if self.task_nav_plan_fail_cancel_requested:
+                    self.move_base.cancel_goal()
+                    self.last_move_base_state = GoalStatus.PREEMPTED
+                    rospy.logwarn(
+                        "[TASK_NAV][PLAN_FAIL_CANCEL] label=%s mode=%s count=%d window=%.2fs best_dist=%s",
+                        label, mode,
+                        self.task_nav_plan_fail_seen,
+                        self.task_nav_plan_fail_window,
+                        "%.3f" % best_dist if best_dist is not None else "None"
+                    )
+                    return False
+
+                elapsed = (rospy.Time.now() - start_time).to_sec()
+                if elapsed > timeout:
+                    self.move_base.cancel_goal()
+                    self.last_move_base_state = GoalStatus.PREEMPTED
+                    rospy.logwarn(
+                        "[TASK_NAV][TIMEOUT_CANCEL] label=%s mode=%s elapsed=%.2fs timeout=%.2fs best_dist=%s",
+                        label, mode, elapsed, timeout,
+                        "%.3f" % best_dist if best_dist is not None else "None"
+                    )
+                    return False
+
+                state = self.move_base.get_state()
+                if state == GoalStatus.SUCCEEDED:
+                    self.last_move_base_state = state
+                    rospy.loginfo("[TASK_NAV][GOTO_DONE] label=%s mode=%s state=SUCCEEDED", label, mode)
+                    return True
+                if state in [GoalStatus.ABORTED, GoalStatus.REJECTED, GoalStatus.PREEMPTED, GoalStatus.RECALLED]:
+                    self.last_move_base_state = state
+                    rospy.logwarn("[TASK_NAV][GOTO_FAILED_STATE] label=%s mode=%s state=%s", label, mode, state)
+                    return False
+
+                if self.task_nav_no_progress_enabled:
+                    dist = self.distance_to_goal_xy(p)
+                    if dist is not None:
+                        if best_dist is None or dist < best_dist - self.task_nav_no_progress_min_delta:
+                            best_dist = dist
+                            last_progress_time = rospy.Time.now()
+                        elif (rospy.Time.now() - last_progress_time).to_sec() > self.task_nav_no_progress_timeout:
+                            self.move_base.cancel_goal()
+                            self.last_move_base_state = GoalStatus.PREEMPTED
+                            rospy.logwarn(
+                                "[TASK_NAV][NO_PROGRESS_CANCEL] label=%s mode=%s dist=%.3f best_dist=%.3f idle=%.2fs timeout=%.2fs",
+                                label, mode, dist, best_dist,
+                                (rospy.Time.now() - last_progress_time).to_sec(),
+                                self.task_nav_no_progress_timeout
+                            )
+                            return False
+
+                rate.sleep()
+        finally:
+            self.task_nav_goal_active = False
+
+        self.move_base.cancel_goal()
+        self.last_move_base_state = GoalStatus.PREEMPTED
+        return False
+
     def goto_detection_point(self, point):
         """检测点导航：先用同yaw预对准，再进入原拍照点并短闭环修正yaw"""
         target = goals[point]
@@ -813,52 +1370,11 @@ class navigation_demo:
                 # 导航到线索对应的任务点 (5s 超时)
                 target = goals[task_id]
                 self.log_nav_state("TASK_NAV_START_%d" % task_id, target)
-                nav_start_time = rospy.Time.now()
-                nav_ok = self.goto(target, timeout=self.task_nav_timeout)
-                nav_reached, nav_dist = self.nav_reached_by_state_and_distance(nav_ok, target)
-                rospy.loginfo("[TASK_TIME][NAV_TO_TASK] idx=%d task_id=%d dt=%.2fs ok=%s dist=%s reached=%s state=%s",
-                              idx + 1, task_id,
-                              (rospy.Time.now() - nav_start_time).to_sec(),
-                              str(nav_ok),
-                              "%.3f" % nav_dist if nav_dist is not None else "None",
-                              str(nav_reached), str(self.last_move_base_state))
-                if (not nav_ok and self.last_move_base_state == GoalStatus.ABORTED
-                        and last_parking is not None):
-                    rospy.logwarn(
-                        "[TASK_TIME][NAV_ABORTED_ESCAPE] idx=%d task_id=%d prev_task_id=%s state=%s",
-                        idx + 1, task_id, str(last_task_id), str(self.last_move_base_state)
-                    )
-                    escape_retry_start = rospy.Time.now()
-                    last_parking.escape(force=True, reason="next_nav_aborted")
-                    rospy.loginfo("[TASK_TIME][NAV_ABORTED_ESCAPE_DONE] idx=%d task_id=%d dt=%.2fs",
-                                  idx + 1, task_id,
-                                  (rospy.Time.now() - escape_retry_start).to_sec())
-                    nav_retry_start = rospy.Time.now()
-                    nav_ok = self.goto(target, timeout=self.task_nav_retry_timeout)
-                    rospy.loginfo("[TASK_TIME][NAV_RETRY_AFTER_ESCAPE] idx=%d task_id=%d dt=%.2fs ok=%s state=%s",
-                                  idx + 1, task_id,
-                                  (rospy.Time.now() - nav_retry_start).to_sec(),
-                                  str(nav_ok), str(self.last_move_base_state))
-                    nav_reached, nav_dist = self.nav_reached_by_state_and_distance(nav_ok, target)
+                nav_ok, nav_reached, nav_dist, nav_mode = self.navigate_task_with_all_approaches(
+                    idx, task_id, target, last_parking, last_task_id)
                 if not nav_reached:
                     rospy.logwarn(
-                        "[TASK_TIME][NAV_NOT_REACHED_RETRY] idx=%d task_id=%d dist=%s accept=%.3f",
-                        idx + 1, task_id,
-                        "%.3f" % nav_dist if nav_dist is not None else "None",
-                        self.task_nav_accept_dist
-                    )
-                    nav_retry_start = rospy.Time.now()
-                    nav_ok = self.goto(target, timeout=self.task_nav_retry_timeout)
-                    nav_reached, nav_dist = self.nav_reached_by_state_and_distance(nav_ok, target)
-                    rospy.loginfo("[TASK_TIME][NAV_RETRY_TO_TASK] idx=%d task_id=%d dt=%.2fs ok=%s dist=%s reached=%s state=%s",
-                                  idx + 1, task_id,
-                                  (rospy.Time.now() - nav_retry_start).to_sec(),
-                                  str(nav_ok),
-                                  "%.3f" % nav_dist if nav_dist is not None else "None",
-                                  str(nav_reached), str(self.last_move_base_state))
-                if not nav_reached:
-                    rospy.logwarn(
-                        "[TASK_TIME][PARK_SKIP_NAV_TOO_FAR] idx=%d task_id=%d dist=%s accept=%.3f",
+                        "[TASK_TIME][PARK_SKIP_NAV_TOO_FAR] idx=%d task_id=%d target_dist=%s accept=%.3f",
                         idx + 1, task_id,
                         "%.3f" % nav_dist if nav_dist is not None else "None",
                         self.task_nav_accept_dist
@@ -867,13 +1383,11 @@ class navigation_demo:
                                   idx + 1, task_id,
                                   (rospy.Time.now() - task_start_time).to_sec())
                     continue
+                approach_nav_used = nav_mode not in [None, "target"]
                 self.log_nav_state("TASK_NAV_DONE_%d" % task_id, target)
 
-                wait_start_time = rospy.Time.now()
-                rospy.sleep(1)
-                rospy.loginfo("[TASK_TIME][PRE_PARK_WAIT] idx=%d task_id=%d dt=%.2fs",
-                              idx + 1, task_id,
-                              (rospy.Time.now() - wait_start_time).to_sec())
+                rospy.loginfo("[TASK_TIME][PRE_PARK_WAIT][SKIP] idx=%d task_id=%d",
+                              idx + 1, task_id)
 
                 # 启动精密停车
                 rospy.loginfo("move_base 到达任务点 %d，启动精密停车 (x=%.3f y=%.3f yaw=%.1f)..." % (task_id, target[0], target[1], target[2]))
@@ -912,10 +1426,15 @@ class navigation_demo:
 
                 # 播报完毕，逃逸离开挡板区域
                 escape_start_time = rospy.Time.now()
-                parking.escape()
-                rospy.loginfo("[TASK_TIME][ESCAPE] idx=%d task_id=%d dt=%.2fs",
+                force_escape = self.should_force_escape_after_approach(parking, approach_nav_used)
+                if force_escape:
+                    parking.escape(force=True, reason="approach_nav_%s" % str(nav_mode))
+                else:
+                    parking.escape()
+                rospy.loginfo("[TASK_TIME][ESCAPE] idx=%d task_id=%d dt=%.2fs mode=%s forced=%s",
                               idx + 1, task_id,
-                              (rospy.Time.now() - escape_start_time).to_sec())
+                              (rospy.Time.now() - escape_start_time).to_sec(),
+                              str(nav_mode), str(force_escape))
                 last_parking = parking
                 last_task_id = task_id
                 rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs",
@@ -954,7 +1473,11 @@ class navigation_demo:
             rospy.loginfo("收集到的任务编号: %s" % task_numbers)
 
         # 按线索导航
-        self.go_to_task_positions()
+        self.set_parking_phase_costmap()
+        try:
+            self.go_to_task_positions()
+        finally:
+            self.restore_cruise_costmap()
 
         # 终点只让 move_base 粗到位，最后贴边交给激光闭环校准
         final_nav_start = rospy.Time.now()
@@ -962,8 +1485,11 @@ class navigation_demo:
         rospy.loginfo("[FINAL][NAV_TO_FINAL] dt=%.2fs ok=%s timeout=%.1fs",
                       (rospy.Time.now() - final_nav_start).to_sec(),
                       str(final_nav_ok), self.final_nav_timeout)
-        self.align_final_yaw(goals[16][2])
-        self.adjust_position(side_target=0.220, back_target=0.240)  
+        self.target_yaw = goals[16][2] / 180.0 * pi
+        rospy.loginfo("[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=0.220 back=0.240",
+                      goals[16][2])
+        final_adjust_ok = self.adjust_position(side_target=0.220, back_target=0.240)
+        rospy.loginfo("[FINAL][ADJUST_POSITION][DONE] ok=%s", str(final_adjust_ok))
         # 语音播报到达终点
         tts_text = u"已到达终点"
         self.tts_client(tts_text)

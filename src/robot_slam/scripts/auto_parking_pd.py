@@ -213,7 +213,6 @@ class AutoSinglePointTest:
             rospy.logerr("move_base action server not available after 30s.")
             raise RuntimeError("move_base not available")
 
-        rospy.sleep(1.0)
         rospy.loginfo("Auto single point target: x=%.3f y=%.3f yaw_deg=%.1f",
                        self.target_x, self.target_y, self.target_yaw_deg)
 
@@ -829,6 +828,7 @@ class AutoSinglePointTest:
                 return True
 
         if self.relative_direct_if_clear and len(blocked_names) == 0:
+            self.best_entry = None
             phase_start = self.phase_start("RELATIVE_DIRECT_CENTER", "no_blocked_sides=true")
             ok = self.pid_translate_relative_center(timeout=self.relative_center_timeout)
             self.phase_end("RELATIVE_DIRECT_CENTER", phase_start, "OK" if ok else "FAIL")

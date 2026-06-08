@@ -82,7 +82,7 @@ TebLocalPlannerROS:
   # 加大障碍物距离和权重，防止前轮缝隙卡挡板
   ############################################################
 
-  min_obstacle_dist: 0.04
+  min_obstacle_dist: 0.03
   inflation_dist: 0.08
 
   include_costmap_obstacles: true

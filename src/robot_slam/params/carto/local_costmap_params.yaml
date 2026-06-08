@@ -12,3 +12,7 @@ local_costmap:
   width: 2.0
   height: 2.0
   resolution: 0.02
+
+  # 局部规划/TEB 使用局部膨胀，避免被全局大膨胀影响。
+  inflation_radius: 0.05
+  cost_scaling_factor: 10.0
