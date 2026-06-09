@@ -134,6 +134,8 @@ class navigation_demo:
         self.task_nav_timeout = rospy.get_param("~task_nav_timeout", 8.0)
         self.task_nav_retry_timeout = rospy.get_param("~task_nav_retry_timeout", 5.0)
         self.task_nav_accept_dist = rospy.get_param("~task_nav_accept_dist", 0.45)
+        self.task_nav_approach_accept_dist = rospy.get_param("~task_nav_approach_accept_dist", 0.45)
+        self.task_nav_direct_done_dist = rospy.get_param("~task_nav_direct_done_dist", 0.05)
         self.task_nav_use_approach_goal = rospy.get_param("~task_nav_use_approach_goal", True)
         self.task_nav_approach_offset = rospy.get_param("~task_nav_approach_offset", 0.30)
         self.task_nav_approach_modes = rospy.get_param(
@@ -305,7 +307,9 @@ class navigation_demo:
         self.last_move_base_feedback = None
         self.last_move_base_state = None
 
-    def nav_reached_by_state_and_distance(self, nav_ok, target):
+    def nav_reached_by_state_and_distance(self, nav_ok, target, accept_dist=None):
+        if accept_dist is None:
+            accept_dist = self.task_nav_accept_dist
         nav_dist = self.distance_to_goal_xy(target)
         if nav_dist is None:
             if nav_ok:
@@ -313,15 +317,15 @@ class navigation_demo:
                 return True, None
             return False, None
         nav_reached = (
-            nav_ok and nav_dist is not None and nav_dist <= self.task_nav_accept_dist
+            nav_ok and nav_dist is not None and nav_dist <= accept_dist
         ) or (
-            nav_dist is not None and nav_dist <= self.task_nav_accept_dist
+            nav_dist is not None and nav_dist <= accept_dist
         )
         if nav_ok and not nav_reached:
             rospy.logwarn(
                 "[TASK_TIME][NAV_STATE_DISTANCE_MISMATCH] state_ok=true dist=%s accept=%.3f",
                 "%.3f" % nav_dist if nav_dist is not None else "None",
-                self.task_nav_accept_dist
+                accept_dist
             )
         return nav_reached, nav_dist
 
@@ -541,15 +545,17 @@ class navigation_demo:
             return False, False, None, None
         rospy.loginfo("[TASK_NAV][TRY_%s] mode=%s nav_target=%s", label, mode, nav_target)
         nav_ok = self.goto_task_nav_goal(nav_target, timeout=timeout, label=label, mode=mode)
-        nav_reached, approach_dist = self.nav_reached_by_state_and_distance(nav_ok, nav_target)
+        accept_dist = self.task_nav_accept_dist if mode == "target" else self.task_nav_approach_accept_dist
+        nav_reached, approach_dist = self.nav_reached_by_state_and_distance(nav_ok, nav_target, accept_dist)
         nav_dist = self.distance_to_goal_xy(target)
         if nav_reached:
             yaw_err = self.yaw_error_to_goal(target)
             rospy.loginfo(
-                "[TASK_NAV][REACHED_BY_POSITION] mode=%s approach_dist=%s target_dist=%s yaw_err=%.3f",
+                "[TASK_NAV][REACHED_BY_POSITION] mode=%s approach_dist=%s target_dist=%s accept=%.3f yaw_err=%.3f",
                 mode,
                 "%.3f" % approach_dist if approach_dist is not None else "None",
                 "%.3f" % nav_dist if nav_dist is not None else "None",
+                accept_dist,
                 yaw_err
             )
         if mode != "target" and nav_ok and not nav_reached:
@@ -557,7 +563,7 @@ class navigation_demo:
                 "[TASK_NAV][APPROACH_STATE_DISTANCE_MISMATCH] mode=%s approach_dist=%s accept=%.3f",
                 mode,
                 "%.3f" % approach_dist if approach_dist is not None else "None",
-                self.task_nav_accept_dist
+                self.task_nav_approach_accept_dist
             )
         rospy.loginfo(
             "[TASK_NAV][TRY_%s_DONE] mode=%s ok=%s target_dist=%s approach_dist=%s reached=%s state=%s",
@@ -1377,6 +1383,17 @@ class navigation_demo:
 
         return parsed_tasks
 
+    def announce_task_arrival(self, idx, task_id):
+        raw_id = TASK_TO_VLM.get(task_id, task_id)
+        tts_text = u"已到达任务点%d号" % raw_id
+        tts_start_time = rospy.Time.now()
+        tts_ok = self.tts_client(tts_text)
+        rospy.loginfo("[TASK_TIME][TTS] idx=%d task_id=%d dt=%.2fs ok=%s",
+                      idx + 1, task_id,
+                      (rospy.Time.now() - tts_start_time).to_sec(),
+                      str(tts_ok))
+        return tts_ok
+
     # ---------------- 按线索导航到任务点 ----------------
     def go_to_task_positions(self):
         """按识别到的线索，依次导航到对应任务点"""
@@ -1410,6 +1427,20 @@ class navigation_demo:
                 approach_nav_used = nav_mode not in [None, "target"]
                 self.log_nav_state("TASK_NAV_DONE_%d" % task_id, target)
 
+                if (nav_mode == "target" and nav_dist is not None
+                        and nav_dist <= self.task_nav_direct_done_dist):
+                    rospy.loginfo(
+                        "[TASK_TIME][DIRECT_DONE_SKIP_PARK] idx=%d task_id=%d target_dist=%.3f accept=%.3f",
+                        idx + 1, task_id, nav_dist, self.task_nav_direct_done_dist
+                    )
+                    self.announce_task_arrival(idx, task_id)
+                    last_parking = None
+                    last_task_id = task_id
+                    rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs direct_done=true",
+                                  idx + 1, task_id,
+                                  (rospy.Time.now() - task_start_time).to_sec())
+                    continue
+
                 rospy.loginfo("[TASK_TIME][PRE_PARK_WAIT][SKIP] idx=%d task_id=%d",
                               idx + 1, task_id)
 
@@ -1439,14 +1470,7 @@ class navigation_demo:
                               (rospy.Time.now() - post_wait_start_time).to_sec())
 
                 # 语音播报到达任务点（用原始VLM识别编号）
-                raw_id = TASK_TO_VLM.get(task_id, task_id)
-                tts_text = u"已到达任务点%d号" % raw_id
-                tts_start_time = rospy.Time.now()
-                tts_ok = self.tts_client(tts_text)
-                rospy.loginfo("[TASK_TIME][TTS] idx=%d task_id=%d dt=%.2fs ok=%s",
-                              idx + 1, task_id,
-                              (rospy.Time.now() - tts_start_time).to_sec(),
-                              str(tts_ok))
+                self.announce_task_arrival(idx, task_id)
 
                 # 播报完毕，逃逸离开挡板区域
                 escape_start_time = rospy.Time.now()

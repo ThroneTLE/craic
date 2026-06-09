@@ -3,8 +3,8 @@
 
 
       <!--                                                                        0       1               2            3           4           5             6            7              8              9           10             11           12          13      14       15                 16  -->
-      <param name="goalListX" value="   0.5,    1.19,       1.19,      1.19,   1.60,    1.59,      1.60,     2.00,      2.00,      1.99,     0.29,         1.60,       2.92,      1.60,    2.65,   0.97,       0.45"/>
-      <param name="goalListY" value="   -0.3,   1.16,       1.54,      1.95,   1.15,   1.55,     1.97,      1.15,       1.55,      1.96,    1.55,          3.0,     1.56,       0.26,    1.6,    -0.88,       3.20"/>
+      <param name="goalListX" value="   0.5,    1.19,       1.19,      1.19,   1.60,    1.59,      1.60,     2.00,      2.00,      1.99,     0.29,         1.60,       2.92,      1.60,    2.65,   0.97,       0.50"/>
+      <param name="goalListY" value="   -0.3,   1.16,       1.54,      1.95,   1.15,   1.55,     1.97,      1.15,       1.55,      1.96,    1.55,          3.0,     1.56,       0.26,    1.6,    -0.88,       3.10"/>
       <param name="goalListYaw" value="   0,   89.1,       88.2,      88.6,   88.0,   88.7,    89.6,       88.8,       88.8,      90.9,      178.6,        90.2,      1.9,        -95.2,      180,  -180, -180  "/>
 
       <!-- 自动停车程序：主程序会按识别顺序调用它 -->
@@ -36,6 +36,8 @@
       <param name="task_nav_timeout" value="15.0"/>
       <param name="task_nav_retry_timeout" value="5.0"/>
       <param name="task_nav_accept_dist" value="0.25"/>
+      <param name="task_nav_approach_accept_dist" value="0.45"/>
+      <param name="task_nav_direct_done_dist" value="0.05"/>
       <param name="task_nav_use_approach_goal" value="false"/>
       <param name="task_nav_approach_offset" value="0.15"/>
       <param name="task_nav_approach_modes" value="back,back_left,left,front_left,front,front_right,right,back_right"/>
