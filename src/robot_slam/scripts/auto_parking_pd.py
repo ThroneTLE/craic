@@ -123,9 +123,9 @@ class AutoSinglePointTest:
         self.pid_kd_xy = rospy.get_param("pid_kd_xy", 0.2)
         self.pid_kp_yaw = rospy.get_param("pid_kp_yaw", 1.5)
         self.pid_kd_yaw = rospy.get_param("pid_kd_yaw", 0.3)
-        self.pid_max_v = rospy.get_param("pid_max_v", 0.15)
-        self.pid_max_wz = rospy.get_param("pid_max_wz", 0.6)
-        self.pid_yaw_align_timeout = rospy.get_param("pid_yaw_align_timeout", 4.0)
+        self.pid_max_v = rospy.get_param("pid_max_v", 0.25)
+        self.pid_max_wz = rospy.get_param("pid_max_wz", 1.0)
+        self.pid_yaw_align_timeout = rospy.get_param("pid_yaw_align_timeout", 5.0)
         self.pid_translate_timeout = rospy.get_param("pid_translate_timeout", 11.0)
         self.pos_tolerance = rospy.get_param("pos_tolerance", 0.04)
         self.yaw_tolerance = rospy.get_param("yaw_tolerance", 0.05)
@@ -143,6 +143,15 @@ class AutoSinglePointTest:
         self.fine_tune_max_v = rospy.get_param("fine_tune_max_v", 0.03)
         self.fine_tune_valid_max_range = self.get_param("fine_tune_valid_max_range", 0.70)
         self.fine_tune_max_travel = self.get_param("fine_tune_max_travel", 0.05)
+        self.fine_tune_mode = self.get_param("fine_tune_mode", "right_then_front")
+        self.fine_tune_yaw_kp = self.get_param("fine_tune_yaw_kp", self.pid_kp_yaw)
+        self.fine_tune_yaw_kd = self.get_param("fine_tune_yaw_kd", self.pid_kd_yaw)
+        self.fine_tune_max_wz = self.get_param("fine_tune_max_wz", self.pid_max_wz)
+        self.fine_tune_yaw_tolerance = self.get_param("fine_tune_yaw_tolerance", self.relative_yaw_tolerance)
+        self.fine_tune_stage_stable_count = int(self.get_param("fine_tune_stage_stable_count", 3))
+        self.fine_tune_right_timeout_ratio = self.get_param("fine_tune_right_timeout_ratio", 0.55)
+        self.fine_tune_right_max_travel = self.get_param("fine_tune_right_max_travel", self.fine_tune_max_travel)
+        self.fine_tune_front_max_travel = self.get_param("fine_tune_front_max_travel", self.fine_tune_max_travel)
 
         # =====================================================
         # Phase 4: 逃逸
@@ -1068,9 +1077,145 @@ class AutoSinglePointTest:
             return None
         return r
 
+    def precision_fine_tune_stage(self, label, laser_ang, target_dist, axis, sign,
+                                  timeout, max_travel, tune_yaw):
+        pd_dist = PDController(self.fine_tune_kp, self.fine_tune_kd)
+        pd_yaw = PDController(self.fine_tune_yaw_kp, self.fine_tune_yaw_kd)
+        rate = rospy.Rate(20)
+        start_time = rospy.Time.now()
+        start_pose = self.lookup_robot_pose()
+        stable_cnt = 0
+
+        rospy.loginfo(
+            "[PARK][FINE_TUNE_%s][START] laser=%d target=%.3f axis=%s sign=%d timeout=%.2fs max_travel=%.3f tune_yaw=%s",
+            label, laser_ang, target_dist, axis, sign, timeout, max_travel, str(tune_yaw)
+        )
+
+        while not rospy.is_shutdown():
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            if elapsed > timeout:
+                rospy.logwarn("[PARK][FINE_TUNE_%s][TIMEOUT] elapsed=%.2f", label, elapsed)
+                return "TIMEOUT", "stage=%s elapsed=%.2f" % (label, elapsed)
+
+            now = rospy.Time.now()
+            pose = self.lookup_robot_pose()
+            moved = 0.0
+            yaw_err = 0.0
+            if pose is not None:
+                yaw_err = normalize_angle(self.target_yaw - pose[2])
+                if start_pose is not None:
+                    moved = math.sqrt((pose[0] - start_pose[0]) ** 2 +
+                                      (pose[1] - start_pose[1]) ** 2)
+                    if max_travel > 0.0 and moved >= max_travel:
+                        rospy.logwarn(
+                            "[PARK][FINE_TUNE_%s][TRAVEL_LIMIT] moved=%.3f limit=%.3f",
+                            label, moved, max_travel
+                        )
+                        return "TRAVEL_LIMIT", "stage=%s moved=%.3f limit=%.3f" % (
+                            label, moved, max_travel)
+
+            d = self.get_laser_at_angle(laser_ang)
+            if d is None:
+                rospy.logwarn("[PARK][FINE_TUNE_%s][SKIP] no valid laser at %d deg", label, laser_ang)
+                return "SKIP", "stage=%s reason=no_laser laser=%d" % (label, laser_ang)
+            if d > self.fine_tune_valid_max_range:
+                rospy.logwarn(
+                    "[PARK][FINE_TUNE_%s][SKIP] laser %.3f > valid max %.3f at %d deg",
+                    label, d, self.fine_tune_valid_max_range, laser_ang
+                )
+                return "SKIP", "stage=%s reason=laser_too_far laser=%.3f max=%.3f" % (
+                    label, d, self.fine_tune_valid_max_range)
+
+            dist_err = d - target_dist
+            dist_ok = abs(dist_err) < self.fine_tune_tolerance
+            yaw_ok = (not tune_yaw) or abs(yaw_err) < self.fine_tune_yaw_tolerance
+            if dist_ok and yaw_ok:
+                stable_cnt += 1
+                self.stop_robot()
+                if stable_cnt >= self.fine_tune_stage_stable_count:
+                    rospy.loginfo(
+                        "[PARK][FINE_TUNE_%s][OK] laser=%.3f target=%.3f err=%.3f yaw_err=%.3f moved=%.3f",
+                        label, d, target_dist, dist_err, yaw_err, moved
+                    )
+                    return "OK", "stage=%s laser=%.3f target=%.3f err=%.3f yaw_err=%.3f" % (
+                        label, d, target_dist, dist_err, yaw_err)
+                rate.sleep()
+                continue
+
+            stable_cnt = 0
+            v = self.clamp(sign * pd_dist.update(dist_err, now), -self.fine_tune_max_v, self.fine_tune_max_v)
+            wz = 0.0
+            if tune_yaw:
+                wz = self.clamp(pd_yaw.update(yaw_err, now), -self.fine_tune_max_wz, self.fine_tune_max_wz)
+
+            cmd = Twist()
+            if axis == "x":
+                cmd.linear.x = v
+            else:
+                cmd.linear.y = v
+            cmd.angular.z = wz
+            cmd = self.apply_laser_safety(cmd)
+            self.publish_cmd(cmd)
+            rospy.loginfo_throttle(
+                0.5,
+                "[PARK_CTRL][FINE_TUNE_%s] laser=%d d=%.3f target=%.3f err=%.3f yaw_err=%.3f cmd=(%.3f,%.3f,%.3f)",
+                label, laser_ang, d, target_dist, dist_err, yaw_err,
+                cmd.linear.x, cmd.linear.y, cmd.angular.z
+            )
+            rate.sleep()
+
+        return "TIMEOUT", "stage=%s shutdown=true" % label
+
+    def precision_fine_tune_right_then_front(self):
+        rospy.loginfo("=== Phase 3: laser precision fine-tune right+yaw then front ===")
+
+        total_timeout = max(0.1, self.fine_tune_timeout)
+        right_timeout = self.clamp(
+            total_timeout * self.fine_tune_right_timeout_ratio,
+            0.1,
+            total_timeout
+        )
+        front_timeout = max(0.1, total_timeout - right_timeout)
+
+        right_status, right_detail = self.precision_fine_tune_stage(
+            "RIGHT_YAW",
+            -90,
+            self.fine_tune_side_target,
+            "y",
+            -1,
+            right_timeout,
+            self.fine_tune_right_max_travel,
+            True
+        )
+        self.stop_robot()
+
+        front_status, front_detail = self.precision_fine_tune_stage(
+            "FRONT",
+            0,
+            self.fine_tune_front_back_target,
+            "x",
+            1,
+            front_timeout,
+            self.fine_tune_front_max_travel,
+            False
+        )
+        self.stop_robot()
+
+        if front_status == "OK":
+            return "OK", "right=%s(%s) front=%s(%s)" % (
+                right_status, right_detail, front_status, front_detail)
+        if right_status == "OK" and front_status in ["TIMEOUT", "TRAVEL_LIMIT"]:
+            return "TIMEOUT_ACCEPT", "right=%s(%s) front=%s(%s)" % (
+                right_status, right_detail, front_status, front_detail)
+        return front_status, "right=%s(%s) front=%s(%s)" % (
+            right_status, right_detail, front_status, front_detail)
+
     def precision_fine_tune(self, forced_baffle_side=None):
         """Phase 3: 只用入口对面那个真实挡板做单方向激光精调"""
         rospy.loginfo("=== Phase 3: laser precision fine-tune ===")
+
+        if str(self.fine_tune_mode).strip().lower() in ["right_then_front", "right_front", "right_yaw_front"]:
+            return self.precision_fine_tune_right_then_front()
 
         if self.best_entry is None and forced_baffle_side is None:
             rospy.loginfo("Phase 3: no entry info, skip.")

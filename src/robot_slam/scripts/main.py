@@ -123,6 +123,11 @@ class navigation_demo:
         self.use_fixed_task_positions = rospy.get_param("~use_fixed_task_positions", False)
         self.fixed_task_ids = rospy.get_param("~fixed_task_ids", "")
         self.final_nav_timeout = rospy.get_param("~final_nav_timeout", 10.0)
+        self.final_prealign_enabled = rospy.get_param("~final_prealign_enabled", True)
+        self.final_prealign_mode = rospy.get_param("~final_prealign_mode", "back")
+        self.final_prealign_distance = rospy.get_param("~final_prealign_distance", 0.35)
+        self.final_prealign_timeout = rospy.get_param("~final_prealign_timeout", self.final_nav_timeout)
+        self.final_align_yaw_before_laser = rospy.get_param("~final_align_yaw_before_laser", True)
         self.final_yaw_align_timeout = rospy.get_param("~final_yaw_align_timeout", 3.0)
         self.final_yaw_tolerance = rospy.get_param("~final_yaw_tolerance", 0.05)
         self.final_yaw_kp = rospy.get_param("~final_yaw_kp", 1.2)
@@ -803,15 +808,14 @@ class navigation_demo:
         self.pub.publish(cmd)
         self.is_adjusting = False
 
-    def make_detection_prealign_goal(self, target):
-        """按配置方向生成检测点预对准位姿"""
+    def make_offset_goal(self, target, mode, distance):
+        """按目标yaw的相对方向生成偏移位姿。"""
         yaw_rad = target[2] / 180.0 * pi
         forward_x = np.cos(yaw_rad)
         forward_y = np.sin(yaw_rad)
         left_x = -np.sin(yaw_rad)
         left_y = np.cos(yaw_rad)
-        mode = str(self.detect_prealign_mode).strip().lower()
-        distance = self.detect_prealign_distance
+        mode = str(mode).strip().lower()
 
         if mode == "front":
             offset_x = forward_x * distance
@@ -831,6 +835,22 @@ class navigation_demo:
             target[1] + offset_y,
             target[2]
         ]
+
+    def make_detection_prealign_goal(self, target):
+        """按配置方向生成检测点预对准位姿"""
+        return self.make_offset_goal(
+            target,
+            self.detect_prealign_mode,
+            self.detect_prealign_distance
+        )
+
+    def make_final_prealign_goal(self, target):
+        """按配置方向生成终点预对准位姿"""
+        return self.make_offset_goal(
+            target,
+            self.final_prealign_mode,
+            self.final_prealign_distance
+        )
 
     def get_locked_approach_velocity(self, speed):
         """根据预对准方向生成保持当前yaw时的base_link速度"""
@@ -1527,16 +1547,37 @@ class navigation_demo:
         finally:
             self.restore_cruise_costmap()
 
-        # 终点只让 move_base 粗到位，最后贴边交给激光闭环校准
+        # 终点按检测点思路处理：先到安全预对准点，再对齐yaw，最后交给激光闭环贴边。
+        final_target = goals[16]
+        final_nav_goal = final_target
+        final_nav_timeout = self.final_nav_timeout
+        if self.final_prealign_enabled and self.final_prealign_distance > 0.0:
+            final_nav_goal = self.make_final_prealign_goal(final_target)
+            final_nav_timeout = self.final_prealign_timeout
+            rospy.loginfo(
+                "[FINAL][PREALIGN_GOAL] mode=%s distance=%.3f target=(%.3f, %.3f, %.1f) goal=(%.3f, %.3f, %.1f)",
+                self.final_prealign_mode,
+                self.final_prealign_distance,
+                final_target[0], final_target[1], final_target[2],
+                final_nav_goal[0], final_nav_goal[1], final_nav_goal[2]
+            )
+
         final_nav_start = rospy.Time.now()
-        final_nav_ok = self.goto(goals[16], timeout=self.final_nav_timeout)
-        rospy.loginfo("[FINAL][NAV_TO_FINAL] dt=%.2fs ok=%s timeout=%.1fs",
+        final_nav_ok = self.goto(final_nav_goal, timeout=final_nav_timeout)
+        rospy.loginfo("[FINAL][NAV_TO_PREALIGN] dt=%.2fs ok=%s timeout=%.1fs",
                       (rospy.Time.now() - final_nav_start).to_sec(),
-                      str(final_nav_ok), self.final_nav_timeout)
-        self.target_yaw = goals[16][2] / 180.0 * pi
+                      str(final_nav_ok), final_nav_timeout)
+
+        final_yaw_ok = True
+        if self.final_align_yaw_before_laser:
+            final_yaw_ok = self.align_final_yaw(final_target[2])
+            rospy.loginfo("[FINAL][YAW_ALIGN][DONE] ok=%s", str(final_yaw_ok))
+        else:
+            self.target_yaw = final_target[2] / 180.0 * pi
+
         rospy.loginfo("[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=0.220 back=0.240",
-                      goals[16][2])
-        final_adjust_ok = self.adjust_position(side_target=0.220, back_target=0.240)
+                      final_target[2])
+        final_adjust_ok = self.adjust_position(side_target=0.15, back_target=0.240)
         rospy.loginfo("[FINAL][ADJUST_POSITION][DONE] ok=%s", str(final_adjust_ok))
         # 语音播报到达终点
         tts_text = u"已到达终点"

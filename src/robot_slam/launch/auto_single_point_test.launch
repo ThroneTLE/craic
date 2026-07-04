@@ -116,6 +116,21 @@
     <param name="exit_distance" value="0.24"/>
     <param name="exit_speed" value="0.090"/>
 
+    <!-- 激光微调：先右侧贴边同时修yaw，最后再前进贴前方 -->
+    <param name="fine_tune_mode" value="right_then_front"/>
+    <param name="fine_tune_front_back_target" value="0.24"/>
+    <param name="fine_tune_side_target" value="0.20"/>
+    <param name="fine_tune_timeout" value="8.0"/>
+    <param name="fine_tune_tolerance" value="0.03"/>
+    <param name="fine_tune_kp" value="0.30"/>
+    <param name="fine_tune_kd" value="0.10"/>
+    <param name="fine_tune_max_v" value="0.03"/>
+    <param name="fine_tune_max_wz" value="0.45"/>
+    <param name="fine_tune_yaw_tolerance" value="0.08"/>
+    <param name="fine_tune_right_timeout_ratio" value="0.55"/>
+    <param name="fine_tune_right_max_travel" value="0.08"/>
+    <param name="fine_tune_front_max_travel" value="0.08"/>
+
     <!-- 雷达安全：渐进式前向减速 + 窄通道降速 -->
     <param name="front_stop_dist" value="0.17"/>
     <param name="front_slow_dist" value="0.30"/>
