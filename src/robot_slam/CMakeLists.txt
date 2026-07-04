@@ -14,8 +14,11 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   message_generation
   actionlib_msgs
+  base_local_planner
   costmap_2d
   geometry_msgs
+  global_planner
+  nav_core
   nav_msgs
   pluginlib
   sensor_msgs
@@ -130,8 +133,11 @@ catkin_package(
     std_srvs
     message_runtime
     actionlib_msgs
+    base_local_planner
     costmap_2d
     geometry_msgs
+    global_planner
+    nav_core
     nav_msgs
     pluginlib
     sensor_msgs
@@ -172,6 +178,12 @@ include_directories(
 add_library(obstacle_memory_layer src/obstacle_memory_layer.cpp)
 add_dependencies(obstacle_memory_layer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(obstacle_memory_layer
+   ${catkin_LIBRARIES}
+)
+
+add_library(smooth_global_planner src/smooth_global_planner.cpp)
+add_dependencies(smooth_global_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(smooth_global_planner
    ${catkin_LIBRARIES}
 )
 

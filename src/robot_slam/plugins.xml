@@ -7,3 +7,14 @@
     </description>
   </class>
 </library>
+
+<library path="lib/libsmooth_global_planner">
+  <class name="robot_slam/SmoothGlobalPlanner"
+         type="robot_slam::SmoothGlobalPlanner"
+         base_class_type="nav_core::BaseGlobalPlanner">
+    <description>
+      GlobalPlanner wrapper that smooths sharp corners with collision-checked
+      Bezier segments.
+    </description>
+  </class>
+</library>

@@ -13,7 +13,7 @@
       <rosparam file="$(find robot_slam)/params/carto/global_planner_params.yaml" command="load"/>
       <rosparam file="$(find robot_slam)/params/carto/teb_local_planner_params.yaml" command="load"/>
       <rosparam file="$(find robot_slam)/params/carto/move_base_params.yaml" command="load"/>
-      <param name="base_global_planner" value="global_planner/GlobalPlanner"/>
+      <param name="base_global_planner" value="robot_slam/SmoothGlobalPlanner"/>
       <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS"/>
       <remap from="cmd_vel" to="/cmd_vel"/>
     </node>
@@ -30,7 +30,7 @@
       <rosparam file="$(find robot_slam)/params/carto/global_planner_params.yaml" command="load"/>
       <rosparam file="$(find robot_slam)/params/carto/rpp_local_planner_params.yaml" command="load"/>
       <rosparam file="$(find robot_slam)/params/carto/move_base_params.yaml" command="load"/>
-      <param name="base_global_planner" value="global_planner/GlobalPlanner"/>
+      <param name="base_global_planner" value="robot_slam/SmoothGlobalPlanner"/>
       <param name="base_local_planner" value="abot_rpp/RPPController"/>
       <remap from="cmd_vel" to="/cmd_vel"/>
     </node>

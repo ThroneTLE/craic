@@ -36,11 +36,11 @@ TebLocalPlannerROS:
   max_vel_x: 0.3
   max_vel_x_backwards: 0.3
   max_vel_y: 0.3
-  max_vel_theta: 4.0
+  max_vel_theta: 2.0
 
-  acc_lim_x: 1.8
-  acc_lim_y: 1.8
-  acc_lim_theta: 2.8
+  acc_lim_x: 1.2
+  acc_lim_y: 1.2
+  acc_lim_theta: 2.0
 
 
   ############################################################
@@ -82,8 +82,8 @@ TebLocalPlannerROS:
   # 加大障碍物距离和权重，防止前轮缝隙卡挡板
   ############################################################
 
-  min_obstacle_dist: 0.03
-  inflation_dist: 0.08
+  min_obstacle_dist: 0.05
+  inflation_dist: 0.16
 
   include_costmap_obstacles: true
   costmap_obstacles_behind_robot_dist: 0.35
@@ -112,10 +112,10 @@ TebLocalPlannerROS:
   weight_optimaltime: 1
   weight_shortest_path: 0
 
-  # 降低障碍物权重+viapoint，复杂狭窄区TEB能偏离全局路径绕障
-  weight_obstacle: 50
-  weight_inflation: 0.4
-  weight_viapoint: 0.05
+  # 提高障碍物约束，并保留适度 viapoint，让TEB跟随平滑全局路径但仍能避障
+  weight_obstacle: 80
+  weight_inflation: 2.5
+  weight_viapoint: 0.2
 
 
   ############################################################

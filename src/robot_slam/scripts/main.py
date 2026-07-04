@@ -6,10 +6,12 @@
 import rospy
 import actionlib
 import numpy as np
+import tf
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Path, Odometry, OccupancyGrid
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from nav_msgs.srv import GetPlan, GetPlanRequest
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from math import pi
 from std_msgs.msg import String, Int32
@@ -84,6 +86,7 @@ class navigation_demo:
 
         # 8. 订阅里程计数据（获取当前航向角）
         rospy.Subscriber("/odom", Odometry, self.odom_callback)
+        self.tf_listener = tf.TransformListener()
 
         # 9. PID校准参数
         self.kp_linear = 0.5        # 线速度比例系数
@@ -92,6 +95,7 @@ class navigation_demo:
         self.yaw_tolerance = 0.05        # 航向角容差 (弧度, ~3°)
         self.target_yaw = 0.0            # 目标航向角
         self.current_yaw = 0.0           # 当前航向角
+        self.current_odom_pose = None
         self.odom_received = False
         self.is_adjusting = False
 
@@ -160,6 +164,28 @@ class navigation_demo:
         self.task_nav_flexible_yaw_candidates = self.parse_yaw_candidates(
             self.task_nav_flexible_yaw_candidates_param)
         self.task_nav_approach_score_radius = rospy.get_param("~task_nav_approach_score_radius", 0.20)
+        self.task_nav_path_filter_enabled = rospy.get_param("~task_nav_path_filter_enabled", True)
+        self.task_nav_path_make_plan_service = rospy.get_param(
+            "~task_nav_path_make_plan_service", "/move_base/make_plan")
+        self.task_nav_path_make_plan_wait = rospy.get_param("~task_nav_path_make_plan_wait", 0.5)
+        self.task_nav_path_sparse_distance = rospy.get_param("~task_nav_path_sparse_distance", 0.06)
+        self.task_nav_path_sharp_turn_threshold_deg = rospy.get_param(
+            "~task_nav_path_sharp_turn_threshold_deg", 65.0)
+        self.task_nav_path_min_endpoint_distance = rospy.get_param(
+            "~task_nav_path_min_endpoint_distance", 0.20)
+        self.task_nav_transition_enabled = rospy.get_param("~task_nav_transition_enabled", True)
+        self.task_nav_transition_distance_before_corner = rospy.get_param(
+            "~task_nav_transition_distance_before_corner", 0.25)
+        self.task_nav_transition_accept_dist = rospy.get_param(
+            "~task_nav_transition_accept_dist", self.task_nav_approach_accept_dist)
+        self.task_nav_teb_slow_fallback_enabled = rospy.get_param(
+            "~task_nav_teb_slow_fallback_enabled", True)
+        self.task_nav_teb_reconfigure_name = rospy.get_param(
+            "~task_nav_teb_reconfigure_name", "move_base/TebLocalPlannerROS")
+        self.task_nav_teb_slow_max_vel_x = rospy.get_param("~task_nav_teb_slow_max_vel_x", 0.12)
+        self.task_nav_teb_slow_max_vel_y = rospy.get_param("~task_nav_teb_slow_max_vel_y", 0.12)
+        self.task_nav_teb_slow_max_vel_theta = rospy.get_param(
+            "~task_nav_teb_slow_max_vel_theta", 0.8)
         self.task_nav_no_progress_enabled = rospy.get_param("~task_nav_no_progress_enabled", True)
         self.task_nav_no_progress_timeout = rospy.get_param("~task_nav_no_progress_timeout", 3.0)
         self.task_nav_no_progress_min_delta = rospy.get_param("~task_nav_no_progress_min_delta", 0.05)
@@ -190,6 +216,9 @@ class navigation_demo:
         self.start_escape_turn_speed = rospy.get_param("~start_escape_turn_speed", 0.18)
         self.start_escape_turn_duration = rospy.get_param("~start_escape_turn_duration", 1.0)
         self.global_costmap = None
+        self.task_nav_make_plan_client = None
+        self.task_nav_teb_client = None
+        self.task_nav_teb_nominal_config = None
         rospy.Subscriber(self.task_nav_approach_costmap_topic, OccupancyGrid, self.global_costmap_callback)
         self.task_nav_goal_active = False
         self.task_nav_plan_fail_cancel_requested = False
@@ -289,6 +318,70 @@ class navigation_demo:
             "return_to_final"
         )
 
+    def get_teb_reconfigure_client(self):
+        if self.task_nav_teb_client is not None:
+            return self.task_nav_teb_client
+        try:
+            self.task_nav_teb_client = dynamic_reconfigure.client.Client(
+                self.task_nav_teb_reconfigure_name,
+                timeout=1.0
+            )
+            return self.task_nav_teb_client
+        except Exception as e:
+            rospy.logwarn(
+                "[TASK_NAV][TEB_SLOW_CLIENT_FAILED] name=%s error=%s",
+                self.task_nav_teb_reconfigure_name,
+                str(e)
+            )
+            return None
+
+    def set_teb_slow_mode(self, enabled, reason):
+        if not self.task_nav_teb_slow_fallback_enabled:
+            return False
+        client = self.get_teb_reconfigure_client()
+        if client is None:
+            return False
+        try:
+            if enabled:
+                if self.task_nav_teb_nominal_config is None:
+                    config = client.get_configuration(timeout=1.0)
+                    self.task_nav_teb_nominal_config = {
+                        "max_vel_x": config.get("max_vel_x", 0.3),
+                        "max_vel_y": config.get("max_vel_y", 0.3),
+                        "max_vel_theta": config.get("max_vel_theta", 2.0)
+                    }
+                client.update_configuration({
+                    "max_vel_x": float(self.task_nav_teb_slow_max_vel_x),
+                    "max_vel_y": float(self.task_nav_teb_slow_max_vel_y),
+                    "max_vel_theta": float(self.task_nav_teb_slow_max_vel_theta)
+                })
+                rospy.logwarn(
+                    "[TASK_NAV][TEB_SLOW_SET] reason=%s vx=%.3f vy=%.3f wz=%.3f",
+                    reason,
+                    self.task_nav_teb_slow_max_vel_x,
+                    self.task_nav_teb_slow_max_vel_y,
+                    self.task_nav_teb_slow_max_vel_theta
+                )
+                return True
+
+            if self.task_nav_teb_nominal_config is not None:
+                client.update_configuration(self.task_nav_teb_nominal_config)
+                rospy.loginfo(
+                    "[TASK_NAV][TEB_SLOW_RESTORE] reason=%s vx=%.3f vy=%.3f wz=%.3f",
+                    reason,
+                    self.task_nav_teb_nominal_config.get("max_vel_x", 0.0),
+                    self.task_nav_teb_nominal_config.get("max_vel_y", 0.0),
+                    self.task_nav_teb_nominal_config.get("max_vel_theta", 0.0)
+                )
+                return True
+        except Exception as e:
+            self.task_nav_teb_client = None
+            rospy.logwarn(
+                "[TASK_NAV][TEB_SLOW_SET_FAILED] enabled=%s reason=%s error=%s",
+                str(enabled), reason, str(e)
+            )
+        return False
+
     def wait_for_service_short(self, service_name, reason):
         try:
             rospy.wait_for_service(service_name, timeout=self.obstacle_memory_service_wait)
@@ -383,6 +476,7 @@ class navigation_demo:
         (_, _, yaw) = euler_from_quaternion([
             orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w])
         self.current_yaw = yaw
+        self.current_odom_pose = msg.pose.pose
         self.odom_received = True
 
     def normalize_angle(self, angle):
@@ -646,16 +740,240 @@ class navigation_demo:
         avg_cost = float(total_cost) / float(count)
         return (max_cost, avg_cost, unknown_count), "ok"
 
-    def evaluate_task_approach_goal(self, mode, nav_target, costmap=None, costmap_checked=False):
-        if not self.task_nav_approach_filter_costmap or mode == "target":
-            return True, "filter_disabled_or_target", (0, 0.0, 0)
+    def get_task_make_plan_client(self):
+        if self.task_nav_make_plan_client is not None:
+            return self.task_nav_make_plan_client
+        try:
+            rospy.wait_for_service(
+                self.task_nav_path_make_plan_service,
+                timeout=self.task_nav_path_make_plan_wait)
+            self.task_nav_make_plan_client = rospy.ServiceProxy(
+                self.task_nav_path_make_plan_service, GetPlan)
+            return self.task_nav_make_plan_client
+        except Exception as e:
+            rospy.logwarn(
+                "[TASK_NAV][PATH_FILTER_SERVICE_UNAVAILABLE] service=%s wait=%.2fs error=%s",
+                self.task_nav_path_make_plan_service,
+                self.task_nav_path_make_plan_wait,
+                str(e)
+            )
+            return None
 
-        if not costmap_checked:
-            costmap = self.get_global_costmap_for_approach()
+    def current_map_pose_for_plan(self):
+        pose = PoseStamped()
+        pose.header.frame_id = "map"
+        pose.header.stamp = rospy.Time.now()
+        try:
+            self.tf_listener.waitForTransform(
+                "map", "base_footprint", rospy.Time(0), rospy.Duration(0.1))
+            trans, rot = self.tf_listener.lookupTransform(
+                "map", "base_footprint", rospy.Time(0))
+            pose.pose.position.x = trans[0]
+            pose.pose.position.y = trans[1]
+            pose.pose.position.z = 0.0
+            pose.pose.orientation.x = rot[0]
+            pose.pose.orientation.y = rot[1]
+            pose.pose.orientation.z = rot[2]
+            pose.pose.orientation.w = rot[3]
+            return pose
+        except Exception as e:
+            rospy.logwarn_throttle(
+                2.0,
+                "[TASK_NAV][PATH_FILTER_TF_FALLBACK] map->base_footprint unavailable: %s",
+                str(e)
+            )
+
+        if self.last_move_base_feedback is not None:
+            pose.pose = self.last_move_base_feedback.base_position.pose
+            return pose
+
+        if self.current_odom_pose is not None:
+            pose.pose = self.current_odom_pose
+            return pose
+
+        return None
+
+    def task_goal_pose_for_plan(self, nav_target):
+        pose = PoseStamped()
+        pose.header.frame_id = "map"
+        pose.header.stamp = rospy.Time.now()
+        pose.pose.position.x = nav_target[0]
+        pose.pose.position.y = nav_target[1]
+        pose.pose.position.z = 0.0
+        q = quaternion_from_euler(0.0, 0.0, nav_target[2] / 180.0 * pi)
+        pose.pose.orientation.x = q[0]
+        pose.pose.orientation.y = q[1]
+        pose.pose.orientation.z = q[2]
+        pose.pose.orientation.w = q[3]
+        return pose
+
+    def evaluate_task_plan_quality(self, mode, nav_target):
+        if not self.task_nav_path_filter_enabled:
+            return True, "path_filter_disabled", {
+                "max_angle_deg": 0.0,
+                "transition_goal": None,
+                "plan_points": 0
+            }
+
+        client = self.get_task_make_plan_client()
+        if client is None:
+            return True, "path_filter_no_service_allow", {
+                "max_angle_deg": 0.0,
+                "transition_goal": None,
+                "plan_points": 0
+            }
+
+        start = self.current_map_pose_for_plan()
+        if start is None:
+            return True, "path_filter_no_start_pose_allow", {
+                "max_angle_deg": 0.0,
+                "transition_goal": None,
+                "plan_points": 0
+            }
+
+        request = GetPlanRequest()
+        request.start = start
+        request.goal = self.task_goal_pose_for_plan(nav_target)
+        request.tolerance = 0.0
+        try:
+            response = client(request)
+        except Exception as e:
+            self.task_nav_make_plan_client = None
+            rospy.logwarn(
+                "[TASK_NAV][PATH_FILTER_MAKE_PLAN_FAILED] mode=%s target=(%.3f,%.3f,%.1f) error=%s",
+                mode, nav_target[0], nav_target[1], nav_target[2], str(e)
+            )
+            return True, "path_filter_call_failed_allow", {
+                "max_angle_deg": 0.0,
+                "transition_goal": None,
+                "plan_points": 0
+            }
+
+        poses = response.plan.poses
+        if len(poses) < 2:
+            return False, "path_filter_no_plan", {
+                "max_angle_deg": 999.0,
+                "transition_goal": None,
+                "plan_points": len(poses)
+            }
+
+        ok, info = self.analyze_task_plan_sharp_turns(poses)
+        info["plan_points"] = len(poses)
+        if ok:
+            return True, "path_ok max_angle=%.1f points=%d" % (
+                info.get("max_angle_deg", 0.0), len(poses)), info
+        transition_goal = info.get("transition_goal")
+        transition_text = "none"
+        if transition_goal is not None:
+            transition_text = "(%.3f,%.3f,%.1f)" % (
+                transition_goal[0], transition_goal[1], transition_goal[2])
+        return False, "path_sharp_turn angle=%.1f index=%s transition=%s points=%d" % (
+            info.get("max_angle_deg", 0.0),
+            str(info.get("sharp_index", None)),
+            transition_text,
+            len(poses)
+        ), info
+
+    def analyze_task_plan_sharp_turns(self, poses):
+        sparse = []
+        path_s = 0.0
+        last_x = poses[0].pose.position.x
+        last_y = poses[0].pose.position.y
+        sparse.append((0, last_x, last_y, 0.0))
+        for i in range(1, len(poses)):
+            x = poses[i].pose.position.x
+            y = poses[i].pose.position.y
+            prev_x = poses[i - 1].pose.position.x
+            prev_y = poses[i - 1].pose.position.y
+            path_s += np.sqrt((x - prev_x) ** 2 + (y - prev_y) ** 2)
+            if (np.sqrt((x - last_x) ** 2 + (y - last_y) ** 2)
+                    >= self.task_nav_path_sparse_distance
+                    or i == len(poses) - 1):
+                sparse.append((i, x, y, path_s))
+                last_x = x
+                last_y = y
+
+        if len(sparse) < 3:
+            return True, {
+                "max_angle_deg": 0.0,
+                "transition_goal": None,
+                "sharp_index": None
+            }
+
+        total_s = sparse[-1][3]
+        threshold_rad = self.task_nav_path_sharp_turn_threshold_deg / 180.0 * pi
+        max_angle = 0.0
+        max_index = None
+        for i in range(1, len(sparse) - 1):
+            if (sparse[i][3] < self.task_nav_path_min_endpoint_distance
+                    or total_s - sparse[i][3] < self.task_nav_path_min_endpoint_distance):
+                continue
+            in_x = sparse[i][1] - sparse[i - 1][1]
+            in_y = sparse[i][2] - sparse[i - 1][2]
+            out_x = sparse[i + 1][1] - sparse[i][1]
+            out_y = sparse[i + 1][2] - sparse[i][2]
+            in_len = np.sqrt(in_x * in_x + in_y * in_y)
+            out_len = np.sqrt(out_x * out_x + out_y * out_y)
+            if in_len < 1e-6 or out_len < 1e-6:
+                continue
+            dot = (in_x * out_x + in_y * out_y) / (in_len * out_len)
+            dot = max(-1.0, min(1.0, dot))
+            angle = np.arccos(dot)
+            if angle > max_angle:
+                max_angle = angle
+                max_index = sparse[i][0]
+
+        max_angle_deg = max_angle * 180.0 / pi
+        if max_index is None or max_angle < threshold_rad:
+            return True, {
+                "max_angle_deg": max_angle_deg,
+                "transition_goal": None,
+                "sharp_index": max_index
+            }
+
+        transition_goal = self.transition_goal_before_path_index(
+            poses, max_index, self.task_nav_transition_distance_before_corner)
+        rospy.logwarn(
+            "[TASK_NAV][PATH_SHARP_TURN] angle=%.1fdeg index=%s transition=%s threshold=%.1fdeg",
+            max_angle_deg,
+            str(max_index),
+            str(transition_goal),
+            self.task_nav_path_sharp_turn_threshold_deg
+        )
+        return False, {
+            "max_angle_deg": max_angle_deg,
+            "transition_goal": transition_goal,
+            "sharp_index": max_index
+        }
+
+    def transition_goal_before_path_index(self, poses, sharp_index, distance_before):
+        if sharp_index is None or sharp_index <= 0:
+            return None
+        remaining = max(0.0, distance_before)
+        for i in range(sharp_index, 0, -1):
+            x0 = poses[i].pose.position.x
+            y0 = poses[i].pose.position.y
+            x1 = poses[i - 1].pose.position.x
+            y1 = poses[i - 1].pose.position.y
+            seg_len = np.sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2)
+            if seg_len < 1e-6:
+                continue
+            if remaining <= seg_len:
+                ratio = remaining / seg_len
+                x = x0 + (x1 - x0) * ratio
+                y = y0 + (y1 - y0) * ratio
+                yaw = np.arctan2(y0 - y1, x0 - x1) * 180.0 / pi
+                return [x, y, yaw]
+            remaining -= seg_len
+        yaw = self.current_yaw * 180.0 / pi
+        return [poses[0].pose.position.x, poses[0].pose.position.y, yaw]
+
+    def is_transition_goal_clear(self, transition_goal, costmap):
+        if transition_goal is None:
+            return False, "no_transition_goal", (999, 999.0, 999)
         if costmap is None:
             return True, "no_costmap_allow", (0, 0.0, 0)
-
-        cost, detail = self.costmap_cost_at(costmap, nav_target[0], nav_target[1])
+        cost, detail = self.costmap_cost_at(costmap, transition_goal[0], transition_goal[1])
         if cost is None:
             return False, detail, (999, 999.0, 999)
         if cost < 0:
@@ -665,6 +983,36 @@ class navigation_demo:
         if cost > self.task_nav_approach_cost_threshold:
             return False, "cost=%d>threshold=%d" % (
                 cost, self.task_nav_approach_cost_threshold), (cost, float(cost), 0)
+        score, detail = self.costmap_score_near(
+            costmap, transition_goal[0], transition_goal[1],
+            self.task_nav_approach_score_radius)
+        if score is None:
+            score = (cost, float(cost), 0)
+        return True, "cost=%d score=max:%d avg:%.1f unk:%d" % (
+            cost, score[0], score[1], score[2]), score
+
+    def evaluate_task_approach_goal(self, mode, nav_target, costmap=None, costmap_checked=False):
+        if not self.task_nav_approach_filter_costmap or mode == "target":
+            path_clear, path_reason, path_info = self.evaluate_task_plan_quality(mode, nav_target)
+            return path_clear, "filter_disabled_or_target %s" % path_reason, (0, 0.0, 0), path_info
+
+        if not costmap_checked:
+            costmap = self.get_global_costmap_for_approach()
+        if costmap is None:
+            path_clear, path_reason, path_info = self.evaluate_task_plan_quality(mode, nav_target)
+            return path_clear, "no_costmap_allow %s" % path_reason, (0, 0.0, 0), path_info
+
+        cost, detail = self.costmap_cost_at(costmap, nav_target[0], nav_target[1])
+        if cost is None:
+            return False, detail, (999, 999.0, 999), None
+        if cost < 0:
+            if self.task_nav_approach_reject_unknown:
+                return False, "unknown", (999, 999.0, 999), None
+            path_clear, path_reason, path_info = self.evaluate_task_plan_quality(mode, nav_target)
+            return path_clear, "unknown_allowed %s" % path_reason, (100, 100.0, 1), path_info
+        if cost > self.task_nav_approach_cost_threshold:
+            return False, "cost=%d>threshold=%d" % (
+                cost, self.task_nav_approach_cost_threshold), (cost, float(cost), 0), None
 
         score, detail = self.costmap_score_near(
             costmap, nav_target[0], nav_target[1], self.task_nav_approach_score_radius)
@@ -674,10 +1022,11 @@ class navigation_demo:
         else:
             score_text = "score=max:%d avg:%.1f unk:%d radius:%.2f" % (
                 score[0], score[1], score[2], self.task_nav_approach_score_radius)
-        return True, "cost=%d %s" % (cost, score_text), score
+        path_clear, path_reason, path_info = self.evaluate_task_plan_quality(mode, nav_target)
+        return path_clear, "cost=%d %s %s" % (cost, score_text, path_reason), score, path_info
 
     def is_task_approach_goal_clear(self, mode, nav_target):
-        clear, reason, _ = self.evaluate_task_approach_goal(mode, nav_target)
+        clear, reason, _, _ = self.evaluate_task_approach_goal(mode, nav_target)
         return clear, reason
 
     def select_task_approach_goal(self, target, skipped_modes=None):
@@ -685,10 +1034,11 @@ class navigation_demo:
             skipped_modes = set()
         candidates = self.make_task_approach_goals(target)
         if not self.task_nav_use_approach_goal and "target" not in skipped_modes:
-            return "target", list(target)
+            return "target", list(target), None
 
         target_fallback = None
         clear_candidates = []
+        transition_candidates = []
         costmap = None
         costmap_checked = False
         if self.task_nav_approach_filter_costmap:
@@ -702,7 +1052,7 @@ class navigation_demo:
             if mode in skipped_modes:
                 rospy.loginfo("[TASK_NAV][APPROACH_SKIP_FAILED] mode=%s", mode)
                 continue
-            clear, reason, score = self.evaluate_task_approach_goal(
+            clear, reason, score, path_info = self.evaluate_task_approach_goal(
                 mode, nav_target, costmap=costmap, costmap_checked=costmap_checked)
             rospy.loginfo(
                 "[TASK_NAV][APPROACH_CHECK] mode=%s nav_target=(%.3f,%.3f,%.1f) clear=%s reason=%s",
@@ -711,6 +1061,27 @@ class navigation_demo:
             )
             if clear:
                 clear_candidates.append((score, mode, nav_target, reason))
+            elif (self.task_nav_transition_enabled
+                  and path_info is not None
+                  and path_info.get("transition_goal") is not None):
+                transition_goal = path_info.get("transition_goal")
+                transition_clear, transition_reason, transition_score = self.is_transition_goal_clear(
+                    transition_goal, costmap)
+                rospy.logwarn(
+                    "[TASK_NAV][APPROACH_TRANSITION_CHECK] mode=%s transition=(%.3f,%.3f,%.1f) clear=%s reason=%s original_reason=%s",
+                    mode,
+                    transition_goal[0], transition_goal[1], transition_goal[2],
+                    str(transition_clear), transition_reason, reason
+                )
+                if transition_clear:
+                    transition_candidates.append((
+                        transition_score,
+                        path_info.get("max_angle_deg", 0.0),
+                        mode,
+                        nav_target,
+                        transition_goal,
+                        reason
+                    ))
 
         if clear_candidates:
             clear_candidates.sort(key=lambda item: (item[0][2], item[0][0], item[0][1]))
@@ -720,20 +1091,36 @@ class navigation_demo:
                 mode, nav_target[0], nav_target[1], nav_target[2],
                 score[0], score[1], score[2], reason
             )
-            return mode, nav_target
+            return mode, nav_target, None
+
+        if transition_candidates:
+            transition_candidates.sort(key=lambda item: (item[0][2], item[0][0], item[0][1], item[1]))
+            score, angle_deg, mode, nav_target, transition_goal, reason = transition_candidates[0]
+            rospy.logwarn(
+                "[TASK_NAV][APPROACH_TRANSITION_SELECTED] mode=%s transition=(%.3f,%.3f,%.1f) followup=(%.3f,%.3f,%.1f) angle=%.1f score=max:%d avg:%.1f unk:%d reason=%s",
+                mode,
+                transition_goal[0], transition_goal[1], transition_goal[2],
+                nav_target[0], nav_target[1], nav_target[2],
+                angle_deg,
+                score[0], score[1], score[2], reason
+            )
+            return "transition:%s" % mode, transition_goal, (mode, nav_target)
 
         rospy.logwarn("[TASK_NAV][APPROACH_NO_CLEAR] target=%s", str(target))
         if self.task_nav_approach_fallback_to_target and target_fallback is not None:
             rospy.logwarn("[TASK_NAV][APPROACH_FALLBACK_TARGET] nav_target=%s", str(target_fallback[1]))
-            return target_fallback
-        return None, None
+            return target_fallback[0], target_fallback[1], None
+        return None, None, None
 
     def goto_task_approach(self, target, timeout, label, skipped_modes=None):
-        mode, nav_target = self.select_task_approach_goal(target, skipped_modes)
+        mode, nav_target, followup = self.select_task_approach_goal(target, skipped_modes)
         if nav_target is None:
             return False, False, None, None, None
         rospy.loginfo("[TASK_NAV][TRY_%s] mode=%s nav_target=%s", label, mode, nav_target)
-        accept_dist = self.task_nav_accept_dist if mode == "target" else self.task_nav_approach_accept_dist
+        if mode.startswith("transition:"):
+            accept_dist = self.task_nav_transition_accept_dist
+        else:
+            accept_dist = self.task_nav_accept_dist if mode == "target" else self.task_nav_approach_accept_dist
         nav_ok = self.goto_task_nav_goal(
             nav_target,
             timeout=timeout,
@@ -742,6 +1129,49 @@ class navigation_demo:
             position_accept_dist=accept_dist
         )
         nav_reached, approach_dist = self.nav_reached_by_state_and_distance(nav_ok, nav_target, accept_dist)
+
+        if followup is not None:
+            followup_mode, followup_target = followup
+            followup_accept = self.task_nav_approach_accept_dist
+            if nav_reached:
+                rospy.logwarn(
+                    "[TASK_NAV][FALLBACK_TRANSITION_GOAL] transition_mode=%s followup_mode=%s followup_target=(%.3f,%.3f,%.1f)",
+                    mode, followup_mode,
+                    followup_target[0], followup_target[1], followup_target[2]
+                )
+                nav_ok = self.goto_task_nav_goal(
+                    followup_target,
+                    timeout=self.task_nav_retry_timeout,
+                    label=label + "_FOLLOWUP",
+                    mode=followup_mode,
+                    position_accept_dist=followup_accept,
+                    slow_mode=self.task_nav_teb_slow_fallback_enabled
+                )
+                nav_reached, approach_dist = self.nav_reached_by_state_and_distance(
+                    nav_ok, followup_target, followup_accept)
+                mode = followup_mode
+                nav_target = followup_target
+                accept_dist = followup_accept
+            elif self.task_nav_teb_slow_fallback_enabled:
+                rospy.logwarn(
+                    "[TASK_NAV][FALLBACK_TRANSITION_FAILED_SLOW_TEB] transition_mode=%s followup_mode=%s followup_target=(%.3f,%.3f,%.1f)",
+                    mode, followup_mode,
+                    followup_target[0], followup_target[1], followup_target[2]
+                )
+                nav_ok = self.goto_task_nav_goal(
+                    followup_target,
+                    timeout=self.task_nav_retry_timeout,
+                    label=label + "_SLOW",
+                    mode="slow:%s" % followup_mode,
+                    position_accept_dist=followup_accept,
+                    slow_mode=True
+                )
+                nav_reached, approach_dist = self.nav_reached_by_state_and_distance(
+                    nav_ok, followup_target, followup_accept)
+                mode = followup_mode
+                nav_target = followup_target
+                accept_dist = followup_accept
+
         nav_dist = self.distance_to_goal_xy(target)
         selected_yaw_deg = None
         if nav_reached:
@@ -777,10 +1207,15 @@ class navigation_demo:
     def mark_failed_approach_mode(self, idx, task_id, mode, failed_approach_modes):
         if mode is None:
             return
-        failed_approach_modes.add(mode)
+        failed_mode = str(mode)
+        if failed_mode.startswith("transition:"):
+            failed_mode = failed_mode.split(":", 1)[1]
+        elif failed_mode.startswith("slow:"):
+            failed_mode = failed_mode.split(":", 1)[1]
+        failed_approach_modes.add(failed_mode)
         rospy.logwarn(
             "[TASK_NAV][APPROACH_MARK_FAILED] idx=%d task_id=%d mode=%s failed_modes=%s",
-            idx + 1, task_id, str(mode),
+            idx + 1, task_id, failed_mode,
             ",".join(sorted(failed_approach_modes))
         )
 
@@ -1392,15 +1827,17 @@ class navigation_demo:
                           (p, state))
             return False
 
-    def goto_task_nav_goal(self, p, timeout=60, label="", mode="", position_accept_dist=None):
+    def goto_task_nav_goal(self, p, timeout=60, label="", mode="", position_accept_dist=None,
+                           slow_mode=False):
         """
         任务点导航专用：在常规 timeout 外，检测规划失败和目标距离长时间没有变近。
         这样目标点在墙里/局部规划卡住时，可以更快切换到 approach 或下一个 approach。
         """
         rospy.loginfo(
-            "[TASK_NAV][GOTO_START] label=%s mode=%s target=%s timeout=%.1fs position_accept=%s no_progress=%s no_progress_timeout=%.1fs min_delta=%.3f",
+            "[TASK_NAV][GOTO_START] label=%s mode=%s target=%s timeout=%.1fs position_accept=%s slow_mode=%s no_progress=%s no_progress_timeout=%.1fs min_delta=%.3f",
             label, mode, str(p), timeout,
             "%.3f" % position_accept_dist if position_accept_dist is not None else "None",
+            str(slow_mode),
             str(self.task_nav_no_progress_enabled),
             self.task_nav_no_progress_timeout,
             self.task_nav_no_progress_min_delta
@@ -1415,6 +1852,10 @@ class navigation_demo:
         goal.target_pose.pose.orientation.y = q[1]
         goal.target_pose.pose.orientation.z = q[2]
         goal.target_pose.pose.orientation.w = q[3]
+
+        slow_applied = False
+        if slow_mode:
+            slow_applied = self.set_teb_slow_mode(True, "%s:%s" % (label, mode))
 
         self.reset_nav_feedback()
         self.task_nav_goal_active = True
@@ -1498,6 +1939,8 @@ class navigation_demo:
                 rate.sleep()
         finally:
             self.task_nav_goal_active = False
+            if slow_applied:
+                self.set_teb_slow_mode(False, "%s:%s" % (label, mode))
 
         self.move_base.cancel_goal()
         self.last_move_base_state = GoalStatus.PREEMPTED

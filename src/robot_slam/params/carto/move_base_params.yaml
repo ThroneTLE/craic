@@ -12,4 +12,4 @@ oscillation_distance: 0.10
 clearing_rotation_allowed: false
 
 base_local_planner: "teb_local_planner/TebLocalPlannerROS"
-base_global_planner: "global_planner/GlobalPlanner"
+base_global_planner: "robot_slam/SmoothGlobalPlanner"

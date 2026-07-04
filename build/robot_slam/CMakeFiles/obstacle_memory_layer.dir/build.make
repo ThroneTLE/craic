@@ -90,6 +90,10 @@ obstacle_memory_layer_EXTERNAL_OBJECTS =
 
 /home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: robot_slam/CMakeFiles/obstacle_memory_layer.dir/src/obstacle_memory_layer.cpp.o
 /home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: robot_slam/CMakeFiles/obstacle_memory_layer.dir/build.make
+/home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: /opt/ros/melodic/lib/libbase_local_planner.so
+/home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: /opt/ros/melodic/lib/libtrajectory_planner_ros.so
+/home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: /opt/ros/melodic/lib/libglobal_planner.so
+/home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: /opt/ros/melodic/lib/libnavfn.so
 /home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: /opt/ros/melodic/lib/libcostmap_2d.so
 /home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: /opt/ros/melodic/lib/liblayers.so
 /home/abot/EIU0US/devel/lib/libobstacle_memory_layer.so: /opt/ros/melodic/lib/libdynamic_reconfigure_config_init_mutex.so

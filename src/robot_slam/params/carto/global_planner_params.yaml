@@ -21,3 +21,13 @@ GlobalPlanner:
   neutral_cost: 50
   cost_factor: 1.5
   publish_potential: false
+
+SmoothGlobalPlanner:
+  enabled: true
+  sample_step: 0.02
+  sparse_distance: 0.06
+  sharp_turn_threshold_deg: 65.0
+  smooth_radius: 0.18
+  min_endpoint_distance: 0.20
+  max_radius_fraction: 0.45
+  collision_check_unknown_as_blocked: true

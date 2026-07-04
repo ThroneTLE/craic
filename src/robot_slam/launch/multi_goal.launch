@@ -42,10 +42,10 @@
       <param name="task_nav_timeout" value="18.0"/>
       <param name="task_nav_retry_timeout" value="5.0"/>
       <param name="task_nav_accept_dist" value="0.25"/>
-      <param name="task_nav_approach_accept_dist" value="0.38"/>
+      <param name="task_nav_approach_accept_dist" value="0.30"/>
       <param name="task_nav_direct_done_dist" value="0.08"/>
-      <param name="task_nav_use_approach_goal" value="false"/>
-      <param name="task_nav_approach_offset" value="0.15"/>
+      <param name="task_nav_use_approach_goal" value="true"/>
+      <param name="task_nav_approach_offset" value="0.25"/>
       <param name="task_nav_approach_modes" value="back,back_left,left,front_left,front,front_right,right,back_right"/>
       <param name="task_nav_approach_filter_costmap" value="true"/>
       <param name="task_nav_approach_costmap_topic" value="/move_base/global_costmap/costmap"/>
@@ -56,6 +56,20 @@
       <param name="task_nav_flexible_yaw_enabled" value="true"/>
       <param name="task_nav_flexible_yaw_candidates" value="0,90,180,-90"/>
       <param name="task_nav_approach_score_radius" value="0.25"/>
+      <param name="task_nav_path_filter_enabled" value="true"/>
+      <param name="task_nav_path_make_plan_service" value="/move_base/make_plan"/>
+      <param name="task_nav_path_make_plan_wait" value="0.5"/>
+      <param name="task_nav_path_sparse_distance" value="0.06"/>
+      <param name="task_nav_path_sharp_turn_threshold_deg" value="65.0"/>
+      <param name="task_nav_path_min_endpoint_distance" value="0.20"/>
+      <param name="task_nav_transition_enabled" value="true"/>
+      <param name="task_nav_transition_distance_before_corner" value="0.25"/>
+      <param name="task_nav_transition_accept_dist" value="0.25"/>
+      <param name="task_nav_teb_slow_fallback_enabled" value="true"/>
+      <param name="task_nav_teb_reconfigure_name" value="move_base/TebLocalPlannerROS"/>
+      <param name="task_nav_teb_slow_max_vel_x" value="0.12"/>
+      <param name="task_nav_teb_slow_max_vel_y" value="0.12"/>
+      <param name="task_nav_teb_slow_max_vel_theta" value="0.8"/>
       <param name="task_nav_no_progress_enabled" value="true"/>
       <param name="task_nav_no_progress_timeout" value="3.0"/>
       <param name="task_nav_no_progress_min_delta" value="0.05"/>

@@ -140,9 +140,9 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/home/abot/EIU0US/build/abot_base/abot_model/cmake_install.cmake")
   include("/home/abot/EIU0US/build/ocr_detect/cmake_install.cmake")
   include("/home/abot/EIU0US/build/abot_find/cmake_install.cmake")
-  include("/home/abot/EIU0US/build/robot_slam/cmake_install.cmake")
   include("/home/abot/EIU0US/build/track_tag/cmake_install.cmake")
   include("/home/abot/EIU0US/build/abot_rpp/cmake_install.cmake")
+  include("/home/abot/EIU0US/build/robot_slam/cmake_install.cmake")
 
 endif()
 

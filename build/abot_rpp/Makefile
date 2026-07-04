@@ -91,17 +91,6 @@ rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-
-.PHONY : edit_cache/fast
-
 # Special rule for the target test
 test:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
@@ -112,6 +101,17 @@ test:
 test/fast: test
 
 .PHONY : test/fast
+
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
+	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
 
 # Special rule for the target list_install_components
 list_install_components:
@@ -211,6 +211,66 @@ visualization_msgs_generate_messages_nodejs: abot_rpp/CMakeFiles/visualization_m
 visualization_msgs_generate_messages_nodejs/fast:
 	cd /home/abot/EIU0US/build && $(MAKE) -f abot_rpp/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build.make abot_rpp/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build
 .PHONY : visualization_msgs_generate_messages_nodejs/fast
+
+# Convenience name for target.
+abot_rpp/CMakeFiles/nav_msgs_generate_messages_py.dir/rule:
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 abot_rpp/CMakeFiles/nav_msgs_generate_messages_py.dir/rule
+.PHONY : abot_rpp/CMakeFiles/nav_msgs_generate_messages_py.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_py: abot_rpp/CMakeFiles/nav_msgs_generate_messages_py.dir/rule
+
+.PHONY : nav_msgs_generate_messages_py
+
+# fast build rule for target.
+nav_msgs_generate_messages_py/fast:
+	cd /home/abot/EIU0US/build && $(MAKE) -f abot_rpp/CMakeFiles/nav_msgs_generate_messages_py.dir/build.make abot_rpp/CMakeFiles/nav_msgs_generate_messages_py.dir/build
+.PHONY : nav_msgs_generate_messages_py/fast
+
+# Convenience name for target.
+abot_rpp/CMakeFiles/nav_msgs_generate_messages_lisp.dir/rule:
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 abot_rpp/CMakeFiles/nav_msgs_generate_messages_lisp.dir/rule
+.PHONY : abot_rpp/CMakeFiles/nav_msgs_generate_messages_lisp.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_lisp: abot_rpp/CMakeFiles/nav_msgs_generate_messages_lisp.dir/rule
+
+.PHONY : nav_msgs_generate_messages_lisp
+
+# fast build rule for target.
+nav_msgs_generate_messages_lisp/fast:
+	cd /home/abot/EIU0US/build && $(MAKE) -f abot_rpp/CMakeFiles/nav_msgs_generate_messages_lisp.dir/build.make abot_rpp/CMakeFiles/nav_msgs_generate_messages_lisp.dir/build
+.PHONY : nav_msgs_generate_messages_lisp/fast
+
+# Convenience name for target.
+abot_rpp/CMakeFiles/nav_msgs_generate_messages_eus.dir/rule:
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 abot_rpp/CMakeFiles/nav_msgs_generate_messages_eus.dir/rule
+.PHONY : abot_rpp/CMakeFiles/nav_msgs_generate_messages_eus.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_eus: abot_rpp/CMakeFiles/nav_msgs_generate_messages_eus.dir/rule
+
+.PHONY : nav_msgs_generate_messages_eus
+
+# fast build rule for target.
+nav_msgs_generate_messages_eus/fast:
+	cd /home/abot/EIU0US/build && $(MAKE) -f abot_rpp/CMakeFiles/nav_msgs_generate_messages_eus.dir/build.make abot_rpp/CMakeFiles/nav_msgs_generate_messages_eus.dir/build
+.PHONY : nav_msgs_generate_messages_eus/fast
+
+# Convenience name for target.
+abot_rpp/CMakeFiles/nav_msgs_generate_messages_cpp.dir/rule:
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 abot_rpp/CMakeFiles/nav_msgs_generate_messages_cpp.dir/rule
+.PHONY : abot_rpp/CMakeFiles/nav_msgs_generate_messages_cpp.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_cpp: abot_rpp/CMakeFiles/nav_msgs_generate_messages_cpp.dir/rule
+
+.PHONY : nav_msgs_generate_messages_cpp
+
+# fast build rule for target.
+nav_msgs_generate_messages_cpp/fast:
+	cd /home/abot/EIU0US/build && $(MAKE) -f abot_rpp/CMakeFiles/nav_msgs_generate_messages_cpp.dir/build.make abot_rpp/CMakeFiles/nav_msgs_generate_messages_cpp.dir/build
+.PHONY : nav_msgs_generate_messages_cpp/fast
 
 # Convenience name for target.
 abot_rpp/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule:
@@ -483,6 +543,21 @@ map_msgs_generate_messages_eus/fast:
 .PHONY : map_msgs_generate_messages_eus/fast
 
 # Convenience name for target.
+abot_rpp/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/rule:
+	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 abot_rpp/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/rule
+.PHONY : abot_rpp/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_nodejs: abot_rpp/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/rule
+
+.PHONY : nav_msgs_generate_messages_nodejs
+
+# fast build rule for target.
+nav_msgs_generate_messages_nodejs/fast:
+	cd /home/abot/EIU0US/build && $(MAKE) -f abot_rpp/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/build.make abot_rpp/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/build
+.PHONY : nav_msgs_generate_messages_nodejs/fast
+
+# Convenience name for target.
 abot_rpp/CMakeFiles/map_msgs_generate_messages_lisp.dir/rule:
 	cd /home/abot/EIU0US/build && $(MAKE) -f CMakeFiles/Makefile2 abot_rpp/CMakeFiles/map_msgs_generate_messages_lisp.dir/rule
 .PHONY : abot_rpp/CMakeFiles/map_msgs_generate_messages_lisp.dir/rule
@@ -548,11 +623,15 @@ help:
 	@echo "... install/strip"
 	@echo "... install"
 	@echo "... rebuild_cache"
-	@echo "... edit_cache"
 	@echo "... test"
 	@echo "... abot_rpp"
 	@echo "... visualization_msgs_generate_messages_py"
 	@echo "... visualization_msgs_generate_messages_nodejs"
+	@echo "... nav_msgs_generate_messages_py"
+	@echo "... edit_cache"
+	@echo "... nav_msgs_generate_messages_lisp"
+	@echo "... nav_msgs_generate_messages_eus"
+	@echo "... nav_msgs_generate_messages_cpp"
 	@echo "... visualization_msgs_generate_messages_eus"
 	@echo "... map_msgs_generate_messages_py"
 	@echo "... base_local_planner_gencfg"
@@ -573,6 +652,7 @@ help:
 	@echo "... costmap_2d_gencfg"
 	@echo "... base_local_planner_generate_messages_py"
 	@echo "... map_msgs_generate_messages_eus"
+	@echo "... nav_msgs_generate_messages_nodejs"
 	@echo "... map_msgs_generate_messages_lisp"
 	@echo "... map_msgs_generate_messages_nodejs"
 	@echo "... src/rpp_controller.o"
