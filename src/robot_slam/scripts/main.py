@@ -104,6 +104,17 @@ class navigation_demo:
         self.detect_prealign_mode = rospy.get_param("~detect_prealign_mode", "back")
         self.detect_prealign_distance = rospy.get_param("~detect_prealign_distance", 0.35)
         self.detect_prealign_timeout = rospy.get_param("~detect_prealign_timeout", 25)
+        self.detect_nav_retry_enabled = rospy.get_param("~detect_nav_retry_enabled", True)
+        self.detect_nav_retry_modes = rospy.get_param(
+            "~detect_nav_retry_modes",
+            "back,back_left,left,front_left,front,front_right,right,back_right")
+        self.detect_nav_retry_distance = rospy.get_param("~detect_nav_retry_distance", 0.35)
+        self.detect_nav_retry_timeout = rospy.get_param(
+            "~detect_nav_retry_timeout", self.detect_prealign_timeout)
+        self.detect_nav_accept_dist = rospy.get_param("~detect_nav_accept_dist", 0.18)
+        self.detect_skip_capture_on_nav_fail = rospy.get_param(
+            "~detect_skip_capture_on_nav_fail", True)
+        self.detect_require_all_points = rospy.get_param("~detect_require_all_points", True)
         self.detect_yaw_align_at_prealign = rospy.get_param("~detect_yaw_align_at_prealign", True)
         self.detect_final_timeout = rospy.get_param("~detect_final_timeout", 35)
         self.detect_locked_final_approach = rospy.get_param("~detect_locked_final_approach", True)
@@ -114,6 +125,16 @@ class navigation_demo:
         self.detect_locked_approach_timeout_margin = rospy.get_param("~detect_locked_approach_timeout_margin", 1.0)
         self.detect_yaw_align_at_photo = rospy.get_param("~detect_yaw_align_at_photo", False)
         self.detect_yaw_align_enabled = rospy.get_param("~detect_yaw_align_enabled", True)
+        self.detect_dynamic_yaw_enabled = rospy.get_param("~detect_dynamic_yaw_enabled", True)
+        self.detect_dynamic_yaw_min_distance = rospy.get_param("~detect_dynamic_yaw_min_distance", 0.05)
+        self.detect_dynamic_yaw_capture_at_prealign = rospy.get_param(
+            "~detect_dynamic_yaw_capture_at_prealign", True)
+        self.detect_photo_target_points_param = rospy.get_param("~detect_photo_target_points", "")
+        self.detect_photo_target_x_param = rospy.get_param(
+            "~detect_photo_target_x", rospy.get_param("~detectPhotoTargetX", ""))
+        self.detect_photo_target_y_param = rospy.get_param(
+            "~detect_photo_target_y", rospy.get_param("~detectPhotoTargetY", ""))
+        self.detect_photo_target_map = self.parse_detection_photo_targets()
         self.detect_yaw_tolerance = rospy.get_param("~detect_yaw_tolerance", 0.06)
         self.detect_yaw_align_timeout = rospy.get_param("~detect_yaw_align_timeout", 3.0)
         self.detect_yaw_kp = rospy.get_param("~detect_yaw_kp", 1.2)
@@ -168,6 +189,8 @@ class navigation_demo:
         self.task_nav_path_make_plan_service = rospy.get_param(
             "~task_nav_path_make_plan_service", "/move_base/make_plan")
         self.task_nav_path_make_plan_wait = rospy.get_param("~task_nav_path_make_plan_wait", 0.5)
+        self.move_base_cancel_wait = rospy.get_param("~move_base_cancel_wait", 1.0)
+        self.move_base_make_plan_idle_wait = rospy.get_param("~move_base_make_plan_idle_wait", 1.0)
         self.task_nav_path_sparse_distance = rospy.get_param("~task_nav_path_sparse_distance", 0.06)
         self.task_nav_path_sharp_turn_threshold_deg = rospy.get_param(
             "~task_nav_path_sharp_turn_threshold_deg", 65.0)
@@ -523,6 +546,121 @@ class navigation_demo:
             candidates = [0.0, 90.0, 180.0, -90.0]
         return candidates
 
+    def parse_float_list(self, value):
+        values = []
+        for item in str(value).replace(";", ",").split(","):
+            item = item.strip()
+            if not item:
+                continue
+            try:
+                values.append(float(item))
+            except ValueError:
+                rospy.logwarn("[DETECT_YAW][BAD_FLOAT] value=%s", item)
+        return values
+
+    def parse_detection_photo_targets(self):
+        """
+        解析检测图片真实坐标。
+        推荐格式: 10:x:y;11:x:y;12:x:y;13:x:y
+        也兼容 detectPhotoTargetX/Y，长度为4时按 points 顺序映射，长度等于 goals 时按索引映射。
+        """
+        target_map = {}
+
+        raw = str(self.detect_photo_target_points_param).strip()
+        if raw:
+            for item in raw.replace("\n", ";").split(";"):
+                item = item.strip()
+                if not item:
+                    continue
+                parts = [part.strip() for part in item.replace(":", ",").split(",")
+                         if part.strip()]
+                if len(parts) < 3:
+                    rospy.logwarn("[DETECT_YAW][BAD_TARGET_ITEM] item=%s", item)
+                    continue
+                try:
+                    point = int(parts[0])
+                    target_map[point] = (float(parts[1]), float(parts[2]))
+                except ValueError:
+                    rospy.logwarn("[DETECT_YAW][BAD_TARGET_ITEM] item=%s", item)
+
+        xs = self.parse_float_list(self.detect_photo_target_x_param)
+        ys = self.parse_float_list(self.detect_photo_target_y_param)
+        if xs or ys:
+            if len(xs) != len(ys):
+                rospy.logwarn(
+                    "[DETECT_YAW][BAD_TARGET_LIST] x_count=%d y_count=%d",
+                    len(xs), len(ys))
+            count = min(len(xs), len(ys))
+            if count == len(points):
+                for i in range(count):
+                    target_map[points[i]] = (xs[i], ys[i])
+            elif "goals" in globals() and count == len(goals):
+                for i in range(count):
+                    target_map[i] = (xs[i], ys[i])
+            elif count > 0:
+                rospy.logwarn(
+                    "[DETECT_YAW][BAD_TARGET_LIST] count=%d should_be_detect_points=%d or goals=%d",
+                    count, len(points), len(goals) if "goals" in globals() else -1)
+
+        if target_map:
+            summary = ",".join([
+                "%s:(%.3f,%.3f)" % (str(point), xy[0], xy[1])
+                for point, xy in sorted(target_map.items())
+            ])
+            rospy.loginfo("[DETECT_YAW][TARGETS] %s", summary)
+        else:
+            rospy.loginfo("[DETECT_YAW][TARGETS] none, use fixed detection yaw")
+        return target_map
+
+    def has_detection_photo_target(self, point):
+        return int(point) in self.detect_photo_target_map
+
+    def detection_yaw_from_xy(self, point, from_x, from_y, fallback_yaw_deg, source):
+        if (not self.detect_dynamic_yaw_enabled
+                or not self.has_detection_photo_target(point)):
+            return fallback_yaw_deg, False
+
+        photo_x, photo_y = self.detect_photo_target_map[int(point)]
+        dx = photo_x - from_x
+        dy = photo_y - from_y
+        dist = np.sqrt(dx * dx + dy * dy)
+        if dist < self.detect_dynamic_yaw_min_distance:
+            rospy.logwarn(
+                "[DETECT_YAW][DYNAMIC_REJECT] point=%s source=%s reason=too_close from=(%.3f,%.3f) photo=(%.3f,%.3f) dist=%.3f fallback=%.1f",
+                str(point), source, from_x, from_y, photo_x, photo_y, dist,
+                fallback_yaw_deg)
+            return fallback_yaw_deg, False
+
+        yaw_deg = self.normalize_angle_deg(np.arctan2(dy, dx) * 180.0 / pi)
+        rospy.loginfo(
+            "[DETECT_YAW][DYNAMIC] point=%s source=%s from=(%.3f,%.3f) photo=(%.3f,%.3f) yaw=%.1f dist=%.3f fallback=%.1f",
+            str(point), source, from_x, from_y, photo_x, photo_y, yaw_deg,
+            dist, fallback_yaw_deg)
+        return yaw_deg, True
+
+    def detection_yaw_from_current_pose(self, point, fallback_yaw_deg, source):
+        if (not self.detect_dynamic_yaw_enabled
+                or not self.has_detection_photo_target(point)):
+            return fallback_yaw_deg, False
+
+        pose = self.current_map_pose_for_plan()
+        if pose is None:
+            rospy.logwarn(
+                "[DETECT_YAW][CURRENT_POSE_FAILED] point=%s source=%s fallback=%.1f",
+                str(point), source, fallback_yaw_deg)
+            return fallback_yaw_deg, False
+        return self.detection_yaw_from_xy(
+            point,
+            pose.pose.position.x,
+            pose.pose.position.y,
+            fallback_yaw_deg,
+            source)
+
+    def should_capture_detection_at_prealign(self, point):
+        return (self.detect_dynamic_yaw_enabled
+                and self.detect_dynamic_yaw_capture_at_prealign
+                and self.has_detection_photo_target(point))
+
     def select_task_flexible_yaw(self, target):
         original_yaw = target[2]
         if (not self.task_nav_flexible_yaw_enabled
@@ -815,6 +953,13 @@ class navigation_demo:
                 "plan_points": 0
             }
 
+        if not self.wait_for_make_plan_idle("task:%s" % mode):
+            return True, "path_filter_move_base_active_allow", {
+                "max_angle_deg": 0.0,
+                "transition_goal": None,
+                "plan_points": 0
+            }
+
         client = self.get_task_make_plan_client()
         if client is None:
             return True, "path_filter_no_service_allow", {
@@ -990,6 +1135,52 @@ class navigation_demo:
             score = (cost, float(cost), 0)
         return True, "cost=%d score=max:%d avg:%.1f unk:%d" % (
             cost, score[0], score[1], score[2]), score
+
+    def evaluate_detection_prealign_goal(self, mode, nav_target, costmap=None):
+        if costmap is not None:
+            cost, detail = self.costmap_cost_at(costmap, nav_target[0], nav_target[1])
+            if cost is None:
+                return False, detail
+            if cost < 0:
+                if self.task_nav_approach_reject_unknown:
+                    return False, "unknown"
+            elif cost > self.task_nav_approach_cost_threshold:
+                return False, "cost=%d>threshold=%d" % (
+                    cost, self.task_nav_approach_cost_threshold)
+
+        if not self.wait_for_make_plan_idle("detect:%s" % mode):
+            return False, "move_base_active_for_make_plan"
+
+        client = self.get_task_make_plan_client()
+        if client is None:
+            return False, "make_plan_service_unavailable"
+
+        start = self.current_map_pose_for_plan()
+        if start is None:
+            return False, "no_start_pose"
+
+        request = GetPlanRequest()
+        request.start = start
+        request.goal = self.task_goal_pose_for_plan(nav_target)
+        request.tolerance = 0.0
+        try:
+            response = client(request)
+        except Exception as e:
+            self.task_nav_make_plan_client = None
+            return False, "make_plan_failed:%s" % str(e)
+
+        poses = response.plan.poses
+        if len(poses) < 2:
+            return False, "no_plan"
+
+        path_ok, path_info = self.analyze_task_plan_sharp_turns(poses)
+        if not path_ok:
+            return False, "sharp_turn angle=%.1f index=%s" % (
+                path_info.get("max_angle_deg", 0.0),
+                str(path_info.get("sharp_index", None))
+            )
+        return True, "path_ok max_angle=%.1f points=%d" % (
+            path_info.get("max_angle_deg", 0.0), len(poses))
 
     def evaluate_task_approach_goal(self, mode, nav_target, costmap=None, costmap_checked=False):
         if not self.task_nav_approach_filter_costmap or mode == "target":
@@ -1448,33 +1639,69 @@ class navigation_demo:
         left_x = -np.sin(yaw_rad)
         left_y = np.cos(yaw_rad)
         mode = str(mode).strip().lower()
-
-        if mode == "front":
-            offset_x = forward_x * distance
-            offset_y = forward_y * distance
-        elif mode == "left":
-            offset_x = left_x * distance
-            offset_y = left_y * distance
-        elif mode == "right":
-            offset_x = -left_x * distance
-            offset_y = -left_y * distance
-        else:
-            offset_x = -forward_x * distance
-            offset_y = -forward_y * distance
+        diag = 1.0 / np.sqrt(2.0)
+        mode_vectors = {
+            "front": (forward_x, forward_y),
+            "back": (-forward_x, -forward_y),
+            "left": (left_x, left_y),
+            "right": (-left_x, -left_y),
+            "front_left": ((forward_x + left_x) * diag, (forward_y + left_y) * diag),
+            "front_right": ((forward_x - left_x) * diag, (forward_y - left_y) * diag),
+            "back_left": ((-forward_x + left_x) * diag, (-forward_y + left_y) * diag),
+            "back_right": ((-forward_x - left_x) * diag, (-forward_y - left_y) * diag),
+            "left_front": ((forward_x + left_x) * diag, (forward_y + left_y) * diag),
+            "right_front": ((forward_x - left_x) * diag, (forward_y - left_y) * diag),
+            "left_back": ((-forward_x + left_x) * diag, (-forward_y + left_y) * diag),
+            "right_back": ((-forward_x - left_x) * diag, (-forward_y - left_y) * diag),
+        }
+        offset_x, offset_y = mode_vectors.get(mode, mode_vectors["back"])
 
         return [
-            target[0] + offset_x,
-            target[1] + offset_y,
+            target[0] + offset_x * distance,
+            target[1] + offset_y * distance,
             target[2]
         ]
 
-    def make_detection_prealign_goal(self, target):
+    def make_detection_prealign_goal(self, target, point=None):
         """按配置方向生成检测点预对准位姿"""
-        return self.make_offset_goal(
+        goal = self.make_offset_goal(
             target,
             self.detect_prealign_mode,
             self.detect_prealign_distance
         )
+        if point is not None and self.should_capture_detection_at_prealign(point):
+            goal[2], _ = self.detection_yaw_from_xy(
+                point, goal[0], goal[1], goal[2], "prealign_goal")
+        return goal
+
+    def make_detection_prealign_candidates(self, point, target):
+        candidates = []
+        seen = set()
+
+        def add_candidate(mode, distance):
+            mode = str(mode).strip().lower()
+            try:
+                distance = float(distance)
+            except Exception:
+                return
+            if distance <= 0.0:
+                return
+            goal = self.make_offset_goal(target, mode, distance)
+            if self.should_capture_detection_at_prealign(point):
+                goal[2], _ = self.detection_yaw_from_xy(
+                    point, goal[0], goal[1], goal[2], "candidate:%s" % mode)
+            key = (round(goal[0], 3), round(goal[1], 3), round(goal[2], 1))
+            if key in seen:
+                return
+            seen.add(key)
+            candidates.append((mode, goal, distance))
+
+        add_candidate(self.detect_prealign_mode, self.detect_prealign_distance)
+        if self.detect_nav_retry_enabled:
+            for mode in str(self.detect_nav_retry_modes).split(","):
+                if mode.strip():
+                    add_candidate(mode, self.detect_nav_retry_distance)
+        return candidates
 
     def make_final_prealign_goal(self, target):
         """按配置方向生成终点预对准位姿"""
@@ -1484,15 +1711,24 @@ class navigation_demo:
             self.final_prealign_distance
         )
 
-    def get_locked_approach_velocity(self, speed):
+    def get_locked_approach_velocity(self, speed, mode=None):
         """根据预对准方向生成保持当前yaw时的base_link速度"""
-        mode = str(self.detect_prealign_mode).strip().lower()
+        mode = str(mode if mode is not None else self.detect_prealign_mode).strip().lower()
+        diag = 1.0 / np.sqrt(2.0)
         if mode == "front":
             return -speed, 0.0
         if mode == "left":
             return 0.0, -speed
         if mode == "right":
             return 0.0, speed
+        if mode in ["front_left", "left_front"]:
+            return -speed * diag, -speed * diag
+        if mode in ["front_right", "right_front"]:
+            return -speed * diag, speed * diag
+        if mode in ["back_left", "left_back"]:
+            return speed * diag, -speed * diag
+        if mode in ["back_right", "right_back"]:
+            return speed * diag, speed * diag
         return speed, 0.0
 
     def wait_for_odom_yaw(self, timeout=1.0):
@@ -1601,12 +1837,14 @@ class navigation_demo:
         self.stop_movement()
         return False
 
-    def locked_approach_detection_point(self, yaw_deg):
+    def locked_approach_detection_point(self, yaw_deg, mode=None, distance=None):
         """
         从预对准点到拍照点的短距离直行段。
         不再交给move_base，避免TEB在最后0.6m重新优化yaw。
         """
-        distance = self.detect_prealign_distance
+        mode = str(mode if mode is not None else self.detect_prealign_mode).strip().lower()
+        if distance is None:
+            distance = self.detect_prealign_distance
         speed = abs(self.detect_locked_approach_speed)
         if distance <= 0.0 or speed <= 0.0:
             rospy.logwarn("锁yaw靠近参数无效: distance=%.3f speed=%.3f" %
@@ -1619,12 +1857,12 @@ class navigation_demo:
         target_yaw = yaw_deg / 180.0 * pi
         travel_time = distance / speed
         timeout = travel_time + self.detect_locked_approach_timeout_margin
-        cmd_x, cmd_y = self.get_locked_approach_velocity(speed)
+        cmd_x, cmd_y = self.get_locked_approach_velocity(speed, mode=mode)
         start_time = rospy.Time.now()
         rate = rospy.Rate(20)
 
         rospy.loginfo("锁yaw靠近拍照点: mode=%s distance=%.3fm speed=%.3fm/s vx=%.3f vy=%.3f time=%.2fs target=%.1fdeg" %
-                      (self.detect_prealign_mode, distance, speed, cmd_x, cmd_y, travel_time, yaw_deg))
+                      (mode, distance, speed, cmd_x, cmd_y, travel_time, yaw_deg))
         while not rospy.is_shutdown():
             elapsed = (rospy.Time.now() - start_time).to_sec()
             if elapsed >= travel_time:
@@ -1790,6 +2028,54 @@ class navigation_demo:
         """导航过程中实时反馈(无需处理)"""
         self.last_move_base_feedback = feedback
 
+    def is_move_base_active_state(self, state):
+        return state in [
+            GoalStatus.PENDING,
+            GoalStatus.ACTIVE,
+            GoalStatus.PREEMPTING,
+            GoalStatus.RECALLING
+        ]
+
+    def wait_for_move_base_inactive(self, reason="", timeout=None):
+        if timeout is None:
+            timeout = self.move_base_cancel_wait
+        timeout = max(0.0, float(timeout))
+        start_time = rospy.Time.now()
+        rate = rospy.Rate(20)
+        last_state = None
+        while not rospy.is_shutdown():
+            state = self.move_base.get_state()
+            last_state = state
+            if not self.is_move_base_active_state(state):
+                self.last_move_base_state = state
+                rospy.loginfo(
+                    "[MOVE_BASE][WAIT_INACTIVE] reason=%s ok=True state=%s elapsed=%.2fs",
+                    reason, str(state), (rospy.Time.now() - start_time).to_sec()
+                )
+                return True
+            if (rospy.Time.now() - start_time).to_sec() >= timeout:
+                rospy.logwarn(
+                    "[MOVE_BASE][WAIT_INACTIVE] reason=%s ok=False state=%s timeout=%.2fs",
+                    reason, str(last_state), timeout
+                )
+                return False
+            rate.sleep()
+        return False
+
+    def cancel_move_base_goal(self, reason="", final_state=GoalStatus.PREEMPTED,
+                              wait_timeout=None):
+        self.move_base.cancel_goal()
+        self.wait_for_move_base_inactive(reason, wait_timeout)
+        self.last_move_base_state = final_state
+
+    def wait_for_make_plan_idle(self, reason):
+        state = self.move_base.get_state()
+        if not self.is_move_base_active_state(state):
+            return True
+        return self.wait_for_move_base_inactive(
+            "make_plan:%s" % reason,
+            self.move_base_make_plan_idle_wait)
+
     # ---------------- 核心：导航到目标点 ----------------
     def goto(self, p, timeout=60):
         """
@@ -1813,8 +2099,7 @@ class navigation_demo:
         self.move_base.send_goal(goal, self._done_cb, self._active_cb, self._feedback_cb)
         result = self.move_base.wait_for_result(rospy.Duration(timeout))
         if not result:
-            self.move_base.cancel_goal()
-            self.last_move_base_state = GoalStatus.PREEMPTED
+            self.cancel_move_base_goal("goto_timeout", GoalStatus.PREEMPTED)
             rospy.loginfo("导航超时，取消目标")
             return False
         else:
@@ -1873,8 +2158,9 @@ class navigation_demo:
         try:
             while not rospy.is_shutdown():
                 if self.task_nav_plan_fail_cancel_requested:
-                    self.move_base.cancel_goal()
-                    self.last_move_base_state = GoalStatus.PREEMPTED
+                    self.cancel_move_base_goal(
+                        "plan_fail_cancel:%s:%s" % (label, mode),
+                        GoalStatus.PREEMPTED)
                     rospy.logwarn(
                         "[TASK_NAV][PLAN_FAIL_CANCEL] label=%s mode=%s count=%d window=%.2fs best_dist=%s",
                         label, mode,
@@ -1886,8 +2172,9 @@ class navigation_demo:
 
                 elapsed = (rospy.Time.now() - start_time).to_sec()
                 if elapsed > timeout:
-                    self.move_base.cancel_goal()
-                    self.last_move_base_state = GoalStatus.PREEMPTED
+                    self.cancel_move_base_goal(
+                        "timeout_cancel:%s:%s" % (label, mode),
+                        GoalStatus.PREEMPTED)
                     rospy.logwarn(
                         "[TASK_NAV][TIMEOUT_CANCEL] label=%s mode=%s elapsed=%.2fs timeout=%.2fs best_dist=%s",
                         label, mode, elapsed, timeout,
@@ -1905,8 +2192,9 @@ class navigation_demo:
                 if (position_accept_dist is not None
                         and dist is not None
                         and dist <= position_accept_dist):
-                    self.move_base.cancel_goal()
-                    self.last_move_base_state = GoalStatus.SUCCEEDED
+                    self.cancel_move_base_goal(
+                        "position_accept:%s:%s" % (label, mode),
+                        GoalStatus.SUCCEEDED)
                     rospy.loginfo(
                         "[TASK_NAV][POSITION_ACCEPT] label=%s mode=%s dist=%.3f accept=%.3f target=%s",
                         label, mode, dist, position_accept_dist, str(p)
@@ -1926,8 +2214,9 @@ class navigation_demo:
                         best_dist = dist
                         last_progress_time = rospy.Time.now()
                     elif (rospy.Time.now() - last_progress_time).to_sec() > self.task_nav_no_progress_timeout:
-                        self.move_base.cancel_goal()
-                        self.last_move_base_state = GoalStatus.PREEMPTED
+                        self.cancel_move_base_goal(
+                            "no_progress_cancel:%s:%s" % (label, mode),
+                            GoalStatus.PREEMPTED)
                         rospy.logwarn(
                             "[TASK_NAV][NO_PROGRESS_CANCEL] label=%s mode=%s dist=%.3f best_dist=%.3f idle=%.2fs timeout=%.2fs",
                             label, mode, dist, best_dist,
@@ -1942,31 +2231,93 @@ class navigation_demo:
             if slow_applied:
                 self.set_teb_slow_mode(False, "%s:%s" % (label, mode))
 
-        self.move_base.cancel_goal()
-        self.last_move_base_state = GoalStatus.PREEMPTED
+        self.cancel_move_base_goal("goto_task_nav_goal_exit:%s:%s" % (label, mode),
+                                   GoalStatus.PREEMPTED)
         return False
 
     def goto_detection_point(self, point):
         """检测点导航：先用同yaw预对准，再进入原拍照点并短闭环修正yaw"""
         target = goals[point]
         prealign_ok = True
+        selected_mode = self.detect_prealign_mode
+        selected_distance = self.detect_prealign_distance
+        capture_at_current_pose = False
         if self.detect_prealign_enabled and self.detect_prealign_distance > 0.0:
-            prealign_goal = self.make_detection_prealign_goal(target)
-            rospy.loginfo("检测点%s预对准目标: %s" % (point, prealign_goal))
-            prealign_ok = self.goto(prealign_goal, timeout=self.detect_prealign_timeout)
-            if self.detect_yaw_align_at_prealign:
-                self.align_detection_yaw(target[2])
+            prealign_ok = False
+            candidates = self.make_detection_prealign_candidates(point, target)
+            costmap = self.get_global_costmap_for_approach()
+            for attempt, (mode, prealign_goal, distance) in enumerate(candidates):
+                clear, reason = self.evaluate_detection_prealign_goal(
+                    mode, prealign_goal, costmap=costmap)
+                rospy.loginfo(
+                    "[DETECT_NAV][CANDIDATE] point=%s attempt=%d mode=%s distance=%.3f goal=(%.3f,%.3f,%.1f) clear=%s reason=%s",
+                    str(point), attempt + 1, mode, distance,
+                    prealign_goal[0], prealign_goal[1], prealign_goal[2],
+                    str(clear), reason
+                )
+                if not clear:
+                    continue
 
-        if self.detect_locked_final_approach:
+                timeout = self.detect_prealign_timeout if attempt == 0 else self.detect_nav_retry_timeout
+                nav_ok = self.goto_task_nav_goal(
+                    prealign_goal,
+                    timeout=timeout,
+                    label="DETECT_%s_%d" % (str(point), attempt + 1),
+                    mode="detect:%s" % mode,
+                    position_accept_dist=self.detect_nav_accept_dist
+                )
+                nav_reached, nav_dist = self.nav_reached_by_state_and_distance(
+                    nav_ok, prealign_goal, self.detect_nav_accept_dist)
+                rospy.loginfo(
+                    "[DETECT_NAV][ATTEMPT_DONE] point=%s mode=%s ok=%s reached=%s dist=%s accept=%.3f",
+                    str(point), mode, str(nav_ok), str(nav_reached),
+                    "%.3f" % nav_dist if nav_dist is not None else "None",
+                    self.detect_nav_accept_dist
+                )
+                if nav_reached:
+                    prealign_ok = True
+                    selected_mode = mode
+                    selected_distance = distance
+                    capture_at_current_pose = self.should_capture_detection_at_prealign(point)
+                    break
+
+            if self.detect_yaw_align_at_prealign and prealign_ok:
+                prealign_yaw = target[2]
+                if capture_at_current_pose:
+                    prealign_yaw, _ = self.detection_yaw_from_current_pose(
+                        point, target[2], "prealign_current")
+                self.align_detection_yaw(prealign_yaw)
+
+        if capture_at_current_pose:
+            rospy.loginfo(
+                "[DETECT_NAV][CAPTURE_AT_PREALIGN] point=%s mode=%s distance=%.3f reason=dynamic_photo_target",
+                str(point), selected_mode, selected_distance)
+        elif self.detect_locked_final_approach:
             if not prealign_ok:
-                rospy.logwarn("检测点%s预对准未确认成功，仍使用锁yaw靠近，避免再次发送最终点move_base" % point)
-            self.locked_approach_detection_point(target[2])
+                rospy.logwarn("检测点%s预对准未确认成功" % point)
+                if self.detect_skip_capture_on_nav_fail:
+                    rospy.logwarn("[DETECT_NAV][SKIP_CAPTURE] point=%s reason=prealign_failed", str(point))
+                    return False
+            if not self.locked_approach_detection_point(
+                    target[2], mode=selected_mode, distance=selected_distance):
+                if self.detect_skip_capture_on_nav_fail:
+                    rospy.logwarn("[DETECT_NAV][SKIP_CAPTURE] point=%s reason=locked_approach_failed", str(point))
+                    return False
         else:
-            rospy.loginfo("检测点%s原始拍照目标: %s" % (point, target))
-            self.goto(target, timeout=self.detect_final_timeout)
+            final_target = list(target)
+            final_target[2], _ = self.detection_yaw_from_xy(
+                point, final_target[0], final_target[1], final_target[2],
+                "final_goal")
+            rospy.loginfo("检测点%s原始拍照目标: %s" % (point, final_target))
+            nav_ok = self.goto(final_target, timeout=self.detect_final_timeout)
+            if not nav_ok and self.detect_skip_capture_on_nav_fail:
+                rospy.logwarn("[DETECT_NAV][SKIP_CAPTURE] point=%s reason=final_nav_failed", str(point))
+                return False
 
         if self.detect_yaw_align_at_photo:
-            self.align_detection_yaw(target[2])
+            photo_yaw, _ = self.detection_yaw_from_current_pose(
+                point, target[2], "photo_current")
+            self.align_detection_yaw(photo_yaw)
         if self.detect_photo_settle_time > 0:
             rospy.sleep(self.detect_photo_settle_time)
         return True
@@ -1992,7 +2343,12 @@ class navigation_demo:
 
         rospy.loginfo("导航到检测点 → 目标点索引%s" % point)
         # 步骤1：导航到预设检测点
-        self.goto_detection_point(point)
+        detect_nav_ok = self.goto_detection_point(point)
+        if not detect_nav_ok:
+            rospy.logwarn("[DETECT_NAV][MISSION_SKIP] point=%s reason=navigation_failed", str(point))
+            id = 0
+            find_id = 0
+            return False
 
         # 步骤2：调用视觉检测
         detect_result = self.call_fruit_detection_service()
@@ -2019,11 +2375,11 @@ class navigation_demo:
         # 重置标记
         id = 0
         find_id = 0
+        return True
 
     # ---------------- 执行识别 ----------------
     def recognize(self, p):
-        self.mission(p)
-        return True
+        return self.mission(p)
 
     def parse_fixed_task_ids(self):
         """
@@ -2199,9 +2555,14 @@ class navigation_demo:
                           (self.fixed_task_ids, task_numbers))
         else:
             # 执行所有检测点任务
-            for p in points:
-                rospy.loginfo("\n=== 开始处理第%s个检测点 ===" % (1))
-                self.recognize(p)
+            for detect_idx, p in enumerate(points):
+                rospy.loginfo("\n=== 开始处理第%s个检测点 ===" % (detect_idx + 1))
+                detect_ok = self.recognize(p)
+                if not detect_ok and self.detect_require_all_points:
+                    rospy.logerr(
+                        "[DETECT_NAV][ABORT_TASK_PHASE] detect_idx=%d point=%s collected=%s",
+                        detect_idx + 1, str(p), task_numbers)
+                    return False
 
             rospy.loginfo("\n=== 所有检测点处理完成 ===")
             rospy.loginfo("收集到的任务编号: %s" % task_numbers)

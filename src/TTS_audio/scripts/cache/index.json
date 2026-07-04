@@ -1,0 +1,95 @@
+{
+  "items": {
+    "29a6d8df760d727eb0957f0565dc50da33cb4d97": {
+      "category": "task_arrival",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:25:55",
+      "file": "task_arrival/29a6d8df760d727eb0957f0565dc50da33cb4d97.mp3",
+      "hit_count": 1,
+      "last_used_at": "2026-07-05 05:57:16",
+      "text": "已到达任务点49号",
+      "voice_type": "BV001"
+    },
+    "2a81b7c5cf6195de2fc01faea19d22b1ff4caef6": {
+      "category": "detect_clue",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:24:37",
+      "file": "detect_clue/2a81b7c5cf6195de2fc01faea19d22b1ff4caef6.mp3",
+      "hit_count": 1,
+      "last_used_at": "2026-07-05 05:46:20",
+      "text": "已检测第3条线索为49号",
+      "voice_type": "BV001"
+    },
+    "32c3e85a9b846c77fb72ce5b20414a0a28e96f86": {
+      "category": "detect_clue",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:13:53",
+      "file": "detect_clue/32c3e85a9b846c77fb72ce5b20414a0a28e96f86.mp3",
+      "hit_count": 4,
+      "last_used_at": "2026-07-05 05:54:30",
+      "text": "已检测第2条线索为32号",
+      "voice_type": "BV001"
+    },
+    "68e22381941e3a2746fa9fc08e6a1d5f8826aa09": {
+      "category": "detect_clue",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:13:29",
+      "file": "detect_clue/68e22381941e3a2746fa9fc08e6a1d5f8826aa09.mp3",
+      "hit_count": 4,
+      "last_used_at": "2026-07-05 05:54:04",
+      "text": "已检测第1条线索为33号",
+      "voice_type": "BV001"
+    },
+    "979c527d453728e639e8d77ad46604083be2b6ad": {
+      "category": "detect_clue",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:39:59",
+      "file": "detect_clue/979c527d453728e639e8d77ad46604083be2b6ad.mp3",
+      "hit_count": 0,
+      "last_used_at": "2026-07-05 05:39:59",
+      "text": "已检测第4条线索为31号",
+      "voice_type": "BV001"
+    },
+    "a4798ccb0db3ff6142f3d998358a516cb902d624": {
+      "category": "task_arrival",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:25:04",
+      "file": "task_arrival/a4798ccb0db3ff6142f3d998358a516cb902d624.mp3",
+      "hit_count": 0,
+      "last_used_at": "2026-07-05 05:25:04",
+      "text": "已到达任务点33号",
+      "voice_type": "BV001"
+    },
+    "b742468657001661320fdf16a105bea99e072fcc": {
+      "category": "task_arrival",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:25:20",
+      "file": "task_arrival/b742468657001661320fdf16a105bea99e072fcc.mp3",
+      "hit_count": 1,
+      "last_used_at": "2026-07-05 05:56:34",
+      "text": "已到达任务点32号",
+      "voice_type": "BV001"
+    },
+    "dbf5c7ae4718f57d621c7c6f093d23ecabeec6cb": {
+      "category": "detect_clue",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:14:18",
+      "file": "detect_clue/dbf5c7ae4718f57d621c7c6f093d23ecabeec6cb.mp3",
+      "hit_count": 2,
+      "last_used_at": "2026-07-05 05:55:03",
+      "text": "已检测第3条线索为31号",
+      "voice_type": "BV001"
+    },
+    "f42c9041fb4ff467d07d7dc772650860db85172e": {
+      "category": "detect_clue",
+      "cluster": "volcano_tts",
+      "created_at": "2026-07-05 05:55:36",
+      "file": "detect_clue/f42c9041fb4ff467d07d7dc772650860db85172e.mp3",
+      "hit_count": 0,
+      "last_used_at": "2026-07-05 05:55:36",
+      "text": "已检测第4条线索为49号",
+      "voice_type": "BV001"
+    }
+  },
+  "version": 1
+}

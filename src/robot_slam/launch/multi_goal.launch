@@ -59,6 +59,8 @@
       <param name="task_nav_path_filter_enabled" value="true"/>
       <param name="task_nav_path_make_plan_service" value="/move_base/make_plan"/>
       <param name="task_nav_path_make_plan_wait" value="0.5"/>
+      <param name="move_base_cancel_wait" value="1.0"/>
+      <param name="move_base_make_plan_idle_wait" value="1.0"/>
       <param name="task_nav_path_sparse_distance" value="0.06"/>
       <param name="task_nav_path_sharp_turn_threshold_deg" value="65.0"/>
       <param name="task_nav_path_min_endpoint_distance" value="0.20"/>
@@ -127,11 +129,23 @@
       <param name="detect_prealign_mode" value="left"/>
       <param name="detect_prealign_distance" value="0.05"/>
       <param name="detect_prealign_timeout" value="15"/>
+      <param name="detect_nav_retry_enabled" value="true"/>
+      <param name="detect_nav_retry_modes" value="back,back_left,left,front_left,front,front_right,right,back_right"/>
+      <param name="detect_nav_retry_distance" value="0.35"/>
+      <param name="detect_nav_retry_timeout" value="15"/>
+      <param name="detect_nav_accept_dist" value="0.18"/>
+      <param name="detect_skip_capture_on_nav_fail" value="true"/>
+      <param name="detect_require_all_points" value="true"/>
 
       <param name="detect_yaw_align_at_prealign" value="true"/>
       <param name="detect_final_timeout" value="15"/>
       <param name="detect_yaw_align_at_photo" value="true"/>
       <param name="detect_yaw_align_enabled" value="true"/>
+      <!-- 图片/牌子真实map坐标，填了才启用动态朝向。格式: 10:x:y;11:x:y;12:x:y;13:x:y -->
+      <param name="detect_dynamic_yaw_enabled" value="true"/>
+      <param name="detect_dynamic_yaw_capture_at_prealign" value="true"/>
+      <param name="detect_dynamic_yaw_min_distance" value="0.05"/>
+      <param name="detect_photo_target_points" value="10:0.00:1.55;11:1.53:3.10;12:3.10:1.70;13:1.48:0.00"/>
       <param name="detect_yaw_tolerance" value="0.04"/>
       <param name="detect_yaw_align_timeout" value="3.0"/>
       <param name="detect_yaw_kp" value="4.2"/>

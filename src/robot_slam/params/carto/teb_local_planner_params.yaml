@@ -40,7 +40,7 @@ TebLocalPlannerROS:
 
   acc_lim_x: 1.2
   acc_lim_y: 1.2
-  acc_lim_theta: 2.0
+  acc_lim_theta: 1.0
 
 
   ############################################################
