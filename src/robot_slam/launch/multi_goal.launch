@@ -67,6 +67,10 @@
       <param name="parking_phase_global_inflation_radius" value="0.10"/>
       <param name="cruise_global_inflation_radius" value="0.15"/>
       <param name="global_inflation_layer_name" value="move_base/global_costmap/inflation_layer"/>
+      <param name="obstacle_memory_control_enabled" value="true"/>
+      <param name="obstacle_memory_clear_service" value="/move_base/global_costmap/obstacle_memory_layer/clear"/>
+      <param name="obstacle_memory_set_enabled_service" value="/move_base/global_costmap/obstacle_memory_layer/set_enabled"/>
+      <param name="obstacle_memory_service_wait" value="0.5"/>
       <param name="start_escape_turn_enabled" value="true"/>
       <param name="start_escape_turn_speed" value="0.18"/>
       <param name="start_escape_turn_duration" value="1.0"/>

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(robot_slam)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -11,11 +11,17 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  std_srvs
   message_generation
   actionlib_msgs
+  costmap_2d
   geometry_msgs
   nav_msgs
+  pluginlib
+  sensor_msgs
   tf
+  tf2
+  tf2_geometry_msgs
   tf2_ros
   tf2_msgs
   tf_conversions
@@ -121,11 +127,17 @@ catkin_package(
     roscpp
     rospy
     std_msgs
+    std_srvs
     message_runtime
     actionlib_msgs
+    costmap_2d
     geometry_msgs
     nav_msgs
+    pluginlib
+    sensor_msgs
     tf
+    tf2
+    tf2_geometry_msgs
     tf2_ros
     tf2_msgs
     tf_conversions
@@ -156,6 +168,12 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/robot_slam_node.cpp)
+
+add_library(obstacle_memory_layer src/obstacle_memory_layer.cpp)
+add_dependencies(obstacle_memory_layer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(obstacle_memory_layer
+   ${catkin_LIBRARIES}
+)
 
 add_executable(navigate_node src/navigate.cpp)
 add_dependencies(navigate_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

@@ -20,7 +20,7 @@ from sensor_msgs.msg import LaserScan, Imu
 from rosgraph_msgs.msg import Log
 import sys, os, time
 import dynamic_reconfigure.client
-from std_srvs.srv import Trigger, TriggerRequest
+from std_srvs.srv import Trigger, TriggerRequest, SetBool, SetBoolRequest
 # 自定义TTS语音播报服务接口
 from TTS_audio.srv import StringService, StringServiceRequest
 # 精密停车模块
@@ -176,6 +176,16 @@ class navigation_demo:
         self.global_inflation_layer_name = rospy.get_param(
             "~global_inflation_layer_name", "move_base/global_costmap/inflation_layer")
         self.global_inflation_client = None
+        self.obstacle_memory_control_enabled = rospy.get_param("~obstacle_memory_control_enabled", True)
+        self.obstacle_memory_clear_service = rospy.get_param(
+            "~obstacle_memory_clear_service",
+            "/move_base/global_costmap/obstacle_memory_layer/clear")
+        self.obstacle_memory_set_enabled_service = rospy.get_param(
+            "~obstacle_memory_set_enabled_service",
+            "/move_base/global_costmap/obstacle_memory_layer/set_enabled")
+        self.obstacle_memory_service_wait = rospy.get_param("~obstacle_memory_service_wait", 0.5)
+        self.obstacle_memory_clear_client = None
+        self.obstacle_memory_set_enabled_client = None
         self.start_escape_turn_enabled = rospy.get_param("~start_escape_turn_enabled", True)
         self.start_escape_turn_speed = rospy.get_param("~start_escape_turn_speed", 0.18)
         self.start_escape_turn_duration = rospy.get_param("~start_escape_turn_duration", 1.0)
@@ -278,6 +288,94 @@ class navigation_demo:
             self.cruise_global_inflation_radius,
             "return_to_final"
         )
+
+    def wait_for_service_short(self, service_name, reason):
+        try:
+            rospy.wait_for_service(service_name, timeout=self.obstacle_memory_service_wait)
+            return True
+        except Exception as e:
+            rospy.logwarn(
+                "[OBSTACLE_MEMORY][SERVICE_UNAVAILABLE] reason=%s service=%s wait=%.2fs error=%s",
+                reason,
+                service_name,
+                self.obstacle_memory_service_wait,
+                str(e)
+            )
+            return False
+
+    def clear_obstacle_memory(self, reason):
+        if not self.obstacle_memory_control_enabled:
+            rospy.loginfo("[OBSTACLE_MEMORY][CLEAR_SKIP] reason=%s enabled=false", reason)
+            return False
+        if not self.wait_for_service_short(self.obstacle_memory_clear_service, reason):
+            return False
+        try:
+            if self.obstacle_memory_clear_client is None:
+                self.obstacle_memory_clear_client = rospy.ServiceProxy(
+                    self.obstacle_memory_clear_service, Trigger)
+            response = self.obstacle_memory_clear_client(TriggerRequest())
+            self.global_costmap = None
+            rospy.loginfo(
+                "[OBSTACLE_MEMORY][CLEAR] reason=%s ok=%s msg=%s",
+                reason,
+                str(response.success),
+                response.message
+            )
+            return response.success
+        except Exception as e:
+            self.obstacle_memory_clear_client = None
+            rospy.logwarn(
+                "[OBSTACLE_MEMORY][CLEAR_FAILED] reason=%s service=%s error=%s",
+                reason,
+                self.obstacle_memory_clear_service,
+                str(e)
+            )
+            return False
+
+    def set_obstacle_memory_enabled(self, enabled, reason):
+        if not self.obstacle_memory_control_enabled:
+            rospy.loginfo(
+                "[OBSTACLE_MEMORY][SET_SKIP] reason=%s target_enabled=%s control_enabled=false",
+                reason,
+                str(enabled)
+            )
+            return False
+        if not self.wait_for_service_short(self.obstacle_memory_set_enabled_service, reason):
+            return False
+        try:
+            if self.obstacle_memory_set_enabled_client is None:
+                self.obstacle_memory_set_enabled_client = rospy.ServiceProxy(
+                    self.obstacle_memory_set_enabled_service, SetBool)
+            request = SetBoolRequest()
+            request.data = bool(enabled)
+            response = self.obstacle_memory_set_enabled_client(request)
+            self.global_costmap = None
+            rospy.loginfo(
+                "[OBSTACLE_MEMORY][SET] reason=%s target_enabled=%s ok=%s msg=%s",
+                reason,
+                str(enabled),
+                str(response.success),
+                response.message
+            )
+            return response.success
+        except Exception as e:
+            self.obstacle_memory_set_enabled_client = None
+            rospy.logwarn(
+                "[OBSTACLE_MEMORY][SET_FAILED] reason=%s target_enabled=%s service=%s error=%s",
+                reason,
+                str(enabled),
+                self.obstacle_memory_set_enabled_service,
+                str(e)
+            )
+            return False
+
+    def disable_obstacle_memory_for_parking(self, reason):
+        self.set_obstacle_memory_enabled(False, reason)
+        self.clear_obstacle_memory(reason + "_clear")
+
+    def enable_obstacle_memory_after_parking(self, reason):
+        self.clear_obstacle_memory(reason + "_clear")
+        self.set_obstacle_memory_enabled(True, reason)
 
     def odom_callback(self, msg):
         """从里程计提取当前航向角"""
@@ -1668,8 +1766,10 @@ class navigation_demo:
         # 按线索导航
         self.set_parking_phase_costmap()
         try:
+            self.enable_obstacle_memory_after_parking("task_nav_start")
             self.go_to_task_positions()
         finally:
+            self.disable_obstacle_memory_for_parking("task_phase_end")
             self.restore_cruise_costmap()
 
         # 终点按检测点思路处理：先到安全预对准点，再对齐yaw，最后交给激光闭环贴边。

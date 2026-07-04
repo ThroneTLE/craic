@@ -1,0 +1,9 @@
+<library path="lib/libobstacle_memory_layer">
+  <class name="robot_slam/ObstacleMemoryLayer"
+         type="robot_slam::ObstacleMemoryLayer"
+         base_class_type="costmap_2d::Layer">
+    <description>
+      Short-term obstacle memory layer for global costmap planning.
+    </description>
+  </class>
+</library>

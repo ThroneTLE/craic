@@ -12,6 +12,43 @@ global_costmap:
   # 小场地建议比 0.1 更细
   resolution: 0.02
 
-  # 全局规划用较大的膨胀，让全局路径更远离墙和障碍边缘。
-  inflation_radius: 0.18
-  cost_scaling_factor: 3.0
+  plugins:
+    - {name: static_layer, type: "costmap_2d::StaticLayer"}
+    - {name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
+    - {name: obstacle_memory_layer, type: "robot_slam/ObstacleMemoryLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+
+  static_layer:
+    map_topic: /map
+    subscribe_to_updates: false
+
+  obstacle_layer:
+    observation_sources: scan
+    scan:
+      sensor_frame: laser_link
+      data_type: LaserScan
+      topic: /scan_filtered
+      marking: true
+      clearing: true
+      expected_update_rate: 0.0
+      obstacle_range: 3.0
+      raytrace_range: 3.5
+
+  obstacle_memory_layer:
+    enabled: false
+    scan_topic: /scan_filtered
+    global_frame: map
+    memory_resolution: 0.02
+    decay_time: 180.0
+    min_hits: 2
+    max_range: 3.0
+    clear_robot_radius: 0.28
+    bounds_padding: 0.35
+    max_cells: 8000
+    publish_cloud: true
+    cloud_topic: /scan_obstacle_memory
+
+  inflation_layer:
+    # 全局规划用较大的膨胀，让全局路径更远离墙和障碍边缘。
+    inflation_radius: 0.18
+    cost_scaling_factor: 3.0
