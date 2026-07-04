@@ -53,6 +53,8 @@
       <param name="task_nav_approach_reject_unknown" value="true"/>
       <param name="task_nav_approach_fallback_to_target" value="false"/>
       <param name="task_nav_target_accept_yaw" value="0.5"/>
+      <param name="task_nav_flexible_yaw_enabled" value="true"/>
+      <param name="task_nav_flexible_yaw_candidates" value="0,90,180,-90"/>
       <param name="task_nav_approach_score_radius" value="0.25"/>
       <param name="task_nav_no_progress_enabled" value="true"/>
       <param name="task_nav_no_progress_timeout" value="3.0"/>

@@ -154,6 +154,11 @@ class navigation_demo:
         self.task_nav_approach_costmap_wait = rospy.get_param("~task_nav_approach_costmap_wait", 0.5)
         self.task_nav_approach_fallback_to_target = rospy.get_param("~task_nav_approach_fallback_to_target", False)
         self.task_nav_target_accept_yaw = rospy.get_param("~task_nav_target_accept_yaw", 0.5)
+        self.task_nav_flexible_yaw_enabled = rospy.get_param("~task_nav_flexible_yaw_enabled", True)
+        self.task_nav_flexible_yaw_candidates_param = rospy.get_param(
+            "~task_nav_flexible_yaw_candidates", "0,90,180,-90")
+        self.task_nav_flexible_yaw_candidates = self.parse_yaw_candidates(
+            self.task_nav_flexible_yaw_candidates_param)
         self.task_nav_approach_score_radius = rospy.get_param("~task_nav_approach_score_radius", 0.20)
         self.task_nav_no_progress_enabled = rospy.get_param("~task_nav_no_progress_enabled", True)
         self.task_nav_no_progress_timeout = rospy.get_param("~task_nav_no_progress_timeout", 3.0)
@@ -289,6 +294,87 @@ class navigation_demo:
         while angle < -np.pi:
             angle += 2.0 * np.pi
         return angle
+
+    def normalize_angle_deg(self, angle):
+        """将角度归一化到(-180, 180]，让270度等价为-90度。"""
+        while angle > 180.0:
+            angle -= 360.0
+        while angle <= -180.0:
+            angle += 360.0
+        return angle
+
+    def yaw_diff_deg(self, a, b):
+        return abs(self.normalize_angle((a - b) / 180.0 * pi) * 180.0 / pi)
+
+    def parse_yaw_candidates(self, value):
+        candidates = []
+        seen = set()
+        for item in str(value).split(","):
+            item = item.strip()
+            if not item:
+                continue
+            try:
+                yaw = self.normalize_angle_deg(float(item))
+            except ValueError:
+                rospy.logwarn("[TASK_NAV][FLEX_YAW_BAD_CANDIDATE] value=%s", item)
+                continue
+            key = round(yaw, 3)
+            if key in seen:
+                continue
+            seen.add(key)
+            candidates.append(yaw)
+        if not candidates:
+            rospy.logwarn(
+                "[TASK_NAV][FLEX_YAW_NO_CANDIDATES] raw=%s fallback=0,90,180,-90",
+                str(value)
+            )
+            candidates = [0.0, 90.0, 180.0, -90.0]
+        return candidates
+
+    def select_task_flexible_yaw(self, target):
+        original_yaw = target[2]
+        if (not self.task_nav_flexible_yaw_enabled
+                or len(self.task_nav_flexible_yaw_candidates) <= 0):
+            rospy.loginfo(
+                "[TASK_NAV][FLEX_YAW_DISABLED] original_yaw=%.1f selected_yaw=%.1f",
+                original_yaw, original_yaw
+            )
+            return original_yaw
+
+        if self.odom_received:
+            current_yaw_deg = self.current_yaw * 180.0 / pi
+            candidates = sorted(
+                self.task_nav_flexible_yaw_candidates,
+                key=lambda yaw: (
+                    self.yaw_diff_deg(yaw, current_yaw_deg),
+                    self.yaw_diff_deg(yaw, original_yaw)
+                )
+            )
+            selected_yaw = candidates[0]
+            rospy.loginfo(
+                "[TASK_NAV][FLEX_YAW_SELECTED] reason=current_odom current_yaw=%.1f original_yaw=%.1f selected_yaw=%.1f candidates=%s diff_current=%.1f diff_original=%.1f",
+                current_yaw_deg,
+                original_yaw,
+                selected_yaw,
+                ",".join(["%.1f" % yaw for yaw in self.task_nav_flexible_yaw_candidates]),
+                self.yaw_diff_deg(selected_yaw, current_yaw_deg),
+                self.yaw_diff_deg(selected_yaw, original_yaw)
+            )
+            return selected_yaw
+
+        candidates = sorted(
+            self.task_nav_flexible_yaw_candidates,
+            key=lambda yaw: self.yaw_diff_deg(yaw, original_yaw)
+        )
+        selected_yaw = candidates[0]
+        rospy.logwarn(
+            "[TASK_NAV][FLEX_YAW_SELECTED] reason=odom_unavailable original_yaw=%.1f selected_yaw=%.1f candidates=%s diff_original=%.1f",
+            original_yaw,
+            selected_yaw,
+            ",".join(["%.1f" % yaw for yaw in self.task_nav_flexible_yaw_candidates]),
+            self.yaw_diff_deg(selected_yaw, original_yaw)
+        )
+        return selected_yaw
 
     def log_nav_state(self, label, target=None):
         if target is None:
@@ -547,21 +633,31 @@ class navigation_demo:
     def goto_task_approach(self, target, timeout, label, skipped_modes=None):
         mode, nav_target = self.select_task_approach_goal(target, skipped_modes)
         if nav_target is None:
-            return False, False, None, None
+            return False, False, None, None, None
         rospy.loginfo("[TASK_NAV][TRY_%s] mode=%s nav_target=%s", label, mode, nav_target)
-        nav_ok = self.goto_task_nav_goal(nav_target, timeout=timeout, label=label, mode=mode)
         accept_dist = self.task_nav_accept_dist if mode == "target" else self.task_nav_approach_accept_dist
+        nav_ok = self.goto_task_nav_goal(
+            nav_target,
+            timeout=timeout,
+            label=label,
+            mode=mode,
+            position_accept_dist=accept_dist
+        )
         nav_reached, approach_dist = self.nav_reached_by_state_and_distance(nav_ok, nav_target, accept_dist)
         nav_dist = self.distance_to_goal_xy(target)
+        selected_yaw_deg = None
         if nav_reached:
+            selected_yaw_deg = self.select_task_flexible_yaw(target)
             yaw_err = self.yaw_error_to_goal(target)
             rospy.loginfo(
-                "[TASK_NAV][REACHED_BY_POSITION] mode=%s approach_dist=%s target_dist=%s accept=%.3f yaw_err=%.3f",
+                "[TASK_NAV][REACHED_BY_POSITION] mode=%s approach_dist=%s target_dist=%s accept=%.3f yaw_err=%.3f original_yaw=%.1f selected_yaw=%.1f",
                 mode,
                 "%.3f" % approach_dist if approach_dist is not None else "None",
                 "%.3f" % nav_dist if nav_dist is not None else "None",
                 accept_dist,
-                yaw_err
+                yaw_err,
+                target[2],
+                selected_yaw_deg
             )
         if mode != "target" and nav_ok and not nav_reached:
             rospy.logwarn(
@@ -571,13 +667,14 @@ class navigation_demo:
                 self.task_nav_approach_accept_dist
             )
         rospy.loginfo(
-            "[TASK_NAV][TRY_%s_DONE] mode=%s ok=%s target_dist=%s approach_dist=%s reached=%s state=%s",
+            "[TASK_NAV][TRY_%s_DONE] mode=%s ok=%s target_dist=%s approach_dist=%s reached=%s state=%s selected_yaw=%s",
             label, mode, str(nav_ok),
             "%.3f" % nav_dist if nav_dist is not None else "None",
             "%.3f" % approach_dist if approach_dist is not None else "None",
-            str(nav_reached), str(self.last_move_base_state)
+            str(nav_reached), str(self.last_move_base_state),
+            "%.1f" % selected_yaw_deg if selected_yaw_deg is not None else "None"
         )
-        return nav_ok, nav_reached, nav_dist, mode
+        return nav_ok, nav_reached, nav_dist, mode, selected_yaw_deg
 
     def mark_failed_approach_mode(self, idx, task_id, mode, failed_approach_modes):
         if mode is None:
@@ -595,6 +692,7 @@ class navigation_demo:
         nav_reached = False
         nav_dist = None
         nav_mode = None
+        selected_yaw_deg = None
         escaped_after_abort = False
         attempt = 0
 
@@ -603,15 +701,16 @@ class navigation_demo:
             label = "MAIN" if attempt == 1 else "RETRY_%d" % (attempt - 1)
             timeout = self.task_nav_timeout if attempt == 1 else self.task_nav_retry_timeout
             nav_start_time = rospy.Time.now()
-            nav_ok, nav_reached, nav_dist, nav_mode = self.goto_task_approach(
+            nav_ok, nav_reached, nav_dist, nav_mode, selected_yaw_deg = self.goto_task_approach(
                 target, timeout, label, failed_approach_modes)
             rospy.loginfo(
-                "[TASK_TIME][NAV_ATTEMPT] idx=%d task_id=%d label=%s dt=%.2fs ok=%s target_dist=%s reached=%s state=%s mode=%s",
+                "[TASK_TIME][NAV_ATTEMPT] idx=%d task_id=%d label=%s dt=%.2fs ok=%s target_dist=%s reached=%s state=%s mode=%s selected_yaw=%s",
                 idx + 1, task_id, label,
                 (rospy.Time.now() - nav_start_time).to_sec(),
                 str(nav_ok),
                 "%.3f" % nav_dist if nav_dist is not None else "None",
-                str(nav_reached), str(self.last_move_base_state), str(nav_mode)
+                str(nav_reached), str(self.last_move_base_state), str(nav_mode),
+                "%.1f" % selected_yaw_deg if selected_yaw_deg is not None else "None"
             )
 
             if nav_reached:
@@ -651,7 +750,7 @@ class navigation_demo:
                 ",".join(sorted(failed_approach_modes))
             )
 
-        return nav_ok, nav_reached, nav_dist, nav_mode
+        return nav_ok, nav_reached, nav_dist, nav_mode, selected_yaw_deg
 
     def should_force_escape_after_approach(self, parking, approach_nav_used):
         if not self.force_escape_after_approach_nav or not approach_nav_used:
@@ -1195,14 +1294,15 @@ class navigation_demo:
                           (p, state))
             return False
 
-    def goto_task_nav_goal(self, p, timeout=60, label="", mode=""):
+    def goto_task_nav_goal(self, p, timeout=60, label="", mode="", position_accept_dist=None):
         """
         任务点导航专用：在常规 timeout 外，检测规划失败和目标距离长时间没有变近。
         这样目标点在墙里/局部规划卡住时，可以更快切换到 approach 或下一个 approach。
         """
         rospy.loginfo(
-            "[TASK_NAV][GOTO_START] label=%s mode=%s target=%s timeout=%.1fs no_progress=%s no_progress_timeout=%.1fs min_delta=%.3f",
+            "[TASK_NAV][GOTO_START] label=%s mode=%s target=%s timeout=%.1fs position_accept=%s no_progress=%s no_progress_timeout=%.1fs min_delta=%.3f",
             label, mode, str(p), timeout,
+            "%.3f" % position_accept_dist if position_accept_dist is not None else "None",
             str(self.task_nav_no_progress_enabled),
             self.task_nav_no_progress_timeout,
             self.task_nav_no_progress_min_delta
@@ -1261,27 +1361,41 @@ class navigation_demo:
                     self.last_move_base_state = state
                     rospy.loginfo("[TASK_NAV][GOTO_DONE] label=%s mode=%s state=SUCCEEDED", label, mode)
                     return True
+
+                dist = self.distance_to_goal_xy(p)
+                if (position_accept_dist is not None
+                        and dist is not None
+                        and dist <= position_accept_dist):
+                    self.move_base.cancel_goal()
+                    self.last_move_base_state = GoalStatus.SUCCEEDED
+                    rospy.loginfo(
+                        "[TASK_NAV][POSITION_ACCEPT] label=%s mode=%s dist=%.3f accept=%.3f target=%s",
+                        label, mode, dist, position_accept_dist, str(p)
+                    )
+                    return True
+
                 if state in [GoalStatus.ABORTED, GoalStatus.REJECTED, GoalStatus.PREEMPTED, GoalStatus.RECALLED]:
                     self.last_move_base_state = state
-                    rospy.logwarn("[TASK_NAV][GOTO_FAILED_STATE] label=%s mode=%s state=%s", label, mode, state)
+                    rospy.logwarn("[TASK_NAV][GOTO_FAILED_STATE] label=%s mode=%s state=%s dist=%s accept=%s",
+                                  label, mode, state,
+                                  "%.3f" % dist if dist is not None else "None",
+                                  "%.3f" % position_accept_dist if position_accept_dist is not None else "None")
                     return False
 
-                if self.task_nav_no_progress_enabled:
-                    dist = self.distance_to_goal_xy(p)
-                    if dist is not None:
-                        if best_dist is None or dist < best_dist - self.task_nav_no_progress_min_delta:
-                            best_dist = dist
-                            last_progress_time = rospy.Time.now()
-                        elif (rospy.Time.now() - last_progress_time).to_sec() > self.task_nav_no_progress_timeout:
-                            self.move_base.cancel_goal()
-                            self.last_move_base_state = GoalStatus.PREEMPTED
-                            rospy.logwarn(
-                                "[TASK_NAV][NO_PROGRESS_CANCEL] label=%s mode=%s dist=%.3f best_dist=%.3f idle=%.2fs timeout=%.2fs",
-                                label, mode, dist, best_dist,
-                                (rospy.Time.now() - last_progress_time).to_sec(),
-                                self.task_nav_no_progress_timeout
-                            )
-                            return False
+                if self.task_nav_no_progress_enabled and dist is not None:
+                    if best_dist is None or dist < best_dist - self.task_nav_no_progress_min_delta:
+                        best_dist = dist
+                        last_progress_time = rospy.Time.now()
+                    elif (rospy.Time.now() - last_progress_time).to_sec() > self.task_nav_no_progress_timeout:
+                        self.move_base.cancel_goal()
+                        self.last_move_base_state = GoalStatus.PREEMPTED
+                        rospy.logwarn(
+                            "[TASK_NAV][NO_PROGRESS_CANCEL] label=%s mode=%s dist=%.3f best_dist=%.3f idle=%.2fs timeout=%.2fs",
+                            label, mode, dist, best_dist,
+                            (rospy.Time.now() - last_progress_time).to_sec(),
+                            self.task_nav_no_progress_timeout
+                        )
+                        return False
 
                 rate.sleep()
         finally:
@@ -1431,7 +1545,7 @@ class navigation_demo:
                 # 导航到线索对应的任务点 (5s 超时)
                 target = goals[task_id]
                 self.log_nav_state("TASK_NAV_START_%d" % task_id, target)
-                nav_ok, nav_reached, nav_dist, nav_mode = self.navigate_task_with_all_approaches(
+                nav_ok, nav_reached, nav_dist, nav_mode, selected_yaw_deg = self.navigate_task_with_all_approaches(
                     idx, task_id, target, last_parking, last_task_id)
                 if not nav_reached:
                     rospy.logwarn(
@@ -1446,6 +1560,12 @@ class navigation_demo:
                     continue
                 approach_nav_used = nav_mode not in [None, "target"]
                 self.log_nav_state("TASK_NAV_DONE_%d" % task_id, target)
+                if selected_yaw_deg is None:
+                    selected_yaw_deg = target[2]
+                    rospy.logwarn(
+                        "[TASK_NAV][FLEX_YAW_FALLBACK_ORIGINAL] idx=%d task_id=%d original_yaw=%.1f",
+                        idx + 1, task_id, target[2]
+                    )
 
                 if (nav_mode == "target" and nav_dist is not None
                         and nav_dist <= self.task_nav_direct_done_dist):
@@ -1465,12 +1585,17 @@ class navigation_demo:
                               idx + 1, task_id)
 
                 # 启动精密停车
-                rospy.loginfo("move_base 到达任务点 %d，启动精密停车 (x=%.3f y=%.3f yaw=%.1f)..." % (task_id, target[0], target[1], target[2]))
-                rospy.loginfo("[PARK_TASK][START] idx=%d task_id=%d target=(%.3f, %.3f, %.1f)",
-                              idx + 1, task_id, target[0], target[1], target[2])
+                rospy.loginfo("move_base 到达任务点 %d，启动精密停车 (x=%.3f y=%.3f original_yaw=%.1f selected_yaw=%.1f)..." %
+                              (task_id, target[0], target[1], target[2], selected_yaw_deg))
+                rospy.loginfo("[PARK_TASK][START] idx=%d task_id=%d target=(%.3f, %.3f, %.1f) selected_yaw=%.1f",
+                              idx + 1, task_id, target[0], target[1], target[2], selected_yaw_deg)
 
                 parking_init_start_time = rospy.Time.now()
-                parking = AutoSinglePointTest(target_x=target[0], target_y=target[1], target_yaw_deg=target[2])
+                parking = AutoSinglePointTest(
+                    target_x=target[0],
+                    target_y=target[1],
+                    target_yaw_deg=selected_yaw_deg
+                )
                 rospy.loginfo("[TASK_TIME][PARK_INIT] idx=%d task_id=%d dt=%.2fs",
                               idx + 1, task_id,
                               (rospy.Time.now() - parking_init_start_time).to_sec())

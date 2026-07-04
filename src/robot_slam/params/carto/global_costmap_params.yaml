@@ -13,5 +13,5 @@ global_costmap:
   resolution: 0.02
 
   # 全局规划用较大的膨胀，让全局路径更远离墙和障碍边缘。
-  inflation_radius: 0.15
+  inflation_radius: 0.18
   cost_scaling_factor: 3.0
