@@ -13,8 +13,7 @@
 
     <node pkg="tf" type="static_transform_publisher" name="base_imu_to_base_link"
         args="0.04 0 0 0 0  0 /base_link /imu_link 40" />  
-    <node pkg="tf" type="static_transform_publisher" name="base_laser_to_base_link"
-        args="0.06 0 0.19 0 0 0 /laser_link /imu_link 40" />  
+    <!-- laser_link is published by robot_state_publisher from the URDF. -->
 
 
     <node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_madgwick" output="screen" respawn="false" >

@@ -45,6 +45,22 @@
       <!-- 调试/固定任务点模式：true时跳过10-13检测扫描，直接按fixed_task_ids泊车 -->
       <param name="use_fixed_task_positions" value="false"/>
       <param name="fixed_task_ids" value="31,49,50,33"/>
+      <!-- 任务点执行顺序优化：识别顺序不变，任务阶段用 make_plan + costmap 选无锐角且总路径最短的顺序 -->
+      <param name="task_nav_optimize_order" value="true"/>
+      <param name="task_nav_order_path_quality_enabled" value="true"/>
+      <param name="task_nav_order_pin_nearest_first" value="false"/>
+      <param name="task_nav_order_pin_nearest_final_last" value="false"/>
+      <param name="task_nav_order_use_final_prealign" value="true"/>
+      <param name="task_nav_order_final_goal_index" value="16"/>
+      <param name="task_nav_order_max_bruteforce" value="7"/>
+      <param name="task_nav_order_use_approach_candidates" value="true"/>
+      <param name="task_nav_order_reject_no_plan" value="true"/>
+      <param name="task_nav_order_reject_sharp_turns" value="true"/>
+      <param name="task_nav_order_path_cost_weight" value="0.004"/>
+      <param name="task_nav_order_path_max_cost_weight" value="0.002"/>
+      <param name="task_nav_order_unknown_penalty" value="0.08"/>
+      <param name="task_nav_order_no_plan_penalty" value="1000.0"/>
+      <param name="task_nav_order_sharp_turn_penalty" value="20.0"/>
 
 
       <param name="task_nav_timeout" value="18.0"/>
@@ -57,6 +73,7 @@
       <param name="task_nav_approach_modes" value="back,back_left,left,front_left,front,front_right,right,back_right"/>
       <param name="task_nav_approach_filter_costmap" value="true"/>
       <param name="task_nav_approach_costmap_topic" value="/move_base/global_costmap/costmap"/>
+      <param name="task_nav_approach_costmap_wait" value="1.5"/>
       <param name="task_nav_approach_cost_threshold" value="98"/>
       <param name="task_nav_approach_reject_unknown" value="true"/>
       <param name="task_nav_approach_fallback_to_target" value="false"/>

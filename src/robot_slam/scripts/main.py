@@ -20,7 +20,7 @@ from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import LaserScan, Imu
 from rosgraph_msgs.msg import Log
-import sys, os, time, json, shutil, subprocess, threading
+import sys, os, time, json, shutil, subprocess, threading, itertools
 try:
     import Queue as queue_module
 except ImportError:
@@ -185,6 +185,37 @@ class navigation_demo:
         # 11. 调试/比赛固定任务点：跳过前置视觉扫描，直接进入任务点泊车
         self.use_fixed_task_positions = rospy.get_param("~use_fixed_task_positions", False)
         self.fixed_task_ids = rospy.get_param("~fixed_task_ids", "")
+        self.task_nav_optimize_order = rospy.get_param("~task_nav_optimize_order", True)
+        self.task_nav_order_pin_nearest_first = rospy.get_param(
+            "~task_nav_order_pin_nearest_first", False)
+        self.task_nav_order_pin_nearest_final_last = rospy.get_param(
+            "~task_nav_order_pin_nearest_final_last", False)
+        self.task_nav_order_use_final_prealign = rospy.get_param(
+            "~task_nav_order_use_final_prealign", True)
+        self.task_nav_order_final_goal_index = int(rospy.get_param(
+            "~task_nav_order_final_goal_index", 16))
+        self.task_nav_order_max_bruteforce = int(rospy.get_param(
+            "~task_nav_order_max_bruteforce", 7))
+        self.task_nav_order_turn_penalty_weight = rospy.get_param(
+            "~task_nav_order_turn_penalty_weight", 0.0)
+        self.task_nav_order_path_quality_enabled = rospy.get_param(
+            "~task_nav_order_path_quality_enabled", True)
+        self.task_nav_order_use_approach_candidates = rospy.get_param(
+            "~task_nav_order_use_approach_candidates", True)
+        self.task_nav_order_reject_no_plan = rospy.get_param(
+            "~task_nav_order_reject_no_plan", True)
+        self.task_nav_order_reject_sharp_turns = rospy.get_param(
+            "~task_nav_order_reject_sharp_turns", True)
+        self.task_nav_order_path_cost_weight = rospy.get_param(
+            "~task_nav_order_path_cost_weight", 0.004)
+        self.task_nav_order_path_max_cost_weight = rospy.get_param(
+            "~task_nav_order_path_max_cost_weight", 0.002)
+        self.task_nav_order_unknown_penalty = rospy.get_param(
+            "~task_nav_order_unknown_penalty", 0.08)
+        self.task_nav_order_no_plan_penalty = rospy.get_param(
+            "~task_nav_order_no_plan_penalty", 1000.0)
+        self.task_nav_order_sharp_turn_penalty = rospy.get_param(
+            "~task_nav_order_sharp_turn_penalty", 20.0)
         self.final_nav_timeout = rospy.get_param("~final_nav_timeout", 10.0)
         self.final_prealign_enabled = rospy.get_param("~final_prealign_enabled", True)
         self.final_prealign_mode = rospy.get_param("~final_prealign_mode", "back")
@@ -805,7 +836,7 @@ class navigation_demo:
         target_yaw = target[2] / 180.0 * pi
         return self.normalize_angle(target_yaw - self.current_yaw)
 
-    def make_task_approach_goals(self, target):
+    def make_task_approach_goals(self, target, log_candidates=True):
         """生成给 move_base 使用的多个墙外预到达点，泊车仍使用原目标点。"""
         if self.task_nav_approach_offset <= 0.0:
             return [("target", list(target))]
@@ -849,12 +880,13 @@ class navigation_demo:
                 continue
             seen.add(key)
             goals_out.append((mode, approach))
-            rospy.loginfo(
-                "[TASK_NAV][APPROACH_CANDIDATE] mode=%s target=(%.3f,%.3f,%.1f) approach=(%.3f,%.3f,%.1f) offset=%.3f",
-                mode, target[0], target[1], target[2],
-                approach[0], approach[1], approach[2],
-                self.task_nav_approach_offset
-            )
+            if log_candidates:
+                rospy.loginfo(
+                    "[TASK_NAV][APPROACH_CANDIDATE] mode=%s target=(%.3f,%.3f,%.1f) approach=(%.3f,%.3f,%.1f) offset=%.3f",
+                    mode, target[0], target[1], target[2],
+                    approach[0], approach[1], approach[2],
+                    self.task_nav_approach_offset
+                )
 
         goals_out.append(("target", list(target)))
         return goals_out
@@ -1070,7 +1102,7 @@ class navigation_demo:
             len(poses)
         ), info
 
-    def analyze_task_plan_sharp_turns(self, poses):
+    def analyze_task_plan_sharp_turns(self, poses, log_warning=True):
         sparse = []
         path_s = 0.0
         last_x = poses[0].pose.position.x
@@ -1129,13 +1161,14 @@ class navigation_demo:
 
         transition_goal = self.transition_goal_before_path_index(
             poses, max_index, self.task_nav_transition_distance_before_corner)
-        rospy.logwarn(
-            "[TASK_NAV][PATH_SHARP_TURN] angle=%.1fdeg index=%s transition=%s threshold=%.1fdeg",
-            max_angle_deg,
-            str(max_index),
-            str(transition_goal),
-            self.task_nav_path_sharp_turn_threshold_deg
-        )
+        if log_warning:
+            rospy.logwarn(
+                "[TASK_NAV][PATH_SHARP_TURN] angle=%.1fdeg index=%s transition=%s threshold=%.1fdeg",
+                max_angle_deg,
+                str(max_index),
+                str(transition_goal),
+                self.task_nav_path_sharp_turn_threshold_deg
+            )
         return False, {
             "max_angle_deg": max_angle_deg,
             "transition_goal": transition_goal,
@@ -3058,6 +3091,633 @@ class navigation_demo:
 
         return parsed_tasks
 
+    def task_id_to_xy(self, task_id):
+        if not (1 <= int(task_id) <= 9):
+            return None
+        if "goals" not in globals() or int(task_id) >= len(goals):
+            return None
+        target = goals[int(task_id)]
+        return float(target[0]), float(target[1])
+
+    def current_xy_for_task_order(self):
+        pose = self.current_map_pose_for_plan()
+        if pose is None:
+            return None
+        return float(pose.pose.position.x), float(pose.pose.position.y)
+
+    def final_xy_for_task_order(self):
+        final_target = self.final_target_for_task_order()
+        if final_target is None:
+            return None
+        return float(final_target[0]), float(final_target[1])
+
+    def final_target_for_task_order(self):
+        if "goals" not in globals() or self.task_nav_order_final_goal_index >= len(goals):
+            return None
+        final_target = goals[self.task_nav_order_final_goal_index]
+        if (self.task_nav_order_use_final_prealign
+                and self.final_prealign_enabled
+                and self.final_prealign_distance > 0.0):
+            final_target = self.make_final_prealign_goal(final_target)
+        return list(final_target)
+
+    def xy_distance(self, a, b):
+        return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+
+    def pose_stamped_from_nav_target(self, nav_target):
+        return self.task_goal_pose_for_plan(nav_target)
+
+    def pose_key_for_order(self, pose):
+        yaw = 0.0
+        try:
+            quat = [
+                pose.pose.orientation.x,
+                pose.pose.orientation.y,
+                pose.pose.orientation.z,
+                pose.pose.orientation.w
+            ]
+            yaw = euler_from_quaternion(quat)[2] * 180.0 / pi
+        except Exception:
+            yaw = 0.0
+        return (
+            round(float(pose.pose.position.x), 3),
+            round(float(pose.pose.position.y), 3),
+            round(yaw, 1)
+        )
+
+    def plan_path_length(self, poses):
+        if len(poses) < 2:
+            return 0.0
+        length = 0.0
+        for i in range(1, len(poses)):
+            x0 = poses[i - 1].pose.position.x
+            y0 = poses[i - 1].pose.position.y
+            x1 = poses[i].pose.position.x
+            y1 = poses[i].pose.position.y
+            length += np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+        return length
+
+    def costmap_path_score(self, costmap, poses):
+        if costmap is None or len(poses) <= 0:
+            return {
+                "avg_cost": 0.0,
+                "max_cost": 0,
+                "unknown_count": 0,
+                "blocked_count": 0,
+                "blocked": False
+            }
+
+        total_cost = 0.0
+        count = 0
+        max_cost = 0
+        unknown_count = 0
+        blocked_count = 0
+        for pose in poses:
+            cost, detail = self.costmap_cost_at(
+                costmap,
+                pose.pose.position.x,
+                pose.pose.position.y)
+            if cost is None or cost < 0:
+                unknown_count += 1
+                if self.task_nav_approach_reject_unknown:
+                    blocked_count += 1
+                cost = 100
+            elif cost > self.task_nav_approach_cost_threshold:
+                blocked_count += 1
+            max_cost = max(max_cost, int(cost))
+            total_cost += float(max(0, int(cost)))
+            count += 1
+
+        avg_cost = total_cost / float(count) if count > 0 else 0.0
+        return {
+            "avg_cost": avg_cost,
+            "max_cost": max_cost,
+            "unknown_count": unknown_count,
+            "blocked_count": blocked_count,
+            "blocked": blocked_count > 0
+        }
+
+    def make_plan_for_order(self, start_pose, nav_target, cache, label):
+        key = (self.pose_key_for_order(start_pose),
+               round(float(nav_target[0]), 3),
+               round(float(nav_target[1]), 3),
+               round(float(nav_target[2]), 1))
+        if key in cache:
+            return cache[key]
+
+        client = self.get_task_make_plan_client()
+        if client is None:
+            result = None, "make_plan_service_unavailable"
+            cache[key] = result
+            return result
+
+        request = GetPlanRequest()
+        request.start = start_pose
+        request.start.header.stamp = rospy.Time.now()
+        request.goal = self.task_goal_pose_for_plan(nav_target)
+        request.tolerance = 0.0
+        try:
+            response = client(request)
+        except Exception as e:
+            self.task_nav_make_plan_client = None
+            result = None, "make_plan_failed:%s" % str(e)
+            cache[key] = result
+            return result
+
+        poses = response.plan.poses
+        if len(poses) < 2:
+            result = None, "no_plan"
+            cache[key] = result
+            return result
+
+        result = poses, "ok"
+        cache[key] = result
+        return result
+
+    def task_order_nav_target_clear(self, costmap, nav_target):
+        if costmap is None:
+            return True, "no_costmap"
+        cost, detail = self.costmap_cost_at(costmap, nav_target[0], nav_target[1])
+        if cost is None:
+            return False, detail
+        if cost < 0:
+            if self.task_nav_approach_reject_unknown:
+                return False, "unknown"
+            return True, "unknown_allowed"
+        if cost > self.task_nav_approach_cost_threshold:
+            return False, "cost=%d>threshold=%d" % (
+                cost, self.task_nav_approach_cost_threshold)
+        return True, "cost=%d" % cost
+
+    def evaluate_task_order_nav_target(self, start_pose, nav_target, costmap, cache, label):
+        end_pose = self.pose_stamped_from_nav_target(nav_target)
+        target_clear, target_reason = self.task_order_nav_target_clear(costmap, nav_target)
+        if not target_clear:
+            return {
+                "valid": False,
+                "end_pose": end_pose,
+                "score": self.task_nav_order_no_plan_penalty,
+                "length": 0.0,
+                "max_angle_deg": 999.0,
+                "sharp_count": 1,
+                "no_plan_count": 1,
+                "blocked_count": 1,
+                "avg_cost": 100.0,
+                "max_cost": 100,
+                "unknown_count": 0,
+                "reason": "target_blocked:%s" % target_reason,
+                "mode": label,
+                "points": 0
+            }
+
+        poses, plan_reason = self.make_plan_for_order(start_pose, nav_target, cache, label)
+        if poses is None:
+            return {
+                "valid": not self.task_nav_order_reject_no_plan,
+                "end_pose": end_pose,
+                "score": self.task_nav_order_no_plan_penalty,
+                "length": 0.0,
+                "max_angle_deg": 999.0,
+                "sharp_count": 0,
+                "no_plan_count": 1,
+                "blocked_count": 0,
+                "avg_cost": 0.0,
+                "max_cost": 0,
+                "unknown_count": 0,
+                "reason": plan_reason,
+                "mode": label,
+                "points": 0
+            }
+
+        path_ok, path_info = self.analyze_task_plan_sharp_turns(
+            poses, log_warning=False)
+        length = self.plan_path_length(poses)
+        cost_info = self.costmap_path_score(costmap, poses)
+        sharp_count = 0 if path_ok else 1
+        blocked_count = cost_info.get("blocked_count", 0)
+        score = length
+        score += cost_info.get("avg_cost", 0.0) * self.task_nav_order_path_cost_weight
+        score += cost_info.get("max_cost", 0) * self.task_nav_order_path_max_cost_weight
+        score += cost_info.get("unknown_count", 0) * self.task_nav_order_unknown_penalty
+        if not path_ok:
+            score += self.task_nav_order_sharp_turn_penalty
+        if cost_info.get("blocked", False):
+            score += self.task_nav_order_no_plan_penalty * 0.5
+
+        valid = True
+        if not path_ok and self.task_nav_order_reject_sharp_turns:
+            valid = False
+        if cost_info.get("blocked", False):
+            valid = False
+
+        return {
+            "valid": valid,
+            "end_pose": end_pose,
+            "score": score,
+            "length": length,
+            "max_angle_deg": path_info.get("max_angle_deg", 0.0),
+            "sharp_count": sharp_count,
+            "no_plan_count": 0,
+            "blocked_count": blocked_count,
+            "avg_cost": cost_info.get("avg_cost", 0.0),
+            "max_cost": cost_info.get("max_cost", 0),
+            "unknown_count": cost_info.get("unknown_count", 0),
+            "reason": "ok" if path_ok else "sharp_turn",
+            "mode": label,
+            "points": len(poses)
+        }
+
+    def evaluate_task_order_leg_to_task(self, start_pose, task_entry, costmap, cache):
+        target = goals[task_entry["task_id"]]
+        if self.task_nav_order_use_approach_candidates:
+            candidates = self.make_task_approach_goals(target, log_candidates=False)
+        else:
+            candidates = [("target", list(target))]
+
+        best_valid = None
+        best_fallback = None
+        for mode, nav_target in candidates:
+            leg = self.evaluate_task_order_nav_target(
+                start_pose,
+                nav_target,
+                costmap,
+                cache,
+                "%s:%d" % (mode, task_entry["task_id"]))
+            leg["task_id"] = task_entry["task_id"]
+            leg["nav_target"] = list(nav_target)
+            if leg["valid"]:
+                if best_valid is None or leg["score"] < best_valid["score"]:
+                    best_valid = leg
+            else:
+                if best_fallback is None or leg["score"] < best_fallback["score"]:
+                    best_fallback = leg
+
+        if best_valid is not None:
+            return best_valid
+        return best_fallback
+
+    def evaluate_task_order_candidate(self, entries, order_indices, start_pose,
+                                      final_target, costmap, cache):
+        current_pose = start_pose
+        order_tasks = [entries[idx]["task_id"] for idx in order_indices]
+        total_score = 0.0
+        total_length = 0.0
+        max_angle = 0.0
+        sharp_count = 0
+        no_plan_count = 0
+        blocked_count = 0
+        unknown_count = 0
+        valid = True
+        leg_summaries = []
+
+        for entry_index in order_indices:
+            leg = self.evaluate_task_order_leg_to_task(
+                current_pose, entries[entry_index], costmap, cache)
+            if leg is None:
+                valid = False
+                total_score += self.task_nav_order_no_plan_penalty
+                no_plan_count += 1
+                leg_summaries.append("task%d:no_candidate" % entries[entry_index]["task_id"])
+                current_pose = self.pose_stamped_from_nav_target(
+                    goals[entries[entry_index]["task_id"]])
+                continue
+
+            total_score += leg["score"]
+            total_length += leg["length"]
+            max_angle = max(max_angle, leg["max_angle_deg"])
+            sharp_count += leg["sharp_count"]
+            no_plan_count += leg["no_plan_count"]
+            blocked_count += leg["blocked_count"]
+            unknown_count += leg["unknown_count"]
+            valid = valid and leg["valid"]
+            leg_summaries.append(
+                "task%d/%s len=%.2f angle=%.1f cost=%.1f max=%d reason=%s" % (
+                    leg["task_id"], leg["mode"], leg["length"],
+                    leg["max_angle_deg"], leg["avg_cost"],
+                    leg["max_cost"], leg["reason"]))
+            current_pose = leg["end_pose"]
+
+        final_leg = self.evaluate_task_order_nav_target(
+            current_pose,
+            final_target,
+            costmap,
+            cache,
+            "final")
+        total_score += final_leg["score"]
+        total_length += final_leg["length"]
+        max_angle = max(max_angle, final_leg["max_angle_deg"])
+        sharp_count += final_leg["sharp_count"]
+        no_plan_count += final_leg["no_plan_count"]
+        blocked_count += final_leg["blocked_count"]
+        unknown_count += final_leg["unknown_count"]
+        valid = valid and final_leg["valid"]
+        leg_summaries.append(
+            "final len=%.2f angle=%.1f cost=%.1f max=%d reason=%s" % (
+                final_leg["length"], final_leg["max_angle_deg"],
+                final_leg["avg_cost"], final_leg["max_cost"],
+                final_leg["reason"]))
+
+        return {
+            "order_indices": list(order_indices),
+            "order_tasks": order_tasks,
+            "valid": valid,
+            "score": total_score,
+            "length": total_length,
+            "max_angle_deg": max_angle,
+            "sharp_count": sharp_count,
+            "no_plan_count": no_plan_count,
+            "blocked_count": blocked_count,
+            "unknown_count": unknown_count,
+            "legs": "; ".join(leg_summaries)
+        }
+
+    def order_index_permutations(self, valid_entries, start_xy, final_xy):
+        all_indices = list(range(len(valid_entries)))
+        first_index = None
+        last_index = None
+        if self.task_nav_order_pin_nearest_first:
+            first_index = min(
+                all_indices,
+                key=lambda idx: self.xy_distance(start_xy, valid_entries[idx]["xy"]))
+        if self.task_nav_order_pin_nearest_final_last and len(valid_entries) > 1:
+            last_candidates = [
+                idx for idx in all_indices
+                if idx != first_index or len(valid_entries) == 1
+            ]
+            if not last_candidates:
+                last_candidates = list(all_indices)
+            last_index = min(
+                last_candidates,
+                key=lambda idx: self.xy_distance(final_xy, valid_entries[idx]["xy"]))
+
+        middle_indices = [
+            idx for idx in all_indices
+            if idx not in [first_index, last_index]
+        ]
+        if len(middle_indices) > self.task_nav_order_max_bruteforce:
+            return [self.greedy_task_order_indices(
+                valid_entries, all_indices, first_index, last_index, start_xy)], "greedy"
+
+        candidates = []
+        for middle_perm in itertools.permutations(middle_indices):
+            candidate = []
+            if first_index is not None:
+                candidate.append(first_index)
+            candidate.extend(list(middle_perm))
+            if last_index is not None:
+                candidate.append(last_index)
+            for idx in all_indices:
+                if idx not in candidate:
+                    candidate.append(idx)
+            candidates.append(candidate)
+        return candidates, "bruteforce_path"
+
+    def optimize_task_order_by_plan(self, tasks, valid_entries, invalid_tasks,
+                                    start_pose, final_target, start_xy, final_xy):
+        if not self.wait_for_make_plan_idle("task_order"):
+            rospy.logwarn("[TASK_ORDER][PATH_QUALITY_SKIP] reason=move_base_active")
+            return None
+
+        costmap = self.get_global_costmap_for_approach()
+        if costmap is None:
+            rospy.logwarn(
+                "[TASK_ORDER][PATH_QUALITY_COSTMAP_MISSING] use_make_plan_only=true")
+
+        candidates, method = self.order_index_permutations(
+            valid_entries, start_xy, final_xy)
+        cache = {}
+        scored = []
+        for candidate in candidates:
+            result = self.evaluate_task_order_candidate(
+                valid_entries,
+                candidate,
+                start_pose,
+                final_target,
+                costmap,
+                cache)
+            scored.append(result)
+            raw_order = [TASK_TO_VLM.get(task_id, task_id)
+                         for task_id in result["order_tasks"]]
+            rospy.loginfo(
+                "[TASK_ORDER][CANDIDATE] method=%s order=%s raw=%s valid=%s score=%.3f length=%.3f max_angle=%.1f sharp=%d no_plan=%d blocked=%d unknown=%d legs=%s",
+                method,
+                str(result["order_tasks"]),
+                str(raw_order),
+                str(result["valid"]),
+                result["score"],
+                result["length"],
+                result["max_angle_deg"],
+                result["sharp_count"],
+                result["no_plan_count"],
+                result["blocked_count"],
+                result["unknown_count"],
+                result["legs"]
+            )
+
+        if not scored:
+            return None
+
+        scored.sort(key=lambda item: (
+            0 if item["valid"] else 1,
+            item["sharp_count"],
+            item["no_plan_count"],
+            item["blocked_count"],
+            item["score"],
+            item["length"]
+        ))
+        best = scored[0]
+        optimized_tasks = list(best["order_tasks"])
+        optimized_tasks.extend(invalid_tasks)
+        original_raw = [TASK_TO_VLM.get(task_id, task_id) for task_id in tasks]
+        optimized_raw = [TASK_TO_VLM.get(task_id, task_id) for task_id in optimized_tasks]
+        if best["valid"]:
+            rospy.loginfo(
+                "[TASK_ORDER][OPTIMIZED_PATH] original=%s raw=%s optimized=%s raw=%s score=%.3f length=%.3f max_angle=%.1f sharp=%d no_plan=%d blocked=%d start=(%.3f,%.3f) final=(%.3f,%.3f)",
+                str(tasks), str(original_raw),
+                str(optimized_tasks), str(optimized_raw),
+                best["score"], best["length"], best["max_angle_deg"],
+                best["sharp_count"], best["no_plan_count"], best["blocked_count"],
+                start_xy[0], start_xy[1], final_xy[0], final_xy[1])
+        else:
+            rospy.logwarn(
+                "[TASK_ORDER][NO_FULLY_SAFE_ORDER] original=%s raw=%s fallback=%s raw=%s score=%.3f length=%.3f max_angle=%.1f sharp=%d no_plan=%d blocked=%d start=(%.3f,%.3f) final=(%.3f,%.3f)",
+                str(tasks), str(original_raw),
+                str(optimized_tasks), str(optimized_raw),
+                best["score"], best["length"], best["max_angle_deg"],
+                best["sharp_count"], best["no_plan_count"], best["blocked_count"],
+                start_xy[0], start_xy[1], final_xy[0], final_xy[1])
+        return optimized_tasks
+
+    def score_task_order_indices(self, entries, order_indices, start_xy, final_xy):
+        points_xy = [start_xy]
+        for entry_index in order_indices:
+            points_xy.append(entries[entry_index]["xy"])
+        points_xy.append(final_xy)
+
+        distance_score = 0.0
+        for i in range(len(points_xy) - 1):
+            distance_score += self.xy_distance(points_xy[i], points_xy[i + 1])
+
+        turn_penalty = 0.0
+        if self.task_nav_order_turn_penalty_weight > 0.0:
+            for i in range(1, len(points_xy) - 1):
+                ax = points_xy[i][0] - points_xy[i - 1][0]
+                ay = points_xy[i][1] - points_xy[i - 1][1]
+                bx = points_xy[i + 1][0] - points_xy[i][0]
+                by = points_xy[i + 1][1] - points_xy[i][1]
+                a_len = np.sqrt(ax * ax + ay * ay)
+                b_len = np.sqrt(bx * bx + by * by)
+                if a_len < 1e-6 or b_len < 1e-6:
+                    continue
+                dot = max(-1.0, min(1.0, (ax * bx + ay * by) / (a_len * b_len)))
+                turn_penalty += np.arccos(dot) * self.task_nav_order_turn_penalty_weight
+
+        return distance_score + turn_penalty, distance_score, turn_penalty
+
+    def greedy_task_order_indices(self, entries, all_indices, first_index, last_index, start_xy):
+        remaining = [idx for idx in all_indices if idx not in [first_index, last_index]]
+        ordered = []
+        current_xy = start_xy
+        if first_index is not None:
+            ordered.append(first_index)
+            current_xy = entries[first_index]["xy"]
+
+        while remaining:
+            next_index = min(
+                remaining,
+                key=lambda idx: self.xy_distance(current_xy, entries[idx]["xy"]))
+            ordered.append(next_index)
+            current_xy = entries[next_index]["xy"]
+            remaining.remove(next_index)
+
+        if last_index is not None:
+            ordered.append(last_index)
+        return ordered
+
+    def optimize_task_order(self, tasks):
+        if not self.task_nav_optimize_order or len(tasks) <= 1:
+            return list(tasks)
+
+        start_pose = self.current_map_pose_for_plan()
+        final_target = self.final_target_for_task_order()
+        if start_pose is None or final_target is None:
+            rospy.logwarn(
+                "[TASK_ORDER][SKIP] reason=no_anchor_pose original=%s",
+                str(tasks)
+            )
+            return list(tasks)
+        start_xy = (
+            float(start_pose.pose.position.x),
+            float(start_pose.pose.position.y)
+        )
+        final_xy = (float(final_target[0]), float(final_target[1]))
+
+        valid_entries = []
+        invalid_tasks = []
+        for original_index, task_id in enumerate(tasks):
+            xy = self.task_id_to_xy(task_id)
+            if xy is None:
+                invalid_tasks.append(task_id)
+                continue
+            valid_entries.append({
+                "original_index": original_index,
+                "task_id": int(task_id),
+                "xy": xy
+            })
+
+        if len(valid_entries) <= 1:
+            return list(tasks)
+
+        if self.task_nav_order_path_quality_enabled:
+            optimized_by_plan = self.optimize_task_order_by_plan(
+                tasks,
+                valid_entries,
+                invalid_tasks,
+                start_pose,
+                final_target,
+                start_xy,
+                final_xy)
+            if optimized_by_plan is not None:
+                return optimized_by_plan
+            rospy.logwarn(
+                "[TASK_ORDER][PATH_QUALITY_FALLBACK_GEOMETRY] original=%s",
+                str(tasks)
+            )
+
+        all_indices = range(len(valid_entries))
+        first_index = None
+        last_index = None
+        if self.task_nav_order_pin_nearest_first:
+            first_index = min(
+                all_indices,
+                key=lambda idx: self.xy_distance(start_xy, valid_entries[idx]["xy"]))
+        if self.task_nav_order_pin_nearest_final_last and len(valid_entries) > 1:
+            last_candidates = [
+                idx for idx in all_indices
+                if idx != first_index or len(valid_entries) == 1
+            ]
+            if not last_candidates:
+                last_candidates = list(all_indices)
+            last_index = min(
+                last_candidates,
+                key=lambda idx: self.xy_distance(final_xy, valid_entries[idx]["xy"]))
+
+        middle_indices = [
+            idx for idx in all_indices
+            if idx not in [first_index, last_index]
+        ]
+        if len(middle_indices) > self.task_nav_order_max_bruteforce:
+            best_order = self.greedy_task_order_indices(
+                valid_entries, list(all_indices), first_index, last_index, start_xy)
+            best_score, best_distance, best_turn = self.score_task_order_indices(
+                valid_entries, best_order, start_xy, final_xy)
+            method = "greedy"
+        else:
+            best_order = None
+            best_score = None
+            best_distance = None
+            best_turn = None
+            for middle_perm in itertools.permutations(middle_indices):
+                candidate = []
+                if first_index is not None:
+                    candidate.append(first_index)
+                candidate.extend(list(middle_perm))
+                if last_index is not None:
+                    candidate.append(last_index)
+                for idx in all_indices:
+                    if idx not in candidate:
+                        candidate.append(idx)
+
+                score, distance_score, turn_score = self.score_task_order_indices(
+                    valid_entries, candidate, start_xy, final_xy)
+                if best_score is None or score < best_score:
+                    best_score = score
+                    best_distance = distance_score
+                    best_turn = turn_score
+                    best_order = candidate
+            method = "bruteforce"
+
+        optimized_tasks = [valid_entries[idx]["task_id"] for idx in best_order]
+        optimized_tasks.extend(invalid_tasks)
+        original_raw = [TASK_TO_VLM.get(task_id, task_id) for task_id in tasks]
+        optimized_raw = [TASK_TO_VLM.get(task_id, task_id) for task_id in optimized_tasks]
+        rospy.loginfo(
+            "[TASK_ORDER][OPTIMIZED] method=%s original=%s raw=%s optimized=%s raw=%s start=(%.3f,%.3f) final=(%.3f,%.3f) first=%s last=%s score=%.3f distance=%.3f turn_penalty=%.3f",
+            method,
+            str(tasks),
+            str(original_raw),
+            str(optimized_tasks),
+            str(optimized_raw),
+            start_xy[0], start_xy[1],
+            final_xy[0], final_xy[1],
+            str(valid_entries[first_index]["task_id"]) if first_index is not None else "None",
+            str(valid_entries[last_index]["task_id"]) if last_index is not None else "None",
+            best_score if best_score is not None else 0.0,
+            best_distance if best_distance is not None else 0.0,
+            best_turn if best_turn is not None else 0.0
+        )
+        return optimized_tasks
+
     def announce_task_arrival(self, idx, task_id):
         raw_id = TASK_TO_VLM.get(task_id, task_id)
         tts_text = u"已到达任务点%d号" % raw_id
@@ -3218,6 +3878,10 @@ class navigation_demo:
         self.set_parking_phase_costmap()
         try:
             self.enable_obstacle_memory_after_parking("task_nav_start")
+            if self.task_nav_optimize_order:
+                task_numbers = self.optimize_task_order(task_numbers)
+            else:
+                rospy.loginfo("[TASK_ORDER][DISABLED] order=%s", str(task_numbers))
             self.go_to_task_positions()
         finally:
             self.disable_obstacle_memory_for_parking("task_phase_end")

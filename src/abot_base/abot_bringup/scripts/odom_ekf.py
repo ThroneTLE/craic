@@ -47,7 +47,7 @@ class OdomEKF():
         odom = Odometry()
         odom.header = msg.header
         odom.header.frame_id = '/odom'
-        odom.child_frame_id = 'base_link'
+        odom.child_frame_id = 'base_footprint'
         odom.pose = msg.pose
         
         self.ekf_pub.publish(odom)
@@ -61,4 +61,3 @@ if __name__ == '__main__':
         
 
         
-
