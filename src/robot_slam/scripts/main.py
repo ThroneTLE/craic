@@ -86,6 +86,10 @@ class navigation_demo:
         self.tts_service_lock = threading.RLock()
         self.tts_async_enabled = rospy.get_param("~tts_async_enabled", True)
         self.tts_async_queue_size = int(rospy.get_param("~tts_async_queue_size", 32))
+        self.task_arrival_nav_delay_after_tts_start = rospy.get_param(
+            "~task_arrival_nav_delay_after_tts_start", 0.8)
+        self.task_arrival_tts_start_wait_timeout = rospy.get_param(
+            "~task_arrival_tts_start_wait_timeout", 5.0)
         self.tts_async_queue = queue_module.Queue(max(1, self.tts_async_queue_size))
         self.tts_async_worker_thread = None
         if self.tts_async_enabled:
@@ -181,6 +185,8 @@ class navigation_demo:
         self.detect_ocr_async_lock = threading.RLock()
         self.detect_ocr_async_threads = []
         self.detect_ocr_async_results = []
+        self.detect_ocr_async_point = None
+        self.detect_ocr_interrupt_result = None
 
         # 11. 调试/比赛固定任务点：跳过前置视觉扫描，直接进入任务点泊车
         self.use_fixed_task_positions = rospy.get_param("~use_fixed_task_positions", False)
@@ -2035,7 +2041,7 @@ class navigation_demo:
             rate.sleep()
         return True
 
-    def align_detection_yaw(self, yaw_deg):
+    def align_detection_yaw(self, yaw_deg, interrupt_check=None):
         """
         拍照前低速闭环修正 yaw，避免 move_base 到点后最后一刻大幅旋转。
         :param yaw_deg: 目标航向角，单位为度
@@ -2054,6 +2060,10 @@ class navigation_demo:
         rospy.loginfo("检测点yaw闭环开始: target=%.1fdeg tolerance=%.3frad" %
                       (yaw_deg, self.detect_yaw_tolerance))
         while not rospy.is_shutdown():
+            if interrupt_check is not None and interrupt_check():
+                self.stop_movement()
+                rospy.logwarn("[DETECT_NAV][YAW_ALIGN_INTERRUPTED_BY_OCR]")
+                return False
             yaw_error = self.normalize_angle(target_yaw - self.current_yaw)
             if abs(yaw_error) <= self.detect_yaw_tolerance:
                 stable_count += 1
@@ -2131,7 +2141,8 @@ class navigation_demo:
         self.stop_movement()
         return False
 
-    def locked_approach_detection_point(self, yaw_deg, mode=None, distance=None):
+    def locked_approach_detection_point(self, yaw_deg, mode=None, distance=None,
+                                        interrupt_check=None):
         """
         从预对准点到拍照点的短距离直行段。
         不再交给move_base，避免TEB在最后0.6m重新优化yaw。
@@ -2158,6 +2169,10 @@ class navigation_demo:
         rospy.loginfo("锁yaw靠近拍照点: mode=%s distance=%.3fm speed=%.3fm/s vx=%.3f vy=%.3f time=%.2fs target=%.1fdeg" %
                       (mode, distance, speed, cmd_x, cmd_y, travel_time, yaw_deg))
         while not rospy.is_shutdown():
+            if interrupt_check is not None and interrupt_check():
+                self.stop_movement()
+                rospy.logwarn("[DETECT_NAV][LOCKED_APPROACH_INTERRUPTED_BY_OCR]")
+                return False
             elapsed = (rospy.Time.now() - start_time).to_sec()
             if elapsed >= travel_time:
                 self.stop_movement()
@@ -2208,9 +2223,18 @@ class navigation_demo:
                 self.tts_async_queue.task_done()
                 return
 
-            text, label, enqueue_time = item
+            if len(item) == 3:
+                text, label, enqueue_time = item
+                start_event = None
+                start_time_holder = None
+            else:
+                text, label, enqueue_time, start_event, start_time_holder = item
             rospy.loginfo("[TTS_ASYNC][PLAY_START] label=%s queue_wait=%.2fs",
                           label, time.time() - enqueue_time)
+            if start_time_holder is not None:
+                start_time_holder["time"] = time.time()
+            if start_event is not None:
+                start_event.set()
             start_time = rospy.Time.now()
             ok = self.tts_client(text)
             rospy.loginfo("[TTS_ASYNC][PLAY_DONE] label=%s dt=%.2fs ok=%s",
@@ -2219,11 +2243,16 @@ class navigation_demo:
                           str(ok))
             self.tts_async_queue.task_done()
 
-    def tts_client_async(self, text, label=""):
+    def tts_client_async(self, text, label="", start_event=None, start_time_holder=None):
         if not self.tts_async_enabled:
+            if start_time_holder is not None:
+                start_time_holder["time"] = time.time()
+            if start_event is not None:
+                start_event.set()
             return self.tts_client(text)
         try:
-            self.tts_async_queue.put_nowait((text, str(label), time.time()))
+            self.tts_async_queue.put_nowait(
+                (text, str(label), time.time(), start_event, start_time_holder))
             rospy.loginfo("[TTS_ASYNC][ENQUEUE] label=%s queue=%d text=%s",
                           str(label), self.tts_async_queue.qsize(),
                           self.log_text(text))
@@ -2503,11 +2532,64 @@ class navigation_demo:
         with self.detect_ocr_async_lock:
             self.detect_ocr_async_results = []
             self.detect_ocr_async_threads = []
+            self.detect_ocr_async_point = point
+            self.detect_ocr_interrupt_result = None
         rospy.loginfo("[DETECT_OCR][EARLY_CAPTURE_RESET] point=%s", str(point))
+
+    def is_detection_ocr_async_current(self, point):
+        with self.detect_ocr_async_lock:
+            return self.detect_ocr_async_point == point
 
     def store_detection_ocr_async_result(self, result):
         with self.detect_ocr_async_lock:
+            if result.get("point") != self.detect_ocr_async_point:
+                rospy.loginfo(
+                    "[DETECT_OCR][EARLY_STALE_RESULT] point=%s current=%s source=%s",
+                    str(result.get("point")), str(self.detect_ocr_async_point),
+                    str(result.get("source")))
+                return
             self.detect_ocr_async_results.append(result)
+            if result.get("valid"):
+                self.detect_ocr_interrupt_result = result
+                rospy.logwarn(
+                    "[DETECT_OCR][EARLY_VALID_INTERRUPT_READY] point=%s answer=%s score=%.4f source=%s",
+                    str(result.get("point")), str(result.get("answer")),
+                    result.get("score", 0.0), str(result.get("source")))
+
+    def get_detection_ocr_interrupt_result(self, point):
+        with self.detect_ocr_async_lock:
+            result = self.detect_ocr_interrupt_result
+            if result is not None and result.get("point") == point and result.get("valid"):
+                return result
+            for item in self.detect_ocr_async_results:
+                if item.get("point") == point and item.get("valid"):
+                    self.detect_ocr_interrupt_result = item
+                    return item
+        return None
+
+    def detection_ocr_interrupt_requested(self, point):
+        result = self.get_detection_ocr_interrupt_result(point)
+        if result is None:
+            return False
+        rospy.logwarn(
+            "[DETECT_OCR][EARLY_VALID_INTERRUPT] point=%s answer=%s score=%.4f source=%s",
+            str(point), str(result.get("answer")),
+            result.get("score", 0.0), str(result.get("source")))
+        return True
+
+    def sleep_with_detection_ocr_interrupt(self, duration, point, reason):
+        if duration <= 0.0:
+            return not self.detection_ocr_interrupt_requested(point)
+        deadline = time.time() + float(duration)
+        while not rospy.is_shutdown():
+            if self.detection_ocr_interrupt_requested(point):
+                return False
+            remaining = deadline - time.time()
+            if remaining <= 0.0:
+                return True
+            rospy.sleep(min(0.05, remaining))
+        return False
+
 
     def run_detection_ocr_burst(self, point, reason):
         try:
@@ -2515,29 +2597,49 @@ class navigation_demo:
             for index in range(count):
                 if rospy.is_shutdown():
                     return
+                if not self.is_detection_ocr_async_current(point):
+                    rospy.loginfo(
+                        "[DETECT_OCR][EARLY_STOP_STALE] point=%s reason=%s",
+                        str(point), reason)
+                    return
+                if self.get_detection_ocr_interrupt_result(point) is not None:
+                    return
                 capture_reason = "%s_%d" % (reason, index + 1)
                 snapshot = self.capture_detection_image(
                     "ocr_point_%s_%s" % (str(point), capture_reason),
                     snapshot=True)
                 if snapshot is not None:
+                    rospy.loginfo(
+                        "[DETECT_OCR][EARLY_CAPTURE] point=%s reason=%s seq=%d path=%s",
+                        str(point), capture_reason, index + 1, snapshot)
+                    result = self.run_ocr_matcher(snapshot, capture_reason)
+                    result["point"] = point
+                    result["pending_ocr"] = False
+                    result["sequence"] = index
+                    self.store_detection_ocr_async_result(result)
+                    if result.get("valid"):
+                        rospy.logwarn(
+                            "[DETECT_OCR][EARLY_BURST_STOP_VALID] point=%s reason=%s answer=%s score=%.4f",
+                            str(point), capture_reason, str(result.get("answer")),
+                            result.get("score", 0.0))
+                        return
+                else:
                     self.store_detection_ocr_async_result({
                         "valid": False,
                         "empty": True,
                         "answer": None,
                         "score": 0.0,
                         "raw_text": u"",
-                        "reason": "early_capture_pending",
+                        "reason": "early_capture_failed",
                         "source": capture_reason,
                         "point": point,
-                        "image_path": snapshot,
-                        "pending_ocr": True,
+                        "pending_ocr": False,
                         "sequence": index
                     })
-                    rospy.loginfo(
-                        "[DETECT_OCR][EARLY_CAPTURE] point=%s reason=%s seq=%d path=%s",
-                        str(point), capture_reason, index + 1, snapshot)
                 if index + 1 < count and self.detect_ocr_early_interval > 0.0:
-                    rospy.sleep(self.detect_ocr_early_interval)
+                    if not self.sleep_with_detection_ocr_interrupt(
+                            self.detect_ocr_early_interval, point, "early_interval"):
+                        return
         except Exception as e:
             rospy.logerr("[DETECT_OCR][EARLY_CAPTURE_EXCEPTION] point=%s reason=%s err=%s",
                          str(point), reason, str(e))
@@ -2653,6 +2755,14 @@ class navigation_demo:
 
     def call_detection_ocr_priority(self, point, reason):
         self.wait_detection_ocr_early_captures(point)
+        early_interrupt = self.get_detection_ocr_interrupt_result(point)
+        if early_interrupt is not None:
+            rospy.logwarn(
+                "[DETECT_OCR][SKIP_FINAL_CAPTURE_EARLY_VALID] point=%s answer=%s score=%.4f source=%s",
+                str(point), str(early_interrupt.get("answer")),
+                early_interrupt.get("score", 0.0),
+                str(early_interrupt.get("source")))
+            return early_interrupt
         final_result = self.run_detection_ocr_capture(point, "%s_final" % reason)
         selected = self.select_detection_ocr_result(point, final_result)
         rospy.loginfo(
@@ -2992,6 +3102,8 @@ class navigation_demo:
         selected_mode = self.detect_prealign_mode
         selected_distance = self.detect_prealign_distance
         capture_at_current_pose = False
+        def early_ocr_interrupt():
+            return self.detection_ocr_interrupt_requested(point)
         rospy.loginfo(
             "[DETECT_NAV][STRATEGY] point=%s dynamic_yaw=%s fixed_yaw=%.1f",
             str(point), str(use_dynamic_yaw), target[2]
@@ -3041,24 +3153,33 @@ class navigation_demo:
                     break
 
             if self.detect_yaw_align_at_prealign and prealign_ok:
+                if early_ocr_interrupt():
+                    return True
                 prealign_yaw = target[2]
                 if use_dynamic_yaw and capture_at_current_pose:
                     prealign_yaw, _ = self.detection_yaw_from_current_pose(
                         point, target[2], "prealign_current")
-                self.align_detection_yaw(prealign_yaw)
+                self.align_detection_yaw(prealign_yaw, interrupt_check=early_ocr_interrupt)
+                if early_ocr_interrupt():
+                    return True
 
         if capture_at_current_pose:
             rospy.loginfo(
                 "[DETECT_NAV][CAPTURE_AT_PREALIGN] point=%s mode=%s distance=%.3f reason=dynamic_photo_target",
                 str(point), selected_mode, selected_distance)
         elif self.detect_locked_final_approach:
+            if early_ocr_interrupt():
+                return True
             if not prealign_ok:
                 rospy.logwarn("检测点%s预对准未确认成功" % point)
                 if self.detect_skip_capture_on_nav_fail:
                     rospy.logwarn("[DETECT_NAV][SKIP_CAPTURE] point=%s reason=prealign_failed", str(point))
                     return False
             if not self.locked_approach_detection_point(
-                    target[2], mode=selected_mode, distance=selected_distance):
+                    target[2], mode=selected_mode, distance=selected_distance,
+                    interrupt_check=early_ocr_interrupt):
+                if early_ocr_interrupt():
+                    return True
                 if self.detect_skip_capture_on_nav_fail:
                     rospy.logwarn("[DETECT_NAV][SKIP_CAPTURE] point=%s reason=locked_approach_failed", str(point))
                     return False
@@ -3074,14 +3195,20 @@ class navigation_demo:
                 rospy.logwarn("[DETECT_NAV][SKIP_CAPTURE] point=%s reason=final_nav_failed", str(point))
                 return False
 
+        if early_ocr_interrupt():
+            return True
         if self.detect_yaw_align_at_photo:
             photo_yaw = target[2]
             if use_dynamic_yaw:
                 photo_yaw, _ = self.detection_yaw_from_current_pose(
                     point, target[2], "photo_current")
-            self.align_detection_yaw(photo_yaw)
+            self.align_detection_yaw(photo_yaw, interrupt_check=early_ocr_interrupt)
+            if early_ocr_interrupt():
+                return True
         if self.detect_photo_settle_time > 0:
-            rospy.sleep(self.detect_photo_settle_time)
+            if not self.sleep_with_detection_ocr_interrupt(
+                    self.detect_photo_settle_time, point, "photo_settle"):
+                return True
         return True
 
     # ---------------- 取消导航 ----------------
@@ -3151,6 +3278,17 @@ class navigation_demo:
             self.reset_detection_ocr_async(point)
             # 首扫固定使用 goalListYaw + OCR题库匹配；动态YAW只作为OCR失败后的大模型保底。
             detect_nav_ok = self.goto_detection_point(point, use_dynamic_yaw=False)
+            early_ocr_result = self.get_detection_ocr_interrupt_result(point)
+            if early_ocr_result is not None:
+                if self.handle_detection_result(
+                        point, str(early_ocr_result.get("answer")),
+                        "fixed_yaw_prealign_ocr"):
+                    rospy.logwarn(
+                        "[DETECT_OCR][EARLY_SUCCESS_SKIP_FINAL] point=%s answer=%s score=%.4f source=%s",
+                        str(point), str(early_ocr_result.get("answer")),
+                        early_ocr_result.get("score", 0.0),
+                        str(early_ocr_result.get("source")))
+                    return True
             if not detect_nav_ok:
                 rospy.logwarn("[DETECT_NAV][MISSION_SKIP] point=%s reason=navigation_failed", str(point))
                 return False
@@ -3201,6 +3339,17 @@ class navigation_demo:
                     str(point)
                 )
                 return True
+            early_ocr_result = self.get_detection_ocr_interrupt_result(point)
+            if early_ocr_result is not None:
+                if self.handle_detection_result(
+                        point, str(early_ocr_result.get("answer")),
+                        "fixed_yaw_prealign_ocr_late"):
+                    rospy.logwarn(
+                        "[DETECT_OCR][EARLY_SUCCESS_SKIP_DYNAMIC_VLM] point=%s answer=%s score=%.4f source=%s",
+                        str(point), str(early_ocr_result.get("answer")),
+                        early_ocr_result.get("score", 0.0),
+                        str(early_ocr_result.get("source")))
+                    return True
 
             fallback_result = self.call_fruit_detection_service()
             rospy.loginfo("当前检测点%s动态YAW保底扫描结果: %s" % (point, fallback_result))
@@ -3874,19 +4023,69 @@ class navigation_demo:
         )
         return optimized_tasks
 
-    def announce_task_arrival(self, idx, task_id):
+    def announce_task_arrival(self, idx, task_id, return_gate=False):
         raw_id = TASK_TO_VLM.get(task_id, task_id)
         tts_text = u"已到达任务点%d号" % raw_id
         tts_start_time = rospy.Time.now()
+        start_event = threading.Event()
+        start_time_holder = {}
         tts_ok = self.tts_client_async(
             tts_text,
-            "task_arrival_%d_%d" % (idx + 1, raw_id)
+            "task_arrival_%d_%d" % (idx + 1, raw_id),
+            start_event=start_event,
+            start_time_holder=start_time_holder
         )
         rospy.loginfo("[TASK_TIME][TTS_QUEUE] idx=%d task_id=%d dt=%.2fs queued=%s",
                       idx + 1, task_id,
                       (rospy.Time.now() - tts_start_time).to_sec(),
                       str(tts_ok))
+        if return_gate:
+            return {
+                "queued": tts_ok,
+                "start_event": start_event,
+                "start_time_holder": start_time_holder,
+                "label": "task_arrival_%d_%d" % (idx + 1, raw_id)
+            }
         return tts_ok
+
+    def wait_task_arrival_tts_delay_before_next_nav(self, tts_gate, idx, task_id, reason):
+        delay = max(0.0, float(self.task_arrival_nav_delay_after_tts_start))
+        if delay <= 0.0:
+            return True
+        if not tts_gate or not tts_gate.get("queued"):
+            rospy.logwarn(
+                "[TASK_TIME][TTS_NAV_DELAY_SKIP] idx=%d task_id=%d reason=%s queued=false",
+                idx + 1, task_id, reason)
+            return False
+
+        start_event = tts_gate.get("start_event")
+        start_time_holder = tts_gate.get("start_time_holder", {})
+        wait_timeout = max(0.0, float(self.task_arrival_tts_start_wait_timeout))
+        wait_start = time.time()
+        while (start_event is not None
+               and not start_event.is_set()
+               and not rospy.is_shutdown()):
+            if time.time() - wait_start >= wait_timeout:
+                rospy.logwarn(
+                    "[TASK_TIME][TTS_NAV_DELAY_START_TIMEOUT] idx=%d task_id=%d reason=%s wait=%.2fs label=%s",
+                    idx + 1, task_id, reason, wait_timeout,
+                    str(tts_gate.get("label")))
+                return False
+            rospy.sleep(0.02)
+
+        tts_start_wall = start_time_holder.get("time", time.time())
+        elapsed_after_start = time.time() - tts_start_wall
+        remaining = delay - elapsed_after_start
+        if remaining > 0.0:
+            rospy.loginfo(
+                "[TASK_TIME][TTS_NAV_DELAY_WAIT] idx=%d task_id=%d reason=%s remaining=%.2fs delay=%.2fs label=%s",
+                idx + 1, task_id, reason, remaining, delay,
+                str(tts_gate.get("label")))
+            rospy.sleep(remaining)
+        rospy.loginfo(
+            "[TASK_TIME][TTS_NAV_DELAY_DONE] idx=%d task_id=%d reason=%s elapsed_after_start=%.2fs delay=%.2fs",
+            idx + 1, task_id, reason, time.time() - tts_start_wall, delay)
+        return True
 
     # ---------------- 按线索导航到任务点 ----------------
     def go_to_task_positions(self):
@@ -3933,9 +4132,12 @@ class navigation_demo:
                         "[TASK_TIME][DIRECT_DONE_SKIP_PARK] idx=%d task_id=%d target_dist=%.3f accept=%.3f",
                         idx + 1, task_id, nav_dist, self.task_nav_direct_done_dist
                     )
-                    self.announce_task_arrival(idx, task_id)
+                    tts_gate = self.announce_task_arrival(
+                        idx, task_id, return_gate=True)
                     last_parking = None
                     last_task_id = task_id
+                    self.wait_task_arrival_tts_delay_before_next_nav(
+                        tts_gate, idx, task_id, "direct_done")
                     rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs direct_done=true",
                                   idx + 1, task_id,
                                   (rospy.Time.now() - task_start_time).to_sec())
@@ -3975,7 +4177,8 @@ class navigation_demo:
                               (rospy.Time.now() - post_wait_start_time).to_sec())
 
                 # 语音播报到达任务点（用原始VLM识别编号）
-                self.announce_task_arrival(idx, task_id)
+                tts_gate = self.announce_task_arrival(
+                    idx, task_id, return_gate=True)
 
                 # 播报已入队，立即逃逸离开挡板区域并进入下一个目标。
                 escape_start_time = rospy.Time.now()
@@ -3990,6 +4193,8 @@ class navigation_demo:
                               str(nav_mode), str(force_escape))
                 last_parking = parking
                 last_task_id = task_id
+                self.wait_task_arrival_tts_delay_before_next_nav(
+                    tts_gate, idx, task_id, "post_escape")
                 rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs",
                               idx + 1, task_id,
                               (rospy.Time.now() - task_start_time).to_sec())
@@ -4139,10 +4344,21 @@ if __name__ == "__main__":
     # 5. 等待IMU初始化完成
     rospy.loginfo("等待IMU传感器激活...")
     imu_msg = rospy.wait_for_message('/imu/data', Imu, timeout=None)
-    rospy.loginfo("IMU传感器已激活，5秒后开始任务...")
+    startup_audio_stabilize_wait = float(rospy.get_param("~startup_audio_stabilize_wait", 5.0))
+    startup_audio_notice_before = float(rospy.get_param("~startup_audio_notice_before", 3.0))
+    rospy.loginfo("IMU传感器已激活，%.1f秒后开始任务..." % startup_audio_stabilize_wait)
 
-    # 6. 延时5秒，等待系统稳定
-    rospy.sleep(5)
+    # 6. 延时等待系统稳定；在启动播报前3秒给终端提示。
+    notice_wait = max(0.0, startup_audio_stabilize_wait - startup_audio_notice_before)
+    if notice_wait > 0.0:
+        rospy.sleep(notice_wait)
+    terminal_notice = "终端提示：%.1f秒后播报控制核心加载完毕" % startup_audio_notice_before
+    print(terminal_notice)
+    sys.stdout.flush()
+    rospy.logwarn("[STARTUP_NOTICE] %s", terminal_notice)
+    remaining_wait = max(0.0, min(startup_audio_notice_before, startup_audio_stabilize_wait))
+    if remaining_wait > 0.0:
+        rospy.sleep(remaining_wait)
 
     # 7. 播报离线音频并开始任务
     os.system('ffplay -nodisp -autoexit -loglevel quiet /home/abot/EIU0US/src/robot_slam/resources/startGame.wav')

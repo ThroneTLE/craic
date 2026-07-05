@@ -211,6 +211,10 @@
       <param name="detect_ocr_async_join_timeout" value="0.05"/>
       <param name="tts_async_enabled" value="true"/>
       <param name="tts_async_queue_size" value="32"/>
+      <param name="task_arrival_nav_delay_after_tts_start" value="0.8"/>
+      <param name="task_arrival_tts_start_wait_timeout" value="5.0"/>
+      <param name="startup_audio_stabilize_wait" value="5.0"/>
+      <param name="startup_audio_notice_before" value="3.0"/>
 
   </node>
 </launch>
