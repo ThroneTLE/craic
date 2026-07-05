@@ -160,6 +160,7 @@ class navigation_demo:
         self.detect_yaw_stable_count = int(rospy.get_param("~detect_yaw_stable_count", 4))
         self.detect_photo_settle_time = rospy.get_param("~detect_photo_settle_time", 0.25)
         self.detect_capture_wait = rospy.get_param("~detect_capture_wait", 0.5)
+        self.detect_capture_stable_wait = rospy.get_param("~detect_capture_stable_wait", 0.08)
         self.detect_image_path = rospy.get_param(
             "~detect_image_path", "/home/abot/EIU0US/src/abot_vlm/temp2/vl_now.jpg")
 
@@ -2312,6 +2313,95 @@ class navigation_demo:
             pass
         return 0.0
 
+    def image_stat(self, path):
+        try:
+            if os.path.isfile(path):
+                stat = os.stat(path)
+                return stat.st_mtime, stat.st_size
+        except Exception:
+            pass
+        return 0.0, 0
+
+    def image_jpeg_complete(self, path):
+        try:
+            if not path or not os.path.isfile(path):
+                return False
+            size = os.path.getsize(path)
+            if size < 4:
+                return False
+            with open(path, "rb") as fp:
+                head = fp.read(2)
+                fp.seek(-2, os.SEEK_END)
+                tail = fp.read(2)
+            return head == "\xff\xd8" and tail == "\xff\xd9"
+        except Exception:
+            return False
+
+    def wait_detection_image_ready(self, reason, before_mtime, start_time):
+        last_mtime = 0.0
+        last_size = -1
+        stable_since = None
+        while not rospy.is_shutdown():
+            now = time.time()
+            current_mtime, current_size = self.image_stat(self.detect_image_path)
+            complete = self.image_jpeg_complete(self.detect_image_path)
+            changed = current_mtime > before_mtime and current_size > 0
+            same_as_last = (
+                current_mtime == last_mtime
+                and current_size == last_size
+            )
+            if changed and same_as_last and complete:
+                if stable_since is None:
+                    stable_since = now
+                if now - stable_since >= self.detect_capture_stable_wait:
+                    return True
+            else:
+                stable_since = None
+
+            last_mtime = current_mtime
+            last_size = current_size
+            if now - start_time > self.detect_ocr_capture_timeout:
+                rospy.logwarn(
+                    "[DETECT_CAPTURE][TIMEOUT] reason=%s path=%s timeout=%.2fs before_mtime=%.6f current_mtime=%.6f size=%d complete=%s",
+                    reason, self.detect_image_path, self.detect_ocr_capture_timeout,
+                    before_mtime, current_mtime, current_size, str(complete))
+                return False
+            rospy.sleep(0.02)
+
+        return False
+
+    def copy_detection_snapshot(self, reason, snapshot_path, start_time):
+        tmp_path = "%s.tmp.%d" % (snapshot_path, int(time.time() * 1000))
+        while not rospy.is_shutdown():
+            try:
+                if os.path.isfile(tmp_path):
+                    os.remove(tmp_path)
+                shutil.copy2(self.detect_image_path, tmp_path)
+                if self.image_jpeg_complete(tmp_path):
+                    if os.path.isfile(snapshot_path):
+                        os.remove(snapshot_path)
+                    os.rename(tmp_path, snapshot_path)
+                    rospy.loginfo("[DETECT_CAPTURE][SNAPSHOT] reason=%s path=%s",
+                                  reason, snapshot_path)
+                    return snapshot_path
+                rospy.logwarn(
+                    "[DETECT_CAPTURE][SNAPSHOT_INCOMPLETE] reason=%s src=%s tmp=%s size=%d",
+                    reason, self.detect_image_path, tmp_path,
+                    os.path.getsize(tmp_path) if os.path.isfile(tmp_path) else 0)
+            except Exception as e:
+                rospy.logwarn("[DETECT_CAPTURE][SNAPSHOT_FAILED] reason=%s src=%s err=%s",
+                              reason, self.detect_image_path, str(e))
+            try:
+                if os.path.isfile(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
+            if time.time() - start_time > self.detect_ocr_capture_timeout:
+                return None
+            rospy.sleep(0.03)
+
+        return None
+
     def capture_detection_image(self, reason, snapshot=True):
         """
         只触发相机保存图片，不触发大模型。返回可供OCR/VLM使用的图片路径。
@@ -2328,17 +2418,8 @@ class navigation_demo:
                 return None
 
             start_time = time.time()
-            while not rospy.is_shutdown():
-                current_mtime = self.image_mtime(self.detect_image_path)
-                if current_mtime > before_mtime:
-                    break
-                if time.time() - start_time > self.detect_ocr_capture_timeout:
-                    rospy.logwarn(
-                        "[DETECT_CAPTURE][TIMEOUT] reason=%s path=%s timeout=%.2fs before_mtime=%.6f current_mtime=%.6f",
-                        reason, self.detect_image_path, self.detect_ocr_capture_timeout,
-                        before_mtime, current_mtime)
-                    return None
-                rospy.sleep(0.02)
+            if not self.wait_detection_image_ready(reason, before_mtime, start_time):
+                return None
 
             if not snapshot:
                 rospy.loginfo("[DETECT_CAPTURE][OK] reason=%s path=%s",
@@ -2353,15 +2434,11 @@ class navigation_demo:
                 int(time.time() * 1000)
             )
             snapshot_path = os.path.join(self.detect_ocr_snapshot_dir, snapshot_name)
-            try:
-                shutil.copy2(self.detect_image_path, snapshot_path)
-                rospy.loginfo("[DETECT_CAPTURE][SNAPSHOT] reason=%s path=%s",
-                              reason, snapshot_path)
-                return snapshot_path
-            except Exception as e:
-                rospy.logwarn("[DETECT_CAPTURE][SNAPSHOT_FAILED] reason=%s src=%s err=%s",
-                              reason, self.detect_image_path, str(e))
-                return self.detect_image_path
+            snapshot_path = self.copy_detection_snapshot(reason, snapshot_path, start_time)
+            if snapshot_path is None:
+                rospy.logwarn("[DETECT_CAPTURE][SNAPSHOT_TIMEOUT] reason=%s src=%s",
+                              reason, self.detect_image_path)
+            return snapshot_path
 
     def run_process_with_timeout(self, cmd, timeout):
         start_time = time.time()
@@ -2412,6 +2489,19 @@ class navigation_demo:
                 "score": 0.0,
                 "raw_text": u"",
                 "reason": "image_missing",
+                "source": reason
+            }
+        if not self.image_jpeg_complete(image_path):
+            rospy.logwarn("[DETECT_OCR][IMAGE_INCOMPLETE] reason=%s path=%s size=%d",
+                          reason, image_path,
+                          os.path.getsize(image_path) if os.path.isfile(image_path) else 0)
+            return {
+                "valid": False,
+                "empty": True,
+                "answer": None,
+                "score": 0.0,
+                "raw_text": u"",
+                "reason": "image_incomplete",
                 "source": reason
             }
 
@@ -4295,13 +4385,22 @@ class navigation_demo:
                     state["yaw_error"])
             else:
                 rospy.logwarn("[FINAL][ARRIVAL_TTS_DEPTH_TIMEOUT_ALLOW] no_valid_laser_state")
-        if final_nav_ok and final_yaw_ok and (final_adjust_ok or final_allow_depth_timeout_tts):
+        final_arrival_ok = final_yaw_ok and (
+            final_adjust_ok
+            or (final_nav_ok and final_allow_depth_timeout_tts)
+        )
+        if final_yaw_ok and final_adjust_ok and not final_nav_ok:
+            rospy.logwarn(
+                "[FINAL][ARRIVAL_NAV_TIMEOUT_ALLOWED] nav_ok=false yaw_ok=true adjust_ok=true, allow arrival TTS after laser final adjust"
+            )
+        if final_arrival_ok:
             tts_text = u"已到达终点"
             self.tts_client(tts_text)
         else:
             rospy.logwarn(
-                "[FINAL][ARRIVAL_SUPPRESSED] nav_ok=%s yaw_ok=%s adjust_ok=%s, skip arrival TTS",
-                str(final_nav_ok), str(final_yaw_ok), str(final_adjust_ok))
+                "[FINAL][ARRIVAL_SUPPRESSED] nav_ok=%s yaw_ok=%s adjust_ok=%s depth_timeout_allow=%s, skip arrival TTS",
+                str(final_nav_ok), str(final_yaw_ok), str(final_adjust_ok),
+                str(final_allow_depth_timeout_tts))
 
     # ---------------- 任务启动回调(空挂，不使用) ----------------
     def start_mission_callback(self, msg):

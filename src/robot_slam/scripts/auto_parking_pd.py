@@ -119,11 +119,11 @@ class AutoSinglePointTest:
         # =====================================================
         # PD 控制参数
         # =====================================================
-        self.pid_kp_xy = rospy.get_param("pid_kp_xy", 0.6)
+        self.pid_kp_xy = rospy.get_param("pid_kp_xy", 0.8)
         self.pid_kd_xy = rospy.get_param("pid_kd_xy", 0.2)
-        self.pid_kp_yaw = rospy.get_param("pid_kp_yaw", 1.5)
+        self.pid_kp_yaw = rospy.get_param("pid_kp_yaw", 1.6)
         self.pid_kd_yaw = rospy.get_param("pid_kd_yaw", 0.3)
-        self.pid_max_v = rospy.get_param("pid_max_v", 0.25)
+        self.pid_max_v = rospy.get_param("pid_max_v", 0.5)
         self.pid_max_wz = rospy.get_param("pid_max_wz", 1.0)
         self.pid_yaw_align_timeout = rospy.get_param("pid_yaw_align_timeout", 5.0)
         self.pid_translate_timeout = rospy.get_param("pid_translate_timeout", 11.0)
@@ -140,7 +140,7 @@ class AutoSinglePointTest:
         self.fine_tune_tolerance = rospy.get_param("fine_tune_tolerance", 0.03)
         self.fine_tune_kp = rospy.get_param("fine_tune_kp", 0.3)
         self.fine_tune_kd = rospy.get_param("fine_tune_kd", 0.1)
-        self.fine_tune_max_v = rospy.get_param("fine_tune_max_v", 0.0375)
+        self.fine_tune_max_v = rospy.get_param("fine_tune_max_v", 0.05)
         self.fine_tune_valid_max_range = self.get_param("fine_tune_valid_max_range", 0.70)
         self.fine_tune_max_travel = self.get_param("fine_tune_max_travel", 0.05)
         self.fine_tune_mode = self.get_param("fine_tune_mode", "right_then_front")
@@ -182,7 +182,7 @@ class AutoSinglePointTest:
         self.scan_topic = rospy.get_param("scan_topic", "/scan_filtered")
         self.front_stop_dist = rospy.get_param("front_stop_dist", 0.17)
         self.front_slow_dist = rospy.get_param("front_slow_dist", 0.30)
-        self.front_slow_v = rospy.get_param("front_slow_v", 0.034)
+        self.front_slow_v = rospy.get_param("front_slow_v", 0.05)
         self.side_stop_dist = rospy.get_param("side_stop_dist", 0.16)
         self.any_stop_dist = rospy.get_param("any_stop_dist", 0.085)
         self.min_v = rospy.get_param("min_v", 0.004)

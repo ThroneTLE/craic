@@ -37,7 +37,7 @@
       <param name="final_depth_target" value="0.20"/>
       <param name="final_adjust_timeout" value="9.0"/>
       <param name="final_side_prealign_tolerance" value="0.04"/>
-      <param name="final_side_prealign_yaw_tolerance" value="0.05"/>
+      <param name="final_side_prealign_yaw_tolerance" value="0.08"/>
       <param name="final_side_prealign_continue_depth_hold" value="true"/>
       <!-- 终点前进贴边时同时保持侧边距离和yaw，避免前进过程中贴边漂移或车身转偏 -->
       <param name="final_depth_hold_side_yaw" value="true"/>
@@ -62,17 +62,17 @@
       <!-- 调试/固定任务点模式：true时跳过10-13检测扫描，直接按fixed_task_ids泊车 -->
       <param name="use_fixed_task_positions" value="false"/>
       <param name="fixed_task_ids" value="31,49,50,33"/>
-      <!-- 任务点执行顺序优化：识别顺序不变，任务阶段用 make_plan + costmap 选无锐角且总路径最短的顺序 -->
-      <param name="task_nav_optimize_order" value="true"/>
-      <param name="task_nav_order_path_quality_enabled" value="true"/>
+      <!-- 竞赛规则要求任务点严格按扫描识别顺序执行，关闭顺序优化及其路径评分 -->
+      <param name="task_nav_optimize_order" value="false"/>
+      <param name="task_nav_order_path_quality_enabled" value="false"/>
       <param name="task_nav_order_pin_nearest_first" value="false"/>
       <param name="task_nav_order_pin_nearest_final_last" value="false"/>
       <param name="task_nav_order_use_final_prealign" value="true"/>
       <param name="task_nav_order_final_goal_index" value="16"/>
       <param name="task_nav_order_max_bruteforce" value="7"/>
-      <param name="task_nav_order_use_approach_candidates" value="true"/>
-      <param name="task_nav_order_reject_no_plan" value="true"/>
-      <param name="task_nav_order_reject_sharp_turns" value="true"/>
+      <param name="task_nav_order_use_approach_candidates" value="false"/>
+      <param name="task_nav_order_reject_no_plan" value="false"/>
+      <param name="task_nav_order_reject_sharp_turns" value="false"/>
       <param name="task_nav_order_path_cost_weight" value="0.004"/>
       <param name="task_nav_order_path_max_cost_weight" value="0.002"/>
       <param name="task_nav_order_unknown_penalty" value="0.08"/>
@@ -211,7 +211,7 @@
       <param name="detect_ocr_async_join_timeout" value="0.05"/>
       <param name="tts_async_enabled" value="true"/>
       <param name="tts_async_queue_size" value="32"/>
-      <param name="task_arrival_nav_delay_after_tts_start" value="0.8"/>
+      <param name="task_arrival_nav_delay_after_tts_start" value="1.5"/>
       <param name="task_arrival_tts_start_wait_timeout" value="5.0"/>
       <param name="startup_audio_stabilize_wait" value="5.0"/>
       <param name="startup_audio_notice_before" value="3.0"/>
