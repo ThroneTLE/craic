@@ -81,12 +81,13 @@
 
 
       <param name="task_nav_timeout" value="18.0"/>
-      <param name="task_nav_retry_timeout" value="5.0"/>
+      <param name="task_nav_retry_timeout" value="7.0"/>
       <param name="task_nav_accept_dist" value="0.25"/>
       <param name="task_nav_approach_accept_dist" value="0.30"/>
+      <param name="task_nav_retry_approach_accept_dist" value="0.32"/>
       <param name="task_nav_direct_done_dist" value="0.08"/>
       <param name="task_nav_use_approach_goal" value="true"/>
-      <param name="task_nav_approach_offset" value="0.25"/>
+      <param name="task_nav_approach_offset" value="0.32"/>
       <param name="task_nav_approach_modes" value="back,back_left,left,front_left,front,front_right,right,back_right"/>
       <param name="task_nav_approach_filter_costmap" value="true"/>
       <param name="task_nav_approach_costmap_topic" value="/move_base/global_costmap/costmap"/>
@@ -132,6 +133,18 @@
       <param name="start_escape_turn_enabled" value="true"/>
       <param name="start_escape_turn_speed" value="0.18"/>
       <param name="start_escape_turn_duration" value="1.0"/>
+      <!-- 定位保护：大跳时刹车并重发当前move_base目标，不shutdown、不退出比赛流程 -->
+      <param name="localization_guard_enabled" value="true"/>
+      <param name="localization_guard_start_x" value="0.50"/>
+      <param name="localization_guard_start_y" value="-0.30"/>
+      <param name="localization_guard_start_radius" value="0.75"/>
+      <param name="localization_guard_start_wait" value="3.0"/>
+      <param name="localization_guard_max_jump" value="0.60"/>
+      <param name="localization_guard_jump_window" value="1.0"/>
+      <param name="localization_guard_protect_enabled" value="true"/>
+      <param name="localization_guard_recover_timeout" value="2.0"/>
+      <param name="localization_guard_stable_time" value="0.6"/>
+      <param name="localization_guard_zero_cmd_count" value="4"/>
 
       <!-- 相对格子泊车：按目标格子局部坐标检测四边障碍并选择入口 -->
       <param name="relative_parking_mode" value="true"/>

@@ -54,6 +54,7 @@ POSE_GRAPH.optimization_problem.local_slam_pose_rotation_weight = 1e5
 POSE_GRAPH.optimization_problem.huber_scale = 1e2
 POSE_GRAPH.optimize_every_n_nodes = 15
 POSE_GRAPH.constraint_builder.min_score = 0.50
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.70
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.5
 
 return options

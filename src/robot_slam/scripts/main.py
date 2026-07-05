@@ -272,6 +272,9 @@ class navigation_demo:
         self.task_nav_retry_timeout = rospy.get_param("~task_nav_retry_timeout", 5.0)
         self.task_nav_accept_dist = rospy.get_param("~task_nav_accept_dist", 0.45)
         self.task_nav_approach_accept_dist = rospy.get_param("~task_nav_approach_accept_dist", 0.45)
+        self.task_nav_retry_approach_accept_dist = rospy.get_param(
+            "~task_nav_retry_approach_accept_dist",
+            self.task_nav_approach_accept_dist)
         self.task_nav_direct_done_dist = rospy.get_param("~task_nav_direct_done_dist", 0.05)
         self.task_nav_use_approach_goal = rospy.get_param("~task_nav_use_approach_goal", True)
         self.task_nav_approach_offset = rospy.get_param("~task_nav_approach_offset", 0.30)
@@ -345,6 +348,19 @@ class navigation_demo:
         self.start_escape_turn_enabled = rospy.get_param("~start_escape_turn_enabled", True)
         self.start_escape_turn_speed = rospy.get_param("~start_escape_turn_speed", 0.18)
         self.start_escape_turn_duration = rospy.get_param("~start_escape_turn_duration", 1.0)
+        self.localization_guard_enabled = rospy.get_param("~localization_guard_enabled", True)
+        self.localization_guard_start_x = rospy.get_param("~localization_guard_start_x", 0.50)
+        self.localization_guard_start_y = rospy.get_param("~localization_guard_start_y", -0.30)
+        self.localization_guard_start_radius = rospy.get_param("~localization_guard_start_radius", 0.75)
+        self.localization_guard_start_wait = rospy.get_param("~localization_guard_start_wait", 3.0)
+        self.localization_guard_max_jump = rospy.get_param("~localization_guard_max_jump", 0.60)
+        self.localization_guard_jump_window = rospy.get_param("~localization_guard_jump_window", 1.0)
+        self.localization_guard_protect_enabled = rospy.get_param("~localization_guard_protect_enabled", True)
+        self.localization_guard_recover_timeout = rospy.get_param("~localization_guard_recover_timeout", 2.0)
+        self.localization_guard_stable_time = rospy.get_param("~localization_guard_stable_time", 0.6)
+        self.localization_guard_zero_cmd_count = int(rospy.get_param("~localization_guard_zero_cmd_count", 4))
+        self.localization_guard_last_pose = None
+        self.localization_guard_last_time = None
         self.global_costmap = None
         self.task_nav_make_plan_client = None
         self.task_nav_teb_client = None
@@ -1011,13 +1027,13 @@ class navigation_demo:
             )
             return None
 
-    def current_map_pose_for_plan(self):
+    def raw_current_map_pose(self, timeout=0.1, log_warn=True):
         pose = PoseStamped()
         pose.header.frame_id = "map"
         pose.header.stamp = rospy.Time.now()
         try:
             self.tf_listener.waitForTransform(
-                "map", "base_footprint", rospy.Time(0), rospy.Duration(0.1))
+                "map", "base_footprint", rospy.Time(0), rospy.Duration(timeout))
             trans, rot = self.tf_listener.lookupTransform(
                 "map", "base_footprint", rospy.Time(0))
             pose.pose.position.x = trans[0]
@@ -1029,11 +1045,207 @@ class navigation_demo:
             pose.pose.orientation.w = rot[3]
             return pose
         except Exception as e:
-            rospy.logwarn_throttle(
-                2.0,
-                "[TASK_NAV][PATH_FILTER_TF_FALLBACK] map->base_footprint unavailable: %s",
-                str(e)
-            )
+            if log_warn:
+                rospy.logwarn_throttle(
+                    2.0,
+                    "[TASK_NAV][PATH_FILTER_TF_FALLBACK] map->base_footprint unavailable: %s",
+                    str(e)
+                )
+            return None
+
+    def map_pose_xy_yaw(self, pose):
+        q = pose.pose.orientation
+        (_, _, yaw) = euler_from_quaternion([q.x, q.y, q.z, q.w])
+        return pose.pose.position.x, pose.pose.position.y, yaw
+
+    def set_localization_guard_reference(self, pose):
+        if pose is None:
+            return
+        x, y, yaw = self.map_pose_xy_yaw(pose)
+        if not (np.isfinite(x) and np.isfinite(y) and np.isfinite(yaw)):
+            return
+        self.localization_guard_last_pose = (float(x), float(y), float(yaw))
+        self.localization_guard_last_time = time.time()
+
+    def fail_localization_guard(self, label, reason):
+        rospy.logerr("[LOCALIZATION_GUARD][WARN_CONTINUE] label=%s reason=%s",
+                     str(label), str(reason))
+
+    def publish_guard_stop(self):
+        repeat = max(1, int(self.localization_guard_zero_cmd_count))
+        for _ in range(repeat):
+            self.pub.publish(Twist())
+            rospy.sleep(0.02)
+
+    def wait_localization_guard_stable(self, label):
+        timeout = max(0.0, float(self.localization_guard_recover_timeout))
+        stable_time = max(0.0, float(self.localization_guard_stable_time))
+        window = max(0.01, float(self.localization_guard_jump_window))
+        start = time.time()
+        stable_since = None
+        last_pose = None
+        last_time = None
+        latest_pose = None
+        rate = rospy.Rate(10)
+
+        while not rospy.is_shutdown() and time.time() - start <= timeout:
+            pose = self.raw_current_map_pose(timeout=0.02, log_warn=False)
+            now = time.time()
+            if pose is None:
+                stable_since = None
+                self.publish_guard_stop()
+                rate.sleep()
+                continue
+
+            x, y, yaw = self.map_pose_xy_yaw(pose)
+            if not (np.isfinite(x) and np.isfinite(y) and np.isfinite(yaw)):
+                stable_since = None
+                self.publish_guard_stop()
+                rate.sleep()
+                continue
+
+            latest_pose = pose
+            if last_pose is not None and last_time is not None:
+                last_x, last_y, last_yaw = last_pose
+                dt = now - last_time
+                jump = np.sqrt((x - last_x) ** 2 + (y - last_y) ** 2)
+                if dt <= window and jump > self.localization_guard_max_jump:
+                    stable_since = None
+                    rospy.logerr_throttle(
+                        0.5,
+                        "[LOCALIZATION_GUARD][RECOVER_STILL_JUMPING] label=%s jump=%.3fm dt=%.2fs max=%.3f",
+                        str(label), jump, dt, self.localization_guard_max_jump)
+                elif stable_since is None:
+                    stable_since = now
+            else:
+                stable_since = now
+
+            last_pose = (float(x), float(y), float(yaw))
+            last_time = now
+            if stable_since is not None and now - stable_since >= stable_time:
+                self.set_localization_guard_reference(pose)
+                rospy.logwarn(
+                    "[LOCALIZATION_GUARD][RECOVER_STABLE] label=%s stable=%.2fs elapsed=%.2fs pose=(%.3f,%.3f,%.1fdeg)",
+                    str(label), now - stable_since, now - start,
+                    x, y, yaw * 180.0 / pi)
+                return True
+
+            self.publish_guard_stop()
+            rate.sleep()
+
+        if latest_pose is not None:
+            self.set_localization_guard_reference(latest_pose)
+        rospy.logerr(
+            "[LOCALIZATION_GUARD][RECOVER_TIMEOUT_CONTINUE] label=%s timeout=%.2fs stable_required=%.2fs",
+            str(label), timeout, stable_time)
+        return False
+
+    def handle_localization_jump_protection(self, label, cancel_active_goal=False):
+        if not self.localization_guard_protect_enabled:
+            return 0.0
+
+        start = time.time()
+        rospy.logerr(
+            "[LOCALIZATION_GUARD][PROTECT_BEGIN] label=%s cancel_active_goal=%s no_shutdown=true",
+            str(label), str(cancel_active_goal))
+        self.publish_guard_stop()
+        if cancel_active_goal:
+            self.cancel_move_base_goal(
+                "localization_guard:%s" % str(label),
+                GoalStatus.PREEMPTED,
+                wait_timeout=min(0.5, float(self.move_base_cancel_wait)))
+        self.publish_guard_stop()
+        stable = self.wait_localization_guard_stable(label)
+        self.publish_guard_stop()
+        elapsed = time.time() - start
+        rospy.logwarn(
+            "[LOCALIZATION_GUARD][PROTECT_RESUME] label=%s stable=%s elapsed=%.2fs action=reissue_goal_continue",
+            str(label), str(stable), elapsed)
+        return elapsed
+
+    def check_start_localization(self):
+        if not self.localization_guard_enabled:
+            return True
+
+        pose = None
+        start_time = time.time()
+        wait_time = max(0.0, float(self.localization_guard_start_wait))
+        while not rospy.is_shutdown() and time.time() - start_time <= wait_time:
+            pose = self.raw_current_map_pose(timeout=0.2, log_warn=False)
+            if pose is not None:
+                break
+            rospy.sleep(0.05)
+
+        if pose is None:
+            self.fail_localization_guard("start", "no_map_pose")
+            return True
+
+        x, y, yaw = self.map_pose_xy_yaw(pose)
+        dist = np.sqrt((x - self.localization_guard_start_x) ** 2
+                       + (y - self.localization_guard_start_y) ** 2)
+        if (not np.isfinite(dist)
+                or dist > self.localization_guard_start_radius):
+            self.fail_localization_guard(
+                "start",
+                "pose=(%.3f,%.3f,%.1fdeg) expected=(%.3f,%.3f) dist=%.3f radius=%.3f" % (
+                    x, y, yaw * 180.0 / pi,
+                    self.localization_guard_start_x,
+                    self.localization_guard_start_y,
+                    dist,
+                    self.localization_guard_start_radius))
+            self.set_localization_guard_reference(pose)
+            return True
+
+        self.set_localization_guard_reference(pose)
+        rospy.loginfo(
+            "[LOCALIZATION_GUARD][START_OK] pose=(%.3f,%.3f,%.1fdeg) expected=(%.3f,%.3f) dist=%.3f radius=%.3f",
+            x, y, yaw * 180.0 / pi,
+            self.localization_guard_start_x,
+            self.localization_guard_start_y,
+            dist,
+            self.localization_guard_start_radius)
+        return True
+
+    def check_localization_jump(self, label):
+        if not self.localization_guard_enabled:
+            return True
+
+        pose = self.raw_current_map_pose(timeout=0.02, log_warn=False)
+        if pose is None:
+            return True
+
+        x, y, yaw = self.map_pose_xy_yaw(pose)
+        if not (np.isfinite(x) and np.isfinite(y) and np.isfinite(yaw)):
+            self.fail_localization_guard(label, "non_finite_pose")
+            return True
+
+        now = time.time()
+        if self.localization_guard_last_pose is not None and self.localization_guard_last_time is not None:
+            last_x, last_y, last_yaw = self.localization_guard_last_pose
+            dt = now - self.localization_guard_last_time
+            jump = np.sqrt((x - last_x) ** 2 + (y - last_y) ** 2)
+            if (dt <= max(0.01, float(self.localization_guard_jump_window))
+                    and jump > self.localization_guard_max_jump):
+                rospy.logerr_throttle(
+                    0.5,
+                    "[LOCALIZATION_GUARD][JUMP_PROTECT_REQUEST] label=%s jump=%.3fm dt=%.2fs from=(%.3f,%.3f) to=(%.3f,%.3f) max=%.3f",
+                    str(label), jump, dt, last_x, last_y, x, y,
+                    self.localization_guard_max_jump)
+                self.localization_guard_last_pose = (float(x), float(y), float(yaw))
+                self.localization_guard_last_time = now
+                return False
+
+        self.localization_guard_last_pose = (float(x), float(y), float(yaw))
+        self.localization_guard_last_time = now
+        return True
+
+    def current_map_pose_for_plan(self):
+        pose = self.raw_current_map_pose()
+        if pose is not None:
+            return pose
+        pose = PoseStamped()
+        pose.header.frame_id = "map"
+        pose.header.stamp = rospy.Time.now()
 
         if self.last_move_base_feedback is not None:
             pose.pose = self.last_move_base_feedback.base_position.pose
@@ -1423,10 +1635,15 @@ class navigation_demo:
         if nav_target is None:
             return False, False, None, None, None
         rospy.loginfo("[TASK_NAV][TRY_%s] mode=%s nav_target=%s", label, mode, nav_target)
+        is_retry = str(label).startswith("RETRY")
         if mode.startswith("transition:"):
             accept_dist = self.task_nav_transition_accept_dist
         else:
-            accept_dist = self.task_nav_accept_dist if mode == "target" else self.task_nav_approach_accept_dist
+            if mode == "target":
+                accept_dist = self.task_nav_accept_dist
+            else:
+                accept_dist = (self.task_nav_retry_approach_accept_dist
+                               if is_retry else self.task_nav_approach_accept_dist)
         nav_ok = self.goto_task_nav_goal(
             nav_target,
             timeout=timeout,
@@ -1438,7 +1655,8 @@ class navigation_demo:
 
         if followup is not None:
             followup_mode, followup_target = followup
-            followup_accept = self.task_nav_approach_accept_dist
+            followup_accept = (self.task_nav_retry_approach_accept_dist
+                               if is_retry else self.task_nav_approach_accept_dist)
             if nav_reached:
                 rospy.logwarn(
                     "[TASK_NAV][FALLBACK_TRANSITION_GOAL] transition_mode=%s followup_mode=%s followup_target=(%.3f,%.3f,%.1f)",
@@ -1498,7 +1716,7 @@ class navigation_demo:
                 "[TASK_NAV][APPROACH_STATE_DISTANCE_MISMATCH] mode=%s approach_dist=%s accept=%.3f",
                 mode,
                 "%.3f" % approach_dist if approach_dist is not None else "None",
-                self.task_nav_approach_accept_dist
+                accept_dist
             )
         rospy.loginfo(
             "[TASK_NAV][TRY_%s_DONE] mode=%s ok=%s target_dist=%s approach_dist=%s reached=%s state=%s selected_yaw=%s",
@@ -2891,6 +3109,10 @@ class navigation_demo:
         msg.angular.z = 0.0
         # 持续发布速度指令1.3秒
         while time_val <= 13:
+            if not self.check_localization_jump("start24_escape"):
+                self.handle_localization_jump_protection(
+                    "start24_escape", cancel_active_goal=False)
+                continue
             elapsed = (time_val - 1) * 0.1
             if self.start_escape_turn_enabled and elapsed < self.start_escape_turn_duration:
                 msg.angular.z = abs(self.start_escape_turn_speed)
@@ -3033,6 +3255,9 @@ class navigation_demo:
         :param p: [x, y, 朝向角度]
         :param timeout: 超时秒数，默认60
         """
+        if not self.check_localization_jump("goto_precheck"):
+            self.handle_localization_jump_protection(
+                "goto_precheck", cancel_active_goal=False)
         rospy.loginfo("[Navi] 前往目标点: %s (timeout=%.1fs)" % (p, timeout))
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = 'map'
@@ -3047,20 +3272,38 @@ class navigation_demo:
 
         self.reset_nav_feedback()
         self.move_base.send_goal(goal, self._done_cb, self._active_cb, self._feedback_cb)
-        result = self.move_base.wait_for_result(rospy.Duration(timeout))
-        if not result:
-            self.cancel_move_base_goal("goto_timeout", GoalStatus.PREEMPTED)
-            rospy.loginfo("导航超时，取消目标")
-            return False
-        else:
+        start_time = rospy.Time.now()
+        rate = rospy.Rate(5)
+        while not rospy.is_shutdown():
+            if not self.check_localization_jump("goto:%s" % str(p)):
+                protect_start = rospy.Time.now()
+                self.handle_localization_jump_protection(
+                    "goto:%s" % str(p), cancel_active_goal=True)
+                pause = (rospy.Time.now() - protect_start).to_sec()
+                start_time = start_time + rospy.Duration.from_sec(pause)
+                self.reset_nav_feedback()
+                self.move_base.send_goal(goal, self._done_cb, self._active_cb, self._feedback_cb)
+                continue
+
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            if elapsed > timeout:
+                self.cancel_move_base_goal("goto_timeout", GoalStatus.PREEMPTED)
+                rospy.loginfo("导航超时，取消目标")
+                return False
+
             state = self.move_base.get_state()
             self.last_move_base_state = state
             if state == GoalStatus.SUCCEEDED:
                 rospy.loginfo("到达目标点 %s 成功! " % p)
                 return True
-            rospy.logwarn("导航未成功到达目标点 %s，state=%s" %
-                          (p, state))
-            return False
+            if state in [GoalStatus.ABORTED, GoalStatus.REJECTED, GoalStatus.PREEMPTED, GoalStatus.RECALLED]:
+                rospy.logwarn("导航未成功到达目标点 %s，state=%s" %
+                              (p, state))
+                return False
+            rate.sleep()
+
+        self.cancel_move_base_goal("goto_shutdown", GoalStatus.PREEMPTED)
+        return False
 
     def goto_task_nav_goal(self, p, timeout=60, label="", mode="", position_accept_dist=None,
                            slow_mode=False):
@@ -3077,6 +3320,10 @@ class navigation_demo:
             self.task_nav_no_progress_timeout,
             self.task_nav_no_progress_min_delta
         )
+        if not self.check_localization_jump("task_nav_precheck:%s:%s" % (label, mode)):
+            self.handle_localization_jump_protection(
+                "task_nav_precheck:%s:%s" % (label, mode),
+                cancel_active_goal=False)
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = 'map'
         goal.target_pose.header.stamp = rospy.Time.now()
@@ -3107,6 +3354,23 @@ class navigation_demo:
         rate = rospy.Rate(5)
         try:
             while not rospy.is_shutdown():
+                if not self.check_localization_jump("task_nav:%s:%s" % (label, mode)):
+                    protect_start = rospy.Time.now()
+                    self.handle_localization_jump_protection(
+                        "task_nav:%s:%s" % (label, mode),
+                        cancel_active_goal=True)
+                    pause = (rospy.Time.now() - protect_start).to_sec()
+                    start_time = start_time + rospy.Duration.from_sec(pause)
+                    last_progress_time = rospy.Time.now()
+                    best_dist = None
+                    self.reset_nav_feedback()
+                    self.task_nav_plan_fail_cancel_requested = False
+                    self.task_nav_plan_fail_seen = 0
+                    self.task_nav_plan_fail_window_start = rospy.Time(0)
+                    self.task_nav_goal_active = True
+                    self.move_base.send_goal(goal, self._done_cb, self._active_cb, self._feedback_cb)
+                    continue
+
                 if self.task_nav_plan_fail_cancel_requested:
                     self.cancel_move_base_goal(
                         "plan_fail_cancel:%s:%s" % (label, mode),
@@ -4307,6 +4571,8 @@ class navigation_demo:
         clue = 1
 
         rospy.loginfo("开始执行任务！")
+        self.check_start_localization()
+
         if self.use_fixed_task_positions:
             task_numbers = self.parse_fixed_task_ids()
             rospy.loginfo("使用固定任务点，跳过检测点扫描: raw=%s parsed=%s" %
@@ -4462,7 +4728,9 @@ if __name__ == "__main__":
     # 7. 播报离线音频并开始任务
     os.system('ffplay -nodisp -autoexit -loglevel quiet /home/abot/EIU0US/src/robot_slam/resources/startGame.wav')
     # navi.adjust_position(side_target=2.352, back_target=0.600) 
+    navi.check_start_localization()
     navi.start24()
+    navi.check_start_localization()
     navi.execute_mission()
 
     # 8. 保持节点运行
