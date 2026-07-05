@@ -147,6 +147,11 @@
 
       <param name="relative_near_center_direct_dist" value="0.15"/>
       <param name="relative_entry_pid_tolerance" value="0.05"/>
+      <param name="side_detect_tight_width" value="0.055"/>
+      <param name="side_detect_min_span" value="0.14"/>
+      <param name="relative_clear_move_base_center_enabled" value="true"/>
+      <param name="relative_clear_move_base_center_timeout" value="3.0"/>
+      <param name="relative_clear_move_base_center_tolerance" value="0.08"/>
       <!-- 泊车激光微调：右侧贴边+修yaw，然后前进贴前方 -->
       <param name="fine_tune_mode" value="right_then_front"/>
       <param name="fine_tune_front_back_target" value="0.24"/>
@@ -201,7 +206,7 @@
       <param name="detect_ocr_enabled" value="true"/>
       <param name="detect_ocr_python" value="/home/abot/anaconda3/envs/robot_com/bin/python3"/>
       <param name="detect_ocr_matcher_script" value="/home/abot/EIU0US/src/robot_slam/scripts/ocr_question_matcher.py"/>
-      <param name="detect_ocr_min_score" value="0.75"/>
+      <param name="detect_ocr_min_score" value="0.50"/>
       <param name="detect_ocr_timeout" value="6.0"/>
       <param name="detect_ocr_capture_timeout" value="1.0"/>
       <param name="detect_ocr_snapshot_dir" value="/tmp/robot_slam_ocr"/>

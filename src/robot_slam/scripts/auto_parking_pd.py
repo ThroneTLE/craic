@@ -74,6 +74,12 @@ class AutoSinglePointTest:
         self.relative_fine_tune_only_if_blocked = self.get_param("relative_fine_tune_only_if_blocked", True)
         self.relative_near_center_direct_dist = self.get_param("relative_near_center_direct_dist", 0.15)
         self.relative_entry_pid_tolerance = self.get_param("relative_entry_pid_tolerance", 0.05)
+        self.relative_clear_move_base_center_enabled = self.get_param(
+            "relative_clear_move_base_center_enabled", True)
+        self.relative_clear_move_base_center_timeout = self.get_param(
+            "relative_clear_move_base_center_timeout", 3.0)
+        self.relative_clear_move_base_center_tolerance = self.get_param(
+            "relative_clear_move_base_center_tolerance", 0.08)
         self.enable_direct_center = rospy.get_param("enable_direct_center", True)
         self.direct_center_timeout = 5.0          # 硬编码，不读 param server
         self.direct_center_tolerance = rospy.get_param("direct_center_tolerance", 0.10)
@@ -89,9 +95,11 @@ class AutoSinglePointTest:
         # 入口识别评分参数
         # =====================================================
         self.enable_entry_recognition = rospy.get_param("enable_entry_recognition", True)
-        self.target_box_half_size = rospy.get_param("target_box_half_size", 0.24)
-        self.side_detect_width = rospy.get_param("side_detect_width", 0.12)
-        self.side_detect_min_points = int(rospy.get_param("side_detect_min_points", 4))
+        self.target_box_half_size = self.get_param("target_box_half_size", 0.24)
+        self.side_detect_width = self.get_param("side_detect_width", 0.12)
+        self.side_detect_min_points = int(self.get_param("side_detect_min_points", 4))
+        self.side_detect_tight_width = self.get_param("side_detect_tight_width", 0.055)
+        self.side_detect_min_span = self.get_param("side_detect_min_span", 0.14)
         self.enable_opening_circle_detect = rospy.get_param("enable_opening_circle_detect", True)
         self.opening_detect_radius = rospy.get_param("opening_detect_radius", 0.30)
         self.opening_ring_width = rospy.get_param("opening_ring_width", 0.08)
@@ -805,8 +813,8 @@ class AutoSinglePointTest:
             "RELATIVE_DETECT_SIDES",
             phase_start,
             "OK",
-            "open=%s blocked=%s counts=%s" %
-            (",".join(open_names), ",".join(blocked_names), str({k: sides[k]["count"] for k in sides}))
+            "open=%s blocked=%s detail=%s" %
+            (",".join(open_names), ",".join(blocked_names), self.format_side_detect_detail(sides))
         )
 
         pose = self.lookup_robot_pose()
@@ -838,6 +846,30 @@ class AutoSinglePointTest:
 
         if self.relative_direct_if_clear and len(blocked_names) == 0:
             self.best_entry = None
+            if self.relative_clear_move_base_center_enabled:
+                phase_start = self.phase_start(
+                    "RELATIVE_MOVE_BASE_CENTER_CLEAR",
+                    "timeout=%.1fs tolerance=%.3f yaw_tol=%.3f" %
+                    (self.relative_clear_move_base_center_timeout,
+                     self.relative_clear_move_base_center_tolerance,
+                     self.relative_yaw_tolerance)
+                )
+                center_mb_ok = self.try_relative_clear_move_base_center()
+                self.phase_end(
+                    "RELATIVE_MOVE_BASE_CENTER_CLEAR",
+                    phase_start,
+                    "OK" if center_mb_ok else "FAIL_FALLBACK_PD"
+                )
+                if center_mb_ok:
+                    self.stop_robot()
+                    self.parking_done = True
+                    return True
+            else:
+                self.phase_skip(
+                    "RELATIVE_MOVE_BASE_CENTER_CLEAR",
+                    "relative_clear_move_base_center_enabled=false"
+                )
+
             phase_start = self.phase_start("RELATIVE_DIRECT_CENTER", "no_blocked_sides=true")
             ok = self.pid_translate_relative_center(timeout=self.relative_center_timeout)
             self.phase_end("RELATIVE_DIRECT_CENTER", phase_start, "OK" if ok else "FAIL")
@@ -934,25 +966,135 @@ class AutoSinglePointTest:
         my = self.target_y + s * cx + c * cy
         return mx, my
 
+    def try_relative_clear_move_base_center(self):
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = self.map_frame
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose.position.x = self.target_x
+        goal.target_pose.pose.position.y = self.target_y
+        goal.target_pose.pose.position.z = 0.0
+        q = yaw_to_quat(self.target_yaw)
+        goal.target_pose.pose.orientation.x = q[0]
+        goal.target_pose.pose.orientation.y = q[1]
+        goal.target_pose.pose.orientation.z = q[2]
+        goal.target_pose.pose.orientation.w = q[3]
+
+        self.move_base.send_goal(goal)
+        start_time = rospy.Time.now()
+        poll_interval = 0.1
+        last_dist = None
+        last_yaw_err = None
+
+        while not rospy.is_shutdown():
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            state = self.move_base.get_state()
+            if state == GoalStatus.SUCCEEDED:
+                rospy.loginfo(
+                    "[PARK][RELATIVE_MOVE_BASE_CENTER_CLEAR][SUCCEEDED] elapsed=%.2fs",
+                    elapsed
+                )
+                return True
+
+            pose = self.lookup_robot_pose()
+            if pose is not None:
+                last_dist = math.sqrt(
+                    (self.target_x - pose[0]) ** 2 + (self.target_y - pose[1]) ** 2)
+                last_yaw_err = abs(normalize_angle(self.target_yaw - pose[2]))
+                if (last_dist <= self.relative_clear_move_base_center_tolerance
+                        and last_yaw_err <= self.relative_yaw_tolerance):
+                    rospy.logwarn(
+                        "[PARK][RELATIVE_MOVE_BASE_CENTER_CLEAR][POSITION_ACCEPT] dist=%.3f yaw_err=%.3f elapsed=%.2fs",
+                        last_dist, last_yaw_err, elapsed
+                    )
+                    self.move_base.cancel_goal()
+                    self.stop_robot()
+                    rospy.sleep(0.2)
+                    return True
+
+            if state in [GoalStatus.ABORTED, GoalStatus.REJECTED, GoalStatus.PREEMPTED, GoalStatus.RECALLED]:
+                rospy.logwarn(
+                    "[PARK][RELATIVE_MOVE_BASE_CENTER_CLEAR][FAILED_STATE] state=%s dist=%s yaw_err=%s elapsed=%.2fs",
+                    str(state),
+                    "%.3f" % last_dist if last_dist is not None else "None",
+                    "%.3f" % last_yaw_err if last_yaw_err is not None else "None",
+                    elapsed
+                )
+                self.move_base.cancel_goal()
+                self.stop_robot()
+                rospy.sleep(0.2)
+                return False
+
+            if elapsed >= self.relative_clear_move_base_center_timeout:
+                rospy.logwarn(
+                    "[PARK][RELATIVE_MOVE_BASE_CENTER_CLEAR][TIMEOUT] timeout=%.2fs dist=%s yaw_err=%s",
+                    self.relative_clear_move_base_center_timeout,
+                    "%.3f" % last_dist if last_dist is not None else "None",
+                    "%.3f" % last_yaw_err if last_yaw_err is not None else "None"
+                )
+                self.move_base.cancel_goal()
+                self.stop_robot()
+                rospy.sleep(0.2)
+                return False
+
+            rospy.sleep(poll_interval)
+
+        self.move_base.cancel_goal()
+        self.stop_robot()
+        return False
+
     def evaluate_target_sides_relative(self, points):
         h = self.target_box_half_size
-        w = self.side_detect_width
-        counts = {"left": 0, "right": 0, "up": 0, "down": 0}
+        broad_w = self.side_detect_width
+        tight_w = min(self.side_detect_width, self.side_detect_tight_width)
+        broad_counts = {"left": 0, "right": 0, "up": 0, "down": 0}
+        side_coords = {"left": [], "right": [], "up": [], "down": []}
         for mx, my in points:
             cx, cy = self.map_to_cell(mx, my)
-            if (-h - w) <= cx <= (-h + w) and -h <= cy <= h:
-                counts["left"] += 1
-            if (h - w) <= cx <= (h + w) and -h <= cy <= h:
-                counts["right"] += 1
-            if (-h - w) <= cy <= (-h + w) and -h <= cx <= h:
-                counts["down"] += 1
-            if (h - w) <= cy <= (h + w) and -h <= cx <= h:
-                counts["up"] += 1
+            if (-h - broad_w) <= cx <= (-h + broad_w) and -h <= cy <= h:
+                broad_counts["left"] += 1
+            if (h - broad_w) <= cx <= (h + broad_w) and -h <= cy <= h:
+                broad_counts["right"] += 1
+            if (-h - broad_w) <= cy <= (-h + broad_w) and -h <= cx <= h:
+                broad_counts["down"] += 1
+            if (h - broad_w) <= cy <= (h + broad_w) and -h <= cx <= h:
+                broad_counts["up"] += 1
+
+            if (-h - tight_w) <= cx <= (-h + tight_w) and -h <= cy <= h:
+                side_coords["left"].append(cy)
+            if (h - tight_w) <= cx <= (h + tight_w) and -h <= cy <= h:
+                side_coords["right"].append(cy)
+            if (-h - tight_w) <= cy <= (-h + tight_w) and -h <= cx <= h:
+                side_coords["down"].append(cx)
+            if (h - tight_w) <= cy <= (h + tight_w) and -h <= cx <= h:
+                side_coords["up"].append(cx)
 
         sides = {}
         for k in ["left", "right", "up", "down"]:
-            sides[k] = {"count": counts[k], "blocked": counts[k] >= self.side_detect_min_points}
+            coords = side_coords[k]
+            count = len(coords)
+            span = max(coords) - min(coords) if count >= 2 else 0.0
+            blocked = (count >= self.side_detect_min_points
+                       and span >= self.side_detect_min_span)
+            sides[k] = {
+                "count": count,
+                "blocked": blocked,
+                "broad_count": broad_counts[k],
+                "span": span
+            }
         return sides
+
+    def format_side_detect_detail(self, sides):
+        detail = []
+        for k in ["left", "right", "up", "down"]:
+            side = sides.get(k, {})
+            detail.append("%s:tight=%s broad=%s span=%.2f blocked=%s" % (
+                k,
+                str(side.get("count", 0)),
+                str(side.get("broad_count", side.get("count", 0))),
+                side.get("span", 0.0),
+                str(side.get("blocked", False))
+            ))
+        return "; ".join(detail)
 
     def choose_relative_entry(self, entries, sides):
         pose = self.lookup_robot_pose()

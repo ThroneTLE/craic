@@ -171,7 +171,7 @@ class navigation_demo:
         self.detect_ocr_matcher_script = rospy.get_param(
             "~detect_ocr_matcher_script",
             "/home/abot/EIU0US/src/robot_slam/scripts/ocr_question_matcher.py")
-        self.detect_ocr_min_score = rospy.get_param("~detect_ocr_min_score", 0.75)
+        self.detect_ocr_min_score = rospy.get_param("~detect_ocr_min_score", 0.50)
         self.detect_ocr_timeout = rospy.get_param("~detect_ocr_timeout", 4.0)
         self.detect_ocr_capture_timeout = rospy.get_param("~detect_ocr_capture_timeout", 1.0)
         self.detect_ocr_snapshot_dir = rospy.get_param(
@@ -4270,7 +4270,9 @@ class navigation_demo:
                 tts_gate = self.announce_task_arrival(
                     idx, task_id, return_gate=True)
 
-                # 播报已入队，立即逃逸离开挡板区域并进入下一个目标。
+                # 播报开始后先留出固定时间，再逃逸离开挡板区域。
+                self.wait_task_arrival_tts_delay_before_next_nav(
+                    tts_gate, idx, task_id, "before_escape")
                 escape_start_time = rospy.Time.now()
                 force_escape = self.should_force_escape_after_approach(parking, approach_nav_used)
                 if force_escape:
@@ -4283,8 +4285,6 @@ class navigation_demo:
                               str(nav_mode), str(force_escape))
                 last_parking = parking
                 last_task_id = task_id
-                self.wait_task_arrival_tts_delay_before_next_nav(
-                    tts_gate, idx, task_id, "post_escape")
                 rospy.loginfo("[TASK_TIME][END] idx=%d task_id=%d total_dt=%.2fs",
                               idx + 1, task_id,
                               (rospy.Time.now() - task_start_time).to_sec())
