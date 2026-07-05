@@ -4587,6 +4587,10 @@ class navigation_demo:
                         "[DETECT_NAV][ABORT_TASK_PHASE] detect_idx=%d point=%s collected=%s",
                         detect_idx + 1, str(p), task_numbers)
                     return False
+                if not detect_ok:
+                    rospy.logwarn(
+                        "[DETECT_NAV][SKIP_CURRENT_CONTINUE] detect_idx=%d point=%s collected=%s",
+                        detect_idx + 1, str(p), task_numbers)
 
             rospy.loginfo("\n=== 所有检测点处理完成 ===")
             rospy.loginfo("收集到的任务编号: %s" % task_numbers)

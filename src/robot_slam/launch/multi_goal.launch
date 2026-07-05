@@ -195,7 +195,7 @@
       <param name="detect_nav_retry_timeout" value="15"/>
       <param name="detect_nav_accept_dist" value="0.18"/>
       <param name="detect_skip_capture_on_nav_fail" value="true"/>
-      <param name="detect_require_all_points" value="true"/>
+      <param name="detect_require_all_points" value="false"/>
 
       <param name="detect_yaw_align_at_prealign" value="true"/>
       <param name="detect_final_timeout" value="15"/>
