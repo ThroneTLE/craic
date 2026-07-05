@@ -87,7 +87,7 @@
       <param name="task_nav_retry_approach_accept_dist" value="0.32"/>
       <param name="task_nav_direct_done_dist" value="0.08"/>
       <param name="task_nav_use_approach_goal" value="true"/>
-      <param name="task_nav_approach_offset" value="0.32"/>
+      <param name="task_nav_approach_offset" value="0.25"/>
       <param name="task_nav_approach_modes" value="back,back_left,left,front_left,front,front_right,right,back_right"/>
       <param name="task_nav_approach_filter_costmap" value="true"/>
       <param name="task_nav_approach_costmap_topic" value="/move_base/global_costmap/costmap"/>
@@ -98,7 +98,7 @@
       <param name="task_nav_target_accept_yaw" value="0.5"/>
       <param name="task_nav_flexible_yaw_enabled" value="true"/>
       <param name="task_nav_flexible_yaw_candidates" value="90,-90"/>
-      <param name="task_nav_approach_score_radius" value="0.25"/>
+      <param name="task_nav_approach_score_radius" value="0.30"/>
       <param name="task_nav_path_filter_enabled" value="true"/>
       <param name="task_nav_path_make_plan_service" value="/move_base/make_plan"/>
       <param name="task_nav_path_make_plan_wait" value="0.5"/>
