@@ -63,11 +63,12 @@ def top_view_shot(image_msg):
         cv2.imwrite(save_path, img_bgr)
         # 重置detect
         rospy.set_param('/detect', 255)
-        cv2.waitKey(1)
 
-        # 调用视觉大模型API
-        result = yi_vision_api()
-        rospy.loginfo(f'最终识别结果：{result}')
+        if rospy.get_param('/detect_run_vlm_on_capture', False):
+            result = yi_vision_api()
+            rospy.loginfo(f'最终识别结果：{result}')
+        else:
+            rospy.loginfo('仅保存检测图片，跳过拍照回调中的大模型调用')
 
 def yi_vision_api(
     # 强化Prompt：要求最后一行只输出有效任务编号
@@ -159,7 +160,7 @@ def yi_vision_api(
     return "无"
 
 def handle_fruit_detection(req):
-    # 调用视觉大模型API
+    # 调用视觉大模型API，使用最近一次保存的图片
     result = yi_vision_api()
     return TriggerResponse(success=True, message=result)
 
@@ -170,6 +171,7 @@ def main():
     rospy.Subscriber('/usb_cam/image_raw', ROSImage, top_view_shot)
     # 初始化参数服务器
     rospy.set_param('/detect', 255)
+    rospy.set_param('/detect_run_vlm_on_capture', False)
     # 创建服务
     s = rospy.Service('fruit_detection', Trigger, handle_fruit_detection)
     

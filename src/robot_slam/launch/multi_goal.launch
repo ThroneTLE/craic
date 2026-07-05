@@ -163,6 +163,18 @@
       <param name="detect_yaw_stable_count" value="3"/>
       <param name="detect_photo_settle_time" value="0.05"/>
       <param name="detect_capture_wait" value="0.1"/>
+      <param name="detect_image_path" value="/home/abot/EIU0US/src/abot_vlm/temp2/vl_now.jpg"/>
+      <param name="detect_ocr_enabled" value="true"/>
+      <param name="detect_ocr_python" value="/home/abot/anaconda3/envs/robot_com/bin/python3"/>
+      <param name="detect_ocr_matcher_script" value="/home/abot/EIU0US/src/robot_slam/scripts/ocr_question_matcher.py"/>
+      <param name="detect_ocr_min_score" value="0.75"/>
+      <param name="detect_ocr_timeout" value="6.0"/>
+      <param name="detect_ocr_capture_timeout" value="1.0"/>
+      <param name="detect_ocr_snapshot_dir" value="/tmp/robot_slam_ocr"/>
+      <param name="detect_ocr_early_enabled" value="true"/>
+      <param name="detect_ocr_early_count" value="2"/>
+      <param name="detect_ocr_early_interval" value="0.20"/>
+      <param name="detect_ocr_async_join_timeout" value="0.05"/>
 
   </node>
 </launch>

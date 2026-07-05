@@ -20,7 +20,7 @@ from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import LaserScan, Imu
 from rosgraph_msgs.msg import Log
-import sys, os, time
+import sys, os, time, json, shutil, subprocess, threading
 import dynamic_reconfigure.client
 from std_srvs.srv import Trigger, TriggerRequest, SetBool, SetBoolRequest
 # 自定义TTS语音播报服务接口
@@ -145,6 +145,31 @@ class navigation_demo:
         self.detect_yaw_stable_count = int(rospy.get_param("~detect_yaw_stable_count", 4))
         self.detect_photo_settle_time = rospy.get_param("~detect_photo_settle_time", 0.25)
         self.detect_capture_wait = rospy.get_param("~detect_capture_wait", 0.5)
+        self.detect_image_path = rospy.get_param(
+            "~detect_image_path", "/home/abot/EIU0US/src/abot_vlm/temp2/vl_now.jpg")
+
+        # OCR优先识别：固定yaw先走本地OCR+题库匹配，失败后再动态yaw+大模型兜底。
+        self.detect_ocr_enabled = rospy.get_param("~detect_ocr_enabled", True)
+        self.detect_ocr_python = rospy.get_param(
+            "~detect_ocr_python", "/home/abot/anaconda3/envs/robot_com/bin/python3")
+        self.detect_ocr_matcher_script = rospy.get_param(
+            "~detect_ocr_matcher_script",
+            "/home/abot/EIU0US/src/robot_slam/scripts/ocr_question_matcher.py")
+        self.detect_ocr_min_score = rospy.get_param("~detect_ocr_min_score", 0.75)
+        self.detect_ocr_timeout = rospy.get_param("~detect_ocr_timeout", 4.0)
+        self.detect_ocr_capture_timeout = rospy.get_param("~detect_ocr_capture_timeout", 1.0)
+        self.detect_ocr_snapshot_dir = rospy.get_param(
+            "~detect_ocr_snapshot_dir", "/tmp/robot_slam_ocr")
+        self.detect_ocr_early_enabled = rospy.get_param("~detect_ocr_early_enabled", True)
+        self.detect_ocr_early_count = int(rospy.get_param("~detect_ocr_early_count", 2))
+        self.detect_ocr_early_interval = rospy.get_param("~detect_ocr_early_interval", 0.20)
+        self.detect_ocr_async_join_timeout = rospy.get_param(
+            "~detect_ocr_async_join_timeout", 0.05)
+        self.detect_ocr_capture_lock = threading.RLock()
+        self.detect_ocr_process_lock = threading.RLock()
+        self.detect_ocr_async_lock = threading.RLock()
+        self.detect_ocr_async_threads = []
+        self.detect_ocr_async_results = []
 
         # 11. 调试/比赛固定任务点：跳过前置视觉扫描，直接进入任务点泊车
         self.use_fixed_task_positions = rospy.get_param("~use_fixed_task_positions", False)
@@ -1977,11 +2002,419 @@ class navigation_demo:
             request = StringServiceRequest()
             request.data = text  # 服务接收的关键字段
             response = self.tts_service(request)
-            rospy.loginfo("TTS播报成功: %s | 响应: %s" % (text, response.result))
+            rospy.loginfo("TTS播报成功: %s | 响应: %s" %
+                          (self.log_text(text), self.log_text(response.result)))
             return True
         except rospy.ServiceException as e:
             rospy.logerr("TTS服务调用失败: %s" % str(e))
             return False
+
+    # ---------------- OCR优先识别客户端 ----------------
+    def ensure_ocr_snapshot_dir(self):
+        try:
+            if not os.path.isdir(self.detect_ocr_snapshot_dir):
+                os.makedirs(self.detect_ocr_snapshot_dir)
+            return True
+        except Exception as e:
+            rospy.logwarn("[DETECT_OCR][SNAPSHOT_DIR_FAILED] dir=%s err=%s",
+                          self.detect_ocr_snapshot_dir, str(e))
+            return False
+
+    def safe_label_text(self, text):
+        safe = []
+        for ch in str(text):
+            if ch.isalnum() or ch in ["_", "-"]:
+                safe.append(ch)
+            else:
+                safe.append("_")
+        return "".join(safe).strip("_") or "capture"
+
+    def image_mtime(self, path):
+        try:
+            if os.path.isfile(path):
+                return os.path.getmtime(path)
+        except Exception:
+            pass
+        return 0.0
+
+    def capture_detection_image(self, reason, snapshot=True):
+        """
+        只触发相机保存图片，不触发大模型。返回可供OCR/VLM使用的图片路径。
+        identify_service.py 中 /detect=1 会保存 detect_image_path。
+        """
+        with self.detect_ocr_capture_lock:
+            before_mtime = self.image_mtime(self.detect_image_path)
+            try:
+                rospy.set_param('/detect_run_vlm_on_capture', False)
+                rospy.set_param('/detect', 1)
+            except Exception as e:
+                rospy.logwarn("[DETECT_CAPTURE][PARAM_FAILED] reason=%s err=%s",
+                              reason, str(e))
+                return None
+
+            start_time = time.time()
+            while not rospy.is_shutdown():
+                current_mtime = self.image_mtime(self.detect_image_path)
+                if current_mtime > before_mtime:
+                    break
+                if time.time() - start_time > self.detect_ocr_capture_timeout:
+                    rospy.logwarn(
+                        "[DETECT_CAPTURE][TIMEOUT] reason=%s path=%s timeout=%.2fs before_mtime=%.6f current_mtime=%.6f",
+                        reason, self.detect_image_path, self.detect_ocr_capture_timeout,
+                        before_mtime, current_mtime)
+                    return None
+                rospy.sleep(0.02)
+
+            if not snapshot:
+                rospy.loginfo("[DETECT_CAPTURE][OK] reason=%s path=%s",
+                              reason, self.detect_image_path)
+                return self.detect_image_path
+
+            if not self.ensure_ocr_snapshot_dir():
+                return self.detect_image_path
+
+            snapshot_name = "%s_%d.jpg" % (
+                self.safe_label_text(reason),
+                int(time.time() * 1000)
+            )
+            snapshot_path = os.path.join(self.detect_ocr_snapshot_dir, snapshot_name)
+            try:
+                shutil.copy2(self.detect_image_path, snapshot_path)
+                rospy.loginfo("[DETECT_CAPTURE][SNAPSHOT] reason=%s path=%s",
+                              reason, snapshot_path)
+                return snapshot_path
+            except Exception as e:
+                rospy.logwarn("[DETECT_CAPTURE][SNAPSHOT_FAILED] reason=%s src=%s err=%s",
+                              reason, self.detect_image_path, str(e))
+                return self.detect_image_path
+
+    def run_process_with_timeout(self, cmd, timeout):
+        start_time = time.time()
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        while proc.poll() is None:
+            if time.time() - start_time > timeout:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                stdout, stderr = proc.communicate()
+                return proc.returncode, stdout, stderr, time.time() - start_time, True
+            time.sleep(0.03)
+        stdout, stderr = proc.communicate()
+        return proc.returncode, stdout, stderr, time.time() - start_time, False
+
+    def decode_process_text(self, value):
+        if value is None:
+            return u""
+        if isinstance(value, unicode):
+            return value
+        return str(value).decode("utf-8", "ignore")
+
+    def log_text(self, value, max_len=None):
+        text = self.decode_process_text(value)
+        if max_len is not None:
+            text = text[-max_len:]
+        return text.encode("utf-8", "replace")
+
+    def run_ocr_matcher(self, image_path, reason):
+        if not self.detect_ocr_enabled:
+            return {
+                "valid": False,
+                "empty": True,
+                "answer": None,
+                "score": 0.0,
+                "raw_text": u"",
+                "reason": "disabled",
+                "source": reason
+            }
+        if not image_path or not os.path.isfile(image_path):
+            rospy.logwarn("[DETECT_OCR][IMAGE_MISSING] reason=%s path=%s",
+                          reason, str(image_path))
+            return {
+                "valid": False,
+                "empty": True,
+                "answer": None,
+                "score": 0.0,
+                "raw_text": u"",
+                "reason": "image_missing",
+                "source": reason
+            }
+
+        cmd = [
+            self.detect_ocr_python,
+            self.detect_ocr_matcher_script,
+            "--image", image_path,
+            "--top-k", "3",
+            "--json"
+        ]
+        rospy.loginfo("[DETECT_OCR][START] reason=%s path=%s timeout=%.2fs",
+                      reason, image_path, self.detect_ocr_timeout)
+        with self.detect_ocr_process_lock:
+            return_code, stdout, stderr, elapsed, timed_out = self.run_process_with_timeout(
+                cmd, self.detect_ocr_timeout)
+        stdout_text = self.decode_process_text(stdout).strip()
+        stderr_text = self.decode_process_text(stderr).strip()
+        if timed_out:
+            rospy.logwarn("[DETECT_OCR][TIMEOUT] reason=%s timeout=%.2fs path=%s",
+                          reason, self.detect_ocr_timeout, image_path)
+            return {
+                "valid": False,
+                "empty": True,
+                "answer": None,
+                "score": 0.0,
+                "raw_text": u"",
+                "reason": "timeout",
+                "source": reason,
+                "elapsed": elapsed
+            }
+        if return_code != 0:
+            rospy.logwarn("[DETECT_OCR][FAILED] reason=%s code=%s elapsed=%.2fs stderr=%s stdout=%s",
+                          reason, str(return_code), elapsed,
+                          self.log_text(stderr_text, 300),
+                          self.log_text(stdout_text, 300))
+            return {
+                "valid": False,
+                "empty": True,
+                "answer": None,
+                "score": 0.0,
+                "raw_text": u"",
+                "reason": "process_failed",
+                "source": reason,
+                "elapsed": elapsed
+            }
+
+        try:
+            payload = json.loads(stdout_text.splitlines()[-1])
+        except Exception as e:
+            rospy.logwarn("[DETECT_OCR][BAD_JSON] reason=%s err=%s stdout=%s",
+                          reason, str(e), self.log_text(stdout_text, 500))
+            return {
+                "valid": False,
+                "empty": True,
+                "answer": None,
+                "score": 0.0,
+                "raw_text": u"",
+                "reason": "bad_json",
+                "source": reason,
+                "elapsed": elapsed
+            }
+
+        raw_text = payload.get("raw_text", u"")
+        normalized_text = payload.get("normalized_text", u"")
+        try:
+            answer = int(payload.get("best_answer"))
+        except Exception:
+            answer = None
+        try:
+            score = float(payload.get("best_score", 0.0))
+        except Exception:
+            score = 0.0
+
+        empty = not bool(normalized_text)
+        valid = (not empty
+                 and answer in VLM_TO_TASK
+                 and score >= self.detect_ocr_min_score)
+        rospy.loginfo(
+            "[DETECT_OCR][RESULT] reason=%s valid=%s empty=%s answer=%s score=%.4f threshold=%.2f elapsed=%.2fs raw=%s best=%s",
+            reason, str(valid), str(empty), str(answer), score,
+            self.detect_ocr_min_score, elapsed,
+            self.log_text(raw_text),
+            self.log_text(payload.get("best_question", u"")))
+        return {
+            "valid": valid,
+            "empty": empty,
+            "answer": answer,
+            "score": score,
+            "raw_text": raw_text,
+            "normalized_text": normalized_text,
+            "reason": "ok" if valid else "no_valid_match",
+            "source": reason,
+            "elapsed": elapsed,
+            "image_path": image_path,
+            "payload": payload
+        }
+
+    def run_detection_ocr_capture(self, point, reason):
+        image_path = self.capture_detection_image(
+            "ocr_point_%s_%s" % (str(point), reason),
+            snapshot=True)
+        if image_path is None:
+            return {
+                "valid": False,
+                "empty": True,
+                "answer": None,
+                "score": 0.0,
+                "raw_text": u"",
+                "reason": "capture_failed",
+                "source": reason,
+                "point": point
+            }
+        result = self.run_ocr_matcher(image_path, reason)
+        result["point"] = point
+        return result
+
+    def reset_detection_ocr_async(self, point):
+        with self.detect_ocr_async_lock:
+            self.detect_ocr_async_results = []
+            self.detect_ocr_async_threads = []
+        rospy.loginfo("[DETECT_OCR][EARLY_CAPTURE_RESET] point=%s", str(point))
+
+    def store_detection_ocr_async_result(self, result):
+        with self.detect_ocr_async_lock:
+            self.detect_ocr_async_results.append(result)
+
+    def run_detection_ocr_burst(self, point, reason):
+        try:
+            count = max(0, int(self.detect_ocr_early_count))
+            for index in range(count):
+                if rospy.is_shutdown():
+                    return
+                capture_reason = "%s_%d" % (reason, index + 1)
+                snapshot = self.capture_detection_image(
+                    "ocr_point_%s_%s" % (str(point), capture_reason),
+                    snapshot=True)
+                if snapshot is not None:
+                    self.store_detection_ocr_async_result({
+                        "valid": False,
+                        "empty": True,
+                        "answer": None,
+                        "score": 0.0,
+                        "raw_text": u"",
+                        "reason": "early_capture_pending",
+                        "source": capture_reason,
+                        "point": point,
+                        "image_path": snapshot,
+                        "pending_ocr": True,
+                        "sequence": index
+                    })
+                    rospy.loginfo(
+                        "[DETECT_OCR][EARLY_CAPTURE] point=%s reason=%s seq=%d path=%s",
+                        str(point), capture_reason, index + 1, snapshot)
+                if index + 1 < count and self.detect_ocr_early_interval > 0.0:
+                    rospy.sleep(self.detect_ocr_early_interval)
+        except Exception as e:
+            rospy.logerr("[DETECT_OCR][EARLY_CAPTURE_EXCEPTION] point=%s reason=%s err=%s",
+                         str(point), reason, str(e))
+
+    def start_detection_ocr_burst_async(self, point, reason):
+        if (not self.detect_ocr_enabled
+                or not self.detect_ocr_early_enabled
+                or self.detect_ocr_early_count <= 0):
+            return False
+        thread = threading.Thread(
+            target=self.run_detection_ocr_burst,
+            args=(point, reason))
+        thread.daemon = True
+        with self.detect_ocr_async_lock:
+            self.detect_ocr_async_threads.append(thread)
+        thread.start()
+        rospy.loginfo("[DETECT_OCR][EARLY_CAPTURE_START] point=%s reason=%s count=%d",
+                      str(point), reason, self.detect_ocr_early_count)
+        return True
+
+    def thread_is_alive(self, thread):
+        if hasattr(thread, "is_alive"):
+            return thread.is_alive()
+        return thread.isAlive()
+
+    def collect_detection_ocr_async_results(self, point, wait_timeout=None):
+        if wait_timeout is None:
+            wait_timeout = self.detect_ocr_async_join_timeout
+        deadline = time.time() + max(0.0, float(wait_timeout))
+        with self.detect_ocr_async_lock:
+            threads = list(self.detect_ocr_async_threads)
+        for thread in threads:
+            if not self.thread_is_alive(thread):
+                continue
+            remaining = deadline - time.time()
+            if remaining <= 0.0:
+                break
+            thread.join(remaining)
+        with self.detect_ocr_async_lock:
+            return [
+                result for result in self.detect_ocr_async_results
+                if result.get("point") == point
+            ]
+
+    def wait_detection_ocr_early_captures(self, point):
+        count = max(0, int(self.detect_ocr_early_count))
+        wait_timeout = max(0.0, float(self.detect_ocr_async_join_timeout))
+        if count > 0:
+            wait_timeout = max(
+                wait_timeout,
+                self.detect_ocr_capture_timeout * count
+                + self.detect_ocr_early_interval * max(0, count - 1)
+                + 0.2)
+        results = self.collect_detection_ocr_async_results(
+            point, wait_timeout=wait_timeout)
+        rospy.loginfo(
+            "[DETECT_OCR][EARLY_CAPTURE_READY] point=%s cached=%d wait=%.2fs",
+            str(point), len(results), wait_timeout)
+        return results
+
+    def run_pending_early_ocr_result(self, point, early_result):
+        if not early_result.get("pending_ocr"):
+            return early_result
+        image_path = early_result.get("image_path")
+        source = early_result.get("source", "early_capture")
+        rospy.loginfo(
+            "[DETECT_OCR][EARLY_CHECK_START] point=%s source=%s path=%s",
+            str(point), str(source), str(image_path))
+        result = self.run_ocr_matcher(image_path, source)
+        result["point"] = point
+        result["pending_ocr"] = False
+        result["sequence"] = early_result.get("sequence", 0)
+        early_result.clear()
+        early_result.update(result)
+        rospy.loginfo(
+            "[DETECT_OCR][EARLY_CHECK_DONE] point=%s source=%s valid=%s empty=%s answer=%s score=%.4f",
+            str(point), str(source), str(result.get("valid")),
+            str(result.get("empty")), str(result.get("answer")),
+            result.get("score", 0.0))
+        return early_result
+
+    def select_detection_ocr_result(self, point, final_result):
+        async_results = self.collect_detection_ocr_async_results(point)
+        if final_result is not None and final_result.get("valid"):
+            rospy.loginfo("[DETECT_OCR][USE_FINAL] point=%s answer=%s score=%.4f",
+                          str(point), str(final_result.get("answer")),
+                          final_result.get("score", 0.0))
+            return final_result
+        async_results.sort(key=lambda item: item.get("sequence", 0))
+        for early_result in async_results:
+            checked = self.run_pending_early_ocr_result(point, early_result)
+            if checked.get("valid"):
+                rospy.loginfo(
+                    "[DETECT_OCR][USE_EARLY] point=%s answer=%s score=%.4f source=%s",
+                    str(point), str(checked.get("answer")),
+                    checked.get("score", 0.0), str(checked.get("source")))
+                return checked
+        if final_result is not None:
+            return final_result
+        if async_results:
+            async_results.sort(key=lambda item: item.get("score", 0.0), reverse=True)
+            return async_results[0]
+        return {
+            "valid": False,
+            "empty": True,
+            "answer": None,
+            "score": 0.0,
+            "raw_text": u"",
+            "reason": "no_ocr_result",
+            "source": "none",
+            "point": point
+        }
+
+    def call_detection_ocr_priority(self, point, reason):
+        self.wait_detection_ocr_early_captures(point)
+        final_result = self.run_detection_ocr_capture(point, "%s_final" % reason)
+        selected = self.select_detection_ocr_result(point, final_result)
+        rospy.loginfo(
+            "[DETECT_OCR][SELECT] point=%s valid=%s empty=%s answer=%s score=%.4f source=%s reason=%s",
+            str(point), str(selected.get("valid")), str(selected.get("empty")),
+            str(selected.get("answer")), selected.get("score", 0.0),
+            str(selected.get("source")), str(selected.get("reason")))
+        return selected
 
     # ---------------- 调用视觉检测服务 ----------------
     def call_fruit_detection_service(self):
@@ -1989,9 +2422,11 @@ class navigation_demo:
         功能：调用视觉服务识别线索(返回数字1-9)
         """
         try:
-            # 设置参数：启动检测
-            rospy.set_param('/detect', 1)
-            rospy.sleep(self.detect_capture_wait)
+            # 先触发相机保存当前画面，再让大模型读取最新图片。
+            image_path = self.capture_detection_image("vlm_capture", snapshot=False)
+            if image_path is None:
+                rospy.logwarn("[DETECT_VLM][CAPTURE_FAILED]")
+                return "无"
             # 调用服务并获取识别结果
             response = self.fruit_detection_service()
             rospy.loginfo("视觉大模型识别结果: %s" % response.message)
@@ -2354,6 +2789,9 @@ class navigation_demo:
                     selected_distance = distance
                     capture_at_current_pose = self.should_capture_detection_at_prealign(
                         point, use_dynamic_yaw)
+                    if not use_dynamic_yaw:
+                        self.start_detection_ocr_burst_async(
+                            point, "fixed_yaw_prealign")
                     break
 
             if self.detect_yaw_align_at_prealign and prealign_ok:
@@ -2424,13 +2862,14 @@ class navigation_demo:
             return False
         if not normalized:
             rospy.logwarn("[DETECT_RESULT][EMPTY] point=%s source=%s raw=%s",
-                          str(point), source, str(detect_result))
+                          str(point), source, self.log_text(detect_result))
             return False
 
         try:
             task_id = int(normalized)
         except ValueError:
-            rospy.logwarn("检测结果不是有效数字: %s" % detect_result)
+            rospy.logwarn("检测结果不是有效数字: %s" %
+                          self.log_text(detect_result))
             return False
 
         if task_id not in VLM_TO_TASK:
@@ -2460,29 +2899,50 @@ class navigation_demo:
         rospy.sleep(0.1)
         try:
             rospy.loginfo("导航到检测点 → 目标点索引%s" % point)
-            # 首扫固定使用 goalListYaw，动态YAW只作为“无”后的保底。
+            self.reset_detection_ocr_async(point)
+            # 首扫固定使用 goalListYaw + OCR题库匹配；动态YAW只作为OCR失败后的大模型保底。
             detect_nav_ok = self.goto_detection_point(point, use_dynamic_yaw=False)
             if not detect_nav_ok:
                 rospy.logwarn("[DETECT_NAV][MISSION_SKIP] point=%s reason=navigation_failed", str(point))
                 return False
 
-            detect_result = self.call_fruit_detection_service()
-            rospy.loginfo("当前检测点%s固定YAW扫描结果: %s" % (point, detect_result))
-            if self.handle_detection_result(point, detect_result, "fixed_yaw"):
-                return True
-
-            if not self.is_no_detection_result(detect_result):
-                return True
+            if self.detect_ocr_enabled:
+                ocr_result = self.call_detection_ocr_priority(point, "fixed_yaw_ocr")
+                if ocr_result.get("valid"):
+                    if self.handle_detection_result(
+                            point, str(ocr_result.get("answer")), "fixed_yaw_ocr"):
+                        return True
+                rospy.logwarn(
+                    "[DETECT_OCR][FALLBACK_TO_VLM] point=%s empty=%s score=%.4f reason=%s raw=%s",
+                    str(point), str(ocr_result.get("empty")),
+                    ocr_result.get("score", 0.0),
+                    str(ocr_result.get("reason")),
+                    self.log_text(ocr_result.get("raw_text", u"")))
+            else:
+                detect_result = self.call_fruit_detection_service()
+                rospy.loginfo("当前检测点%s固定YAW大模型扫描结果: %s" % (point, detect_result))
+                if self.handle_detection_result(point, detect_result, "fixed_yaw_vlm"):
+                    return True
+                if not self.is_no_detection_result(detect_result):
+                    return True
 
             if not self.should_run_dynamic_yaw_fallback(point):
                 rospy.loginfo(
                     "[DETECT_YAW][FALLBACK_SKIP] point=%s reason=disabled_or_no_photo_target",
                     str(point)
                 )
+                if self.detect_ocr_enabled:
+                    rospy.logwarn(
+                        "[DETECT_VLM][FIXED_FALLBACK_START] point=%s reason=no_dynamic_yaw_target",
+                        str(point))
+                    fixed_vlm_result = self.call_fruit_detection_service()
+                    rospy.loginfo("当前检测点%s固定YAW大模型兜底结果: %s" %
+                                  (point, fixed_vlm_result))
+                    self.handle_detection_result(point, fixed_vlm_result, "fixed_yaw_vlm_fallback")
                 return True
 
             rospy.logwarn(
-                "[DETECT_YAW][FALLBACK_START] point=%s reason=first_scan_none",
+                "[DETECT_YAW][FALLBACK_START] point=%s reason=ocr_no_valid_match",
                 str(point)
             )
             fallback_nav_ok = self.goto_detection_point(point, use_dynamic_yaw=True)
