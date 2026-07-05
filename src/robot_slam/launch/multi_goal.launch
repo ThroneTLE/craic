@@ -175,6 +175,8 @@
       <param name="detect_ocr_early_count" value="2"/>
       <param name="detect_ocr_early_interval" value="0.20"/>
       <param name="detect_ocr_async_join_timeout" value="0.05"/>
+      <param name="tts_async_enabled" value="true"/>
+      <param name="tts_async_queue_size" value="32"/>
 
   </node>
 </launch>

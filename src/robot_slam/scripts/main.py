@@ -21,6 +21,10 @@ from geometry_msgs.msg import Point
 from sensor_msgs.msg import LaserScan, Imu
 from rosgraph_msgs.msg import Log
 import sys, os, time, json, shutil, subprocess, threading
+try:
+    import Queue as queue_module
+except ImportError:
+    import queue as queue_module
 import dynamic_reconfigure.client
 from std_srvs.srv import Trigger, TriggerRequest, SetBool, SetBoolRequest
 # 自定义TTS语音播报服务接口
@@ -79,6 +83,13 @@ class navigation_demo:
         rospy.wait_for_service('tts_service', timeout=20)
         self.tts_service = rospy.ServiceProxy('tts_service', StringService)
         rospy.loginfo("TTS服务连接成功！")
+        self.tts_service_lock = threading.RLock()
+        self.tts_async_enabled = rospy.get_param("~tts_async_enabled", True)
+        self.tts_async_queue_size = int(rospy.get_param("~tts_async_queue_size", 32))
+        self.tts_async_queue = queue_module.Queue(max(1, self.tts_async_queue_size))
+        self.tts_async_worker_thread = None
+        if self.tts_async_enabled:
+            self.start_tts_async_worker()
 
         # 7. 订阅激光雷达数据（供 adjust_position 使用）
         self.scan_data = None
@@ -1988,6 +1999,51 @@ class navigation_demo:
         return False
 
     # ---------------- TTS语音播报客户端 ----------------
+    def start_tts_async_worker(self):
+        if self.tts_async_worker_thread is not None:
+            return
+        thread = threading.Thread(target=self.tts_async_worker)
+        thread.daemon = True
+        self.tts_async_worker_thread = thread
+        thread.start()
+        rospy.loginfo("[TTS_ASYNC][WORKER_START] queue_size=%d",
+                      max(1, self.tts_async_queue_size))
+
+    def tts_async_worker(self):
+        while not rospy.is_shutdown():
+            try:
+                item = self.tts_async_queue.get(True, 0.2)
+            except queue_module.Empty:
+                continue
+            if item is None:
+                self.tts_async_queue.task_done()
+                return
+
+            text, label, enqueue_time = item
+            rospy.loginfo("[TTS_ASYNC][PLAY_START] label=%s queue_wait=%.2fs",
+                          label, time.time() - enqueue_time)
+            start_time = rospy.Time.now()
+            ok = self.tts_client(text)
+            rospy.loginfo("[TTS_ASYNC][PLAY_DONE] label=%s dt=%.2fs ok=%s",
+                          label,
+                          (rospy.Time.now() - start_time).to_sec(),
+                          str(ok))
+            self.tts_async_queue.task_done()
+
+    def tts_client_async(self, text, label=""):
+        if not self.tts_async_enabled:
+            return self.tts_client(text)
+        try:
+            self.tts_async_queue.put_nowait((text, str(label), time.time()))
+            rospy.loginfo("[TTS_ASYNC][ENQUEUE] label=%s queue=%d text=%s",
+                          str(label), self.tts_async_queue.qsize(),
+                          self.log_text(text))
+            return True
+        except queue_module.Full:
+            rospy.logwarn("[TTS_ASYNC][DROP] label=%s reason=queue_full text=%s",
+                          str(label), self.log_text(text))
+            return False
+
     def tts_client(self, text):
         """
         功能：调用语音服务播报文本
@@ -2001,7 +2057,8 @@ class navigation_demo:
             # 构造语音服务请求
             request = StringServiceRequest()
             request.data = text  # 服务接收的关键字段
-            response = self.tts_service(request)
+            with self.tts_service_lock:
+                response = self.tts_service(request)
             rospy.loginfo("TTS播报成功: %s | 响应: %s" %
                           (self.log_text(text), self.log_text(response.result)))
             return True
@@ -2880,7 +2937,10 @@ class navigation_demo:
         task_numbers.append(mapped_id)
         rospy.loginfo("收集到任务编号: %s (原始VLM: %s)" % (mapped_id, task_id))
         tts_text = u"已检测第%d条线索为%d号" % (clue, task_id)
-        self.tts_client(tts_text)
+        self.tts_client_async(
+            tts_text,
+            "detect_clue_%d_%d" % (clue, task_id)
+        )
         clue += 1
         return True
 
@@ -3002,8 +3062,11 @@ class navigation_demo:
         raw_id = TASK_TO_VLM.get(task_id, task_id)
         tts_text = u"已到达任务点%d号" % raw_id
         tts_start_time = rospy.Time.now()
-        tts_ok = self.tts_client(tts_text)
-        rospy.loginfo("[TASK_TIME][TTS] idx=%d task_id=%d dt=%.2fs ok=%s",
+        tts_ok = self.tts_client_async(
+            tts_text,
+            "task_arrival_%d_%d" % (idx + 1, raw_id)
+        )
+        rospy.loginfo("[TASK_TIME][TTS_QUEUE] idx=%d task_id=%d dt=%.2fs queued=%s",
                       idx + 1, task_id,
                       (rospy.Time.now() - tts_start_time).to_sec(),
                       str(tts_ok))
@@ -3098,7 +3161,7 @@ class navigation_demo:
                 # 语音播报到达任务点（用原始VLM识别编号）
                 self.announce_task_arrival(idx, task_id)
 
-                # 播报完毕，逃逸离开挡板区域
+                # 播报已入队，立即逃逸离开挡板区域并进入下一个目标。
                 escape_start_time = rospy.Time.now()
                 force_escape = self.should_force_escape_after_approach(parking, approach_nav_used)
                 if force_escape:
