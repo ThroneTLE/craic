@@ -124,8 +124,8 @@
     <param name="fine_tune_tolerance" value="0.03"/>
     <param name="fine_tune_kp" value="0.30"/>
     <param name="fine_tune_kd" value="0.10"/>
-    <param name="fine_tune_max_v" value="0.03"/>
-    <param name="fine_tune_max_wz" value="0.45"/>
+    <param name="fine_tune_max_v" value="0.0375"/>
+    <param name="fine_tune_max_wz" value="0.5625"/>
     <param name="fine_tune_yaw_tolerance" value="0.08"/>
     <param name="fine_tune_right_timeout_ratio" value="0.55"/>
     <param name="fine_tune_right_max_travel" value="0.08"/>

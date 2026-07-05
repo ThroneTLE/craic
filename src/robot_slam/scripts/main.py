@@ -230,7 +230,31 @@ class navigation_demo:
         self.final_yaw_stable_count = int(rospy.get_param("~final_yaw_stable_count", 3))
         self.final_side_laser_direction = rospy.get_param("~final_side_laser_direction", "left")
         self.final_depth_laser_direction = rospy.get_param("~final_depth_laser_direction", "back")
+        self.final_side_target = rospy.get_param("~final_side_target", 0.17)
+        self.final_depth_target = rospy.get_param("~final_depth_target", 0.20)
         self.final_adjust_timeout = rospy.get_param("~final_adjust_timeout", 9.0)
+        self.final_side_prealign_tolerance = rospy.get_param(
+            "~final_side_prealign_tolerance", 0.04)
+        self.final_side_prealign_yaw_tolerance = rospy.get_param(
+            "~final_side_prealign_yaw_tolerance", self.yaw_tolerance)
+        self.final_side_prealign_continue_depth_hold = rospy.get_param(
+            "~final_side_prealign_continue_depth_hold", True)
+        self.final_depth_hold_side_yaw = rospy.get_param("~final_depth_hold_side_yaw", True)
+        self.final_depth_tolerance = rospy.get_param(
+            "~final_depth_tolerance", self.position_tolerance)
+        self.final_depth_hold_side_tolerance = rospy.get_param(
+            "~final_depth_hold_side_tolerance", self.final_side_prealign_tolerance)
+        self.final_depth_hold_yaw_tolerance = rospy.get_param(
+            "~final_depth_hold_yaw_tolerance", self.yaw_tolerance)
+        self.final_depth_max_v = rospy.get_param("~final_depth_max_v", 0.06)
+        self.final_depth_max_side_v = rospy.get_param("~final_depth_max_side_v", 0.04)
+        self.final_depth_max_wz = rospy.get_param("~final_depth_max_wz", 0.35)
+        self.final_depth_side_kp = rospy.get_param("~final_depth_side_kp", self.kp_linear)
+        self.final_depth_yaw_kp = rospy.get_param("~final_depth_yaw_kp", self.kp_angular)
+        self.final_arrival_tts_on_depth_timeout = rospy.get_param(
+            "~final_arrival_tts_on_depth_timeout", True)
+        self.final_depth_hold_timed_out_after_cmd = False
+        self.final_depth_hold_last_state = None
         self.final_adjust_force_side_on_fail = rospy.get_param("~final_adjust_force_side_on_fail", True)
         self.final_force_side_duration = rospy.get_param("~final_force_side_duration", 1.5)
         self.final_force_side_speed = rospy.get_param("~final_force_side_speed", 0.04)
@@ -257,7 +281,7 @@ class navigation_demo:
         self.task_nav_target_accept_yaw = rospy.get_param("~task_nav_target_accept_yaw", 0.5)
         self.task_nav_flexible_yaw_enabled = rospy.get_param("~task_nav_flexible_yaw_enabled", True)
         self.task_nav_flexible_yaw_candidates_param = rospy.get_param(
-            "~task_nav_flexible_yaw_candidates", "0,90,180,-90")
+            "~task_nav_flexible_yaw_candidates", "90,-90")
         self.task_nav_flexible_yaw_candidates = self.parse_yaw_candidates(
             self.task_nav_flexible_yaw_candidates_param)
         self.task_nav_approach_score_radius = rospy.get_param("~task_nav_approach_score_radius", 0.20)
@@ -616,10 +640,10 @@ class navigation_demo:
             candidates.append(yaw)
         if not candidates:
             rospy.logwarn(
-                "[TASK_NAV][FLEX_YAW_NO_CANDIDATES] raw=%s fallback=0,90,180,-90",
+                "[TASK_NAV][FLEX_YAW_NO_CANDIDATES] raw=%s fallback=90,-90",
                 str(value)
             )
-            candidates = [0.0, 90.0, 180.0, -90.0]
+            candidates = [90.0, -90.0]
         return candidates
 
     def parse_float_list(self, value):
@@ -1640,13 +1664,19 @@ class navigation_demo:
         rospy.logwarn("[FINAL][FORCE_%s][DONE]", label)
         return True
 
-    def adjust_final_axis(self, label, angle, axis, sign, target, timeout, adjust_yaw):
+    def adjust_final_axis(self, label, angle, axis, sign, target, timeout, adjust_yaw,
+                          distance_tolerance=None, yaw_tolerance=None):
+        if distance_tolerance is None:
+            distance_tolerance = self.position_tolerance
+        if yaw_tolerance is None:
+            yaw_tolerance = self.yaw_tolerance
         rate = rospy.Rate(10)
         start_time = rospy.Time.now()
         self.is_adjusting = True
         rospy.loginfo(
-            "[FINAL][ADJUST_%s][START] axis=%s target=%.3f timeout=%.1fs yaw=%s",
-            label, axis, target, timeout, str(adjust_yaw))
+            "[FINAL][ADJUST_%s][START] axis=%s target=%.3f timeout=%.1fs yaw=%s dist_tol=%.3f yaw_tol=%.3f",
+            label, axis, target, timeout, str(adjust_yaw),
+            distance_tolerance, yaw_tolerance)
 
         while not rospy.is_shutdown() and self.is_adjusting:
             elapsed = (rospy.Time.now() - start_time).to_sec()
@@ -1667,8 +1697,8 @@ class navigation_demo:
 
             distance_error = distance - target
             yaw_error = self.normalize_angle(self.target_yaw - self.current_yaw)
-            distance_ok = abs(distance_error) < self.position_tolerance
-            yaw_ok = (not adjust_yaw) or abs(yaw_error) < self.yaw_tolerance
+            distance_ok = abs(distance_error) <= distance_tolerance
+            yaw_ok = (not adjust_yaw) or abs(yaw_error) <= yaw_tolerance
 
             if distance_ok and yaw_ok:
                 rospy.loginfo(
@@ -1696,6 +1726,107 @@ class navigation_demo:
         self.stop_movement()
         return False
 
+    def adjust_final_depth_with_side_yaw(
+            self, side_angle, side_axis, side_sign, side_target,
+            depth_angle, depth_axis, depth_sign, depth_target, timeout):
+        rate = rospy.Rate(10)
+        start_time = rospy.Time.now()
+        self.is_adjusting = True
+        depth_cmd_sent = False
+        self.final_depth_hold_timed_out_after_cmd = False
+        self.final_depth_hold_last_state = None
+        rospy.loginfo(
+            "[FINAL][ADJUST_DEPTH_HOLD][START] depth_axis=%s depth_target=%.3f side_axis=%s side_target=%.3f timeout=%.1fs",
+            depth_axis, depth_target, side_axis, side_target, timeout)
+
+        while not rospy.is_shutdown() and self.is_adjusting:
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            if elapsed > timeout:
+                self.final_depth_hold_timed_out_after_cmd = depth_cmd_sent
+                if self.final_depth_hold_last_state is not None:
+                    state = self.final_depth_hold_last_state
+                    rospy.logwarn(
+                        "[FINAL][ADJUST_DEPTH_HOLD][TIMEOUT] elapsed=%.2f depth_cmd_sent=%s depth=%.3f target=%.3f err=%.3f side=%.3f target=%.3f err=%.3f yaw_err=%.3f",
+                        elapsed, str(depth_cmd_sent),
+                        state["depth"], depth_target, state["depth_error"],
+                        state["side"], side_target, state["side_error"],
+                        state["yaw_error"])
+                else:
+                    rospy.logwarn(
+                        "[FINAL][ADJUST_DEPTH_HOLD][TIMEOUT] elapsed=%.2f depth_cmd_sent=%s no_valid_laser_state",
+                        elapsed, str(depth_cmd_sent))
+                self.stop_movement()
+                return False
+
+            side_distance = self.get_range_at_angle(side_angle)
+            depth_distance = self.get_range_at_angle(depth_angle)
+            if not np.isfinite(side_distance) or not np.isfinite(depth_distance):
+                rospy.logwarn_throttle(
+                    1.0,
+                    "[FINAL][ADJUST_DEPTH_HOLD][WAIT_LASER] side_valid=%s depth_valid=%s",
+                    str(np.isfinite(side_distance)), str(np.isfinite(depth_distance)))
+                self.pub.publish(Twist())
+                rate.sleep()
+                continue
+
+            side_error = side_distance - side_target
+            depth_error = depth_distance - depth_target
+            yaw_error = self.normalize_angle(self.target_yaw - self.current_yaw)
+            self.final_depth_hold_last_state = {
+                "depth": depth_distance,
+                "depth_error": depth_error,
+                "side": side_distance,
+                "side_error": side_error,
+                "yaw_error": yaw_error,
+            }
+            side_ok = abs(side_error) <= self.final_depth_hold_side_tolerance
+            depth_ok = abs(depth_error) <= self.final_depth_tolerance
+            yaw_ok = abs(yaw_error) <= self.final_depth_hold_yaw_tolerance
+
+            if side_ok and depth_ok and yaw_ok:
+                rospy.loginfo(
+                    "[FINAL][ADJUST_DEPTH_HOLD][OK] depth=%.3f target=%.3f err=%.3f side=%.3f target=%.3f err=%.3f yaw_err=%.3f",
+                    depth_distance, depth_target, depth_error,
+                    side_distance, side_target, side_error, yaw_error)
+                self.stop_movement()
+                return True
+
+            cmd = Twist()
+            if not depth_ok:
+                depth_cmd = self.kp_linear * depth_sign * depth_error
+                depth_cmd = self.clamp(
+                    depth_cmd,
+                    -abs(self.final_depth_max_v),
+                    abs(self.final_depth_max_v))
+                if abs(depth_cmd) > 1e-4:
+                    depth_cmd_sent = True
+                self.apply_final_axis_cmd(cmd, depth_axis, depth_cmd)
+            if not side_ok:
+                side_cmd = self.final_depth_side_kp * side_sign * side_error
+                side_cmd = self.clamp(
+                    side_cmd,
+                    -abs(self.final_depth_max_side_v),
+                    abs(self.final_depth_max_side_v))
+                self.apply_final_axis_cmd(cmd, side_axis, side_cmd)
+            if not yaw_ok:
+                cmd.angular.z = self.clamp(
+                    self.final_depth_yaw_kp * yaw_error,
+                    -abs(self.final_depth_max_wz),
+                    abs(self.final_depth_max_wz))
+
+            self.pub.publish(cmd)
+            rospy.loginfo_throttle(
+                0.5,
+                "[FINAL][ADJUST_DEPTH_HOLD] depth=%.3f target=%.3f err=%.3f side=%.3f target=%.3f err=%.3f yaw_err=%.3f ok=(%s,%s,%s) cmd=(%.3f,%.3f,%.3f)",
+                depth_distance, depth_target, depth_error,
+                side_distance, side_target, side_error, yaw_error,
+                str(depth_ok), str(side_ok), str(yaw_ok),
+                cmd.linear.x, cmd.linear.y, cmd.angular.z)
+            rate.sleep()
+
+        self.stop_movement()
+        return False
+
     def adjust_position(self, side_target, back_target):
         """
         执行位置校准
@@ -1703,6 +1834,8 @@ class navigation_demo:
         :param back_target: 深度方向目标距离 (米)
         :return: 是否完成校准
         """
+        self.final_depth_hold_timed_out_after_cmd = False
+        self.final_depth_hold_last_state = None
         if self.scan_data is None:
             rospy.logwarn("无激光数据，无法校准!")
             return False
@@ -1731,13 +1864,20 @@ class navigation_demo:
             side_sign,
             side_target,
             self.final_adjust_timeout,
-            True)
+            True,
+            self.final_side_prealign_tolerance,
+            self.final_side_prealign_yaw_tolerance)
 
         if not side_ok:
             rospy.logwarn(
-                "[FINAL][ADJUST_POSITION][SIDE_FAILED] force_side_on_fail=%s",
+                "[FINAL][ADJUST_POSITION][SIDE_FAILED] continue_depth_hold=%s force_side_on_fail=%s",
+                str(self.final_side_prealign_continue_depth_hold
+                    and self.final_depth_hold_side_yaw),
                 str(self.final_adjust_force_side_on_fail))
-            if self.final_adjust_force_side_on_fail:
+            if self.final_depth_hold_side_yaw and self.final_side_prealign_continue_depth_hold:
+                rospy.logwarn(
+                    "[FINAL][ADJUST_POSITION][SIDE_FAILED_CONTINUE_DEPTH_HOLD] depth stage will keep correcting side+yaw")
+            elif self.final_adjust_force_side_on_fail:
                 self.run_final_axis_motion(
                     "SIDE",
                     side_axis,
@@ -1751,16 +1891,32 @@ class navigation_demo:
                         depth_sign,
                         self.final_force_depth_speed,
                         self.final_force_depth_duration)
-            return False
+                return False
+            else:
+                return False
 
-        depth_ok = self.adjust_final_axis(
-            "DEPTH",
-            depth_angle,
-            depth_axis,
-            depth_sign,
-            back_target,
-            self.final_adjust_timeout,
-            False)
+        if self.final_depth_hold_side_yaw:
+            depth_ok = self.adjust_final_depth_with_side_yaw(
+                side_angle,
+                side_axis,
+                side_sign,
+                side_target,
+                depth_angle,
+                depth_axis,
+                depth_sign,
+                back_target,
+                self.final_adjust_timeout)
+        else:
+            depth_ok = self.adjust_final_axis(
+                "DEPTH",
+                depth_angle,
+                depth_axis,
+                depth_sign,
+                back_target,
+                self.final_adjust_timeout,
+                False)
+        if self.final_depth_hold_side_yaw:
+            return depth_ok
         return side_ok and depth_ok
 
     def stop_movement(self):
@@ -3915,13 +4071,32 @@ class navigation_demo:
         else:
             self.target_yaw = final_target[2] / 180.0 * pi
 
-        rospy.loginfo("[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=0.150 depth=0.240",
-                      final_target[2])
-        final_adjust_ok = self.adjust_position(side_target=0.17, back_target=0.20)
+        rospy.loginfo("[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=%.3f depth=%.3f",
+                      final_target[2], self.final_side_target, self.final_depth_target)
+        final_adjust_ok = self.adjust_position(
+            side_target=self.final_side_target,
+            back_target=self.final_depth_target)
         rospy.loginfo("[FINAL][ADJUST_POSITION][DONE] ok=%s", str(final_adjust_ok))
-        # 语音播报到达终点
-        tts_text = u"已到达终点"
-        self.tts_client(tts_text)
+        final_allow_depth_timeout_tts = (
+            self.final_arrival_tts_on_depth_timeout
+            and self.final_depth_hold_timed_out_after_cmd)
+        if final_nav_ok and final_yaw_ok and final_allow_depth_timeout_tts and not final_adjust_ok:
+            state = self.final_depth_hold_last_state
+            if state is not None:
+                rospy.logwarn(
+                    "[FINAL][ARRIVAL_TTS_DEPTH_TIMEOUT_ALLOW] depth=%.3f target=%.3f err=%.3f side=%.3f target=%.3f err=%.3f yaw_err=%.3f",
+                    state["depth"], self.final_depth_target, state["depth_error"],
+                    state["side"], self.final_side_target, state["side_error"],
+                    state["yaw_error"])
+            else:
+                rospy.logwarn("[FINAL][ARRIVAL_TTS_DEPTH_TIMEOUT_ALLOW] no_valid_laser_state")
+        if final_nav_ok and final_yaw_ok and (final_adjust_ok or final_allow_depth_timeout_tts):
+            tts_text = u"已到达终点"
+            self.tts_client(tts_text)
+        else:
+            rospy.logwarn(
+                "[FINAL][ARRIVAL_SUPPRESSED] nav_ok=%s yaw_ok=%s adjust_ok=%s, skip arrival TTS",
+                str(final_nav_ok), str(final_yaw_ok), str(final_adjust_ok))
 
     # ---------------- 任务启动回调(空挂，不使用) ----------------
     def start_mission_callback(self, msg):

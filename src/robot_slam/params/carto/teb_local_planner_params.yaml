@@ -40,7 +40,7 @@ TebLocalPlannerROS:
 
   acc_lim_x: 1.2
   acc_lim_y: 1.2
-  acc_lim_theta: 1.0
+  acc_lim_theta: 2.0
 
 
   ############################################################
@@ -83,7 +83,7 @@ TebLocalPlannerROS:
   ############################################################
 
   min_obstacle_dist: 0.05
-  inflation_dist: 0.16
+  inflation_dist: 0.14
 
   include_costmap_obstacles: true
   costmap_obstacles_behind_robot_dist: 0.35

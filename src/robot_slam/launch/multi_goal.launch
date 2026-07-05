@@ -33,8 +33,25 @@
       <!-- 终点yaw=-180时，原地图左/后墙对应车体右/前激光 -->
       <param name="final_side_laser_direction" value="right"/>
       <param name="final_depth_laser_direction" value="front"/>
+      <param name="final_side_target" value="0.17"/>
+      <param name="final_depth_target" value="0.20"/>
       <param name="final_adjust_timeout" value="9.0"/>
-      <!-- 终点侧向闭环失败时：先向配置的侧向移动1.5s，再向配置的深度方向前进一小段，然后仍播报终点 -->
+      <param name="final_side_prealign_tolerance" value="0.04"/>
+      <param name="final_side_prealign_yaw_tolerance" value="0.05"/>
+      <param name="final_side_prealign_continue_depth_hold" value="true"/>
+      <!-- 终点前进贴边时同时保持侧边距离和yaw，避免前进过程中贴边漂移或车身转偏 -->
+      <param name="final_depth_hold_side_yaw" value="true"/>
+      <param name="final_depth_tolerance" value="0.08"/>
+      <param name="final_depth_hold_side_tolerance" value="0.04"/>
+      <param name="final_depth_hold_yaw_tolerance" value="0.05"/>
+      <param name="final_depth_max_v" value="0.3"/>
+      <param name="final_depth_max_side_v" value="0.1"/>
+      <param name="final_depth_max_wz" value="0.35"/>
+      <param name="final_depth_side_kp" value="0.5"/>
+      <param name="final_depth_yaw_kp" value="0.5"/>
+      <!-- 终点深度前进闭环超时但已经执行过前进修正时，仍允许播报到达终点 -->
+      <param name="final_arrival_tts_on_depth_timeout" value="true"/>
+      <!-- 终点侧向闭环失败时：先向配置的侧向移动1.5s，再向配置的深度方向前进一小段 -->
       <param name="final_adjust_force_side_on_fail" value="true"/>
       <param name="final_force_side_duration" value="1.5"/>
       <param name="final_force_side_speed" value="0.04"/>
@@ -79,7 +96,7 @@
       <param name="task_nav_approach_fallback_to_target" value="false"/>
       <param name="task_nav_target_accept_yaw" value="0.5"/>
       <param name="task_nav_flexible_yaw_enabled" value="true"/>
-      <param name="task_nav_flexible_yaw_candidates" value="0,90,180,-90"/>
+      <param name="task_nav_flexible_yaw_candidates" value="90,-90"/>
       <param name="task_nav_approach_score_radius" value="0.25"/>
       <param name="task_nav_path_filter_enabled" value="true"/>
       <param name="task_nav_path_make_plan_service" value="/move_base/make_plan"/>
@@ -138,8 +155,8 @@
       <param name="fine_tune_tolerance" value="0.03"/>
       <param name="fine_tune_kp" value="0.30"/>
       <param name="fine_tune_kd" value="0.10"/>
-      <param name="fine_tune_max_v" value="0.03"/>
-      <param name="fine_tune_max_wz" value="0.45"/>
+      <param name="fine_tune_max_v" value="0.1"/>
+      <param name="fine_tune_max_wz" value="0.8"/>
       <param name="fine_tune_yaw_tolerance" value="0.08"/>
       <param name="fine_tune_right_timeout_ratio" value="0.55"/>
       <param name="fine_tune_right_max_travel" value="0.08"/>
