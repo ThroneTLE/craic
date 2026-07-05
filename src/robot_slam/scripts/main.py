@@ -126,6 +126,8 @@ class navigation_demo:
         self.detect_yaw_align_at_photo = rospy.get_param("~detect_yaw_align_at_photo", False)
         self.detect_yaw_align_enabled = rospy.get_param("~detect_yaw_align_enabled", True)
         self.detect_dynamic_yaw_enabled = rospy.get_param("~detect_dynamic_yaw_enabled", True)
+        self.detect_dynamic_yaw_fallback_on_none = rospy.get_param(
+            "~detect_dynamic_yaw_fallback_on_none", True)
         self.detect_dynamic_yaw_min_distance = rospy.get_param("~detect_dynamic_yaw_min_distance", 0.05)
         self.detect_dynamic_yaw_capture_at_prealign = rospy.get_param(
             "~detect_dynamic_yaw_capture_at_prealign", True)
@@ -161,6 +163,13 @@ class navigation_demo:
         self.final_yaw_stable_count = int(rospy.get_param("~final_yaw_stable_count", 3))
         self.final_side_laser_direction = rospy.get_param("~final_side_laser_direction", "left")
         self.final_depth_laser_direction = rospy.get_param("~final_depth_laser_direction", "back")
+        self.final_adjust_timeout = rospy.get_param("~final_adjust_timeout", 9.0)
+        self.final_adjust_force_side_on_fail = rospy.get_param("~final_adjust_force_side_on_fail", True)
+        self.final_force_side_duration = rospy.get_param("~final_force_side_duration", 1.5)
+        self.final_force_side_speed = rospy.get_param("~final_force_side_speed", 0.04)
+        self.final_force_depth_after_side = rospy.get_param("~final_force_depth_after_side", True)
+        self.final_force_depth_duration = rospy.get_param("~final_force_depth_duration", 1.0)
+        self.final_force_depth_speed = rospy.get_param("~final_force_depth_speed", 0.04)
         self.task_nav_timeout = rospy.get_param("~task_nav_timeout", 8.0)
         self.task_nav_retry_timeout = rospy.get_param("~task_nav_retry_timeout", 5.0)
         self.task_nav_accept_dist = rospy.get_param("~task_nav_accept_dist", 0.45)
@@ -656,9 +665,15 @@ class navigation_demo:
             fallback_yaw_deg,
             source)
 
-    def should_capture_detection_at_prealign(self, point):
-        return (self.detect_dynamic_yaw_enabled
+    def should_capture_detection_at_prealign(self, point, use_dynamic_yaw=True):
+        return (use_dynamic_yaw
+                and self.detect_dynamic_yaw_enabled
                 and self.detect_dynamic_yaw_capture_at_prealign
+                and self.has_detection_photo_target(point))
+
+    def should_run_dynamic_yaw_fallback(self, point):
+        return (self.detect_dynamic_yaw_fallback_on_none
+                and self.detect_dynamic_yaw_enabled
                 and self.has_detection_photo_target(point))
 
     def select_task_flexible_yaw(self, target):
@@ -1532,6 +1547,86 @@ class navigation_demo:
         elif axis == "linear.y":
             cmd.linear.y += value
 
+    def run_final_axis_motion(self, label, axis, sign, speed, duration):
+        if duration <= 0.0 or speed <= 0.0:
+            rospy.loginfo(
+                "[FINAL][FORCE_%s][SKIP] duration=%.2f speed=%.3f",
+                label, duration, speed)
+            return False
+
+        rospy.logwarn(
+            "[FINAL][FORCE_%s][START] axis=%s sign=%.1f speed=%.3f duration=%.2fs",
+            label, axis, sign, speed, duration)
+        rate = rospy.Rate(10)
+        start_time = rospy.Time.now()
+        while not rospy.is_shutdown():
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            if elapsed >= duration:
+                break
+            cmd = Twist()
+            self.apply_final_axis_cmd(cmd, axis, sign * abs(speed))
+            self.pub.publish(cmd)
+            rate.sleep()
+        self.pub.publish(Twist())
+        rospy.logwarn("[FINAL][FORCE_%s][DONE]", label)
+        return True
+
+    def adjust_final_axis(self, label, angle, axis, sign, target, timeout, adjust_yaw):
+        rate = rospy.Rate(10)
+        start_time = rospy.Time.now()
+        self.is_adjusting = True
+        rospy.loginfo(
+            "[FINAL][ADJUST_%s][START] axis=%s target=%.3f timeout=%.1fs yaw=%s",
+            label, axis, target, timeout, str(adjust_yaw))
+
+        while not rospy.is_shutdown() and self.is_adjusting:
+            elapsed = (rospy.Time.now() - start_time).to_sec()
+            if elapsed > timeout:
+                rospy.logwarn("[FINAL][ADJUST_%s][TIMEOUT] elapsed=%.2f", label, elapsed)
+                self.stop_movement()
+                return False
+
+            distance = self.get_range_at_angle(angle)
+            if not np.isfinite(distance):
+                rospy.logwarn_throttle(
+                    1.0,
+                    "[FINAL][ADJUST_%s][WAIT_LASER] invalid_distance",
+                    label)
+                self.pub.publish(Twist())
+                rate.sleep()
+                continue
+
+            distance_error = distance - target
+            yaw_error = self.normalize_angle(self.target_yaw - self.current_yaw)
+            distance_ok = abs(distance_error) < self.position_tolerance
+            yaw_ok = (not adjust_yaw) or abs(yaw_error) < self.yaw_tolerance
+
+            if distance_ok and yaw_ok:
+                rospy.loginfo(
+                    "[FINAL][ADJUST_%s][OK] distance=%.3f target=%.3f err=%.3f yaw_err=%.3f",
+                    label, distance, target, distance_error, yaw_error)
+                self.stop_movement()
+                return True
+
+            cmd = Twist()
+            if not distance_ok:
+                self.apply_final_axis_cmd(
+                    cmd,
+                    axis,
+                    self.kp_linear * sign * distance_error)
+            if adjust_yaw and not yaw_ok:
+                cmd.angular.z = self.kp_angular * yaw_error
+            self.pub.publish(cmd)
+            rospy.loginfo_throttle(
+                0.5,
+                "[FINAL][ADJUST_%s] distance=%.3f target=%.3f err=%.3f yaw_err=%.3f cmd=(%.3f,%.3f,%.3f)",
+                label, distance, target, distance_error, yaw_error,
+                cmd.linear.x, cmd.linear.y, cmd.angular.z)
+            rate.sleep()
+
+        self.stop_movement()
+        return False
+
     def adjust_position(self, side_target, back_target):
         """
         执行位置校准
@@ -1559,72 +1654,46 @@ class navigation_demo:
             str(self.final_side_laser_direction), side_target,
             str(self.final_depth_laser_direction), back_target
         )
-        
-        #rospy.loginfo(f"开始位置校准: 侧方目标={side_target:.2f}m, 后方目标={back_target:.2f}m, 航向角目标=0°")
-        
-        self.is_adjusting = True
-        rate = rospy.Rate(10)  # 10Hz控制频率
-        complete = False
-        start_time = rospy.Time.now()
-        while not rospy.is_shutdown() and self.is_adjusting and not complete:
-                    # 检查超时
-            if (rospy.Time.now() - start_time).to_sec() > 9:
-                rospy.logwarn("位置校准超时!")
-                self.stop_movement()
-                return False
-            # 获取关键角度距离
-            side_dist = self.get_range_at_angle(side_angle)
-            depth_dist = self.get_range_at_angle(depth_angle)
-            
-            
-            # 计算位置误差
-            side_error = side_dist - side_target
-            depth_error = depth_dist - back_target
-            
-            # 计算航向角误差
-            yaw_error = self.normalize_angle(self.target_yaw - self.current_yaw)
-            
-            # 创建速度指令
-            cmd = Twist()
-            
-            if abs(side_error) > self.position_tolerance:
-                self.apply_final_axis_cmd(
-                    cmd, side_axis, self.kp_linear * side_sign * side_error)
-            
-            if abs(depth_error) > self.position_tolerance:
-                self.apply_final_axis_cmd(
-                    cmd, depth_axis, self.kp_linear * depth_sign * depth_error)
-            
-            # 航向角调整 (Z轴旋转)
-            if abs(yaw_error) > self.yaw_tolerance:
-                cmd.angular.z = self.kp_angular * yaw_error
-            
-            # 发布控制指令
-            self.pub.publish(cmd)
-            
-            # 检查是否完成校准
-            position_ok = (abs(side_error) < self.position_tolerance and
-                          abs(depth_error) < self.position_tolerance)
-            yaw_ok = abs(yaw_error) < self.yaw_tolerance
-            
-            if position_ok and yaw_ok:
-                rospy.loginfo("位置和航向角校准完成!")
-                complete = True
-                self.stop_movement()
-                break
-            elif position_ok and not yaw_ok:
-                rospy.loginfo_throttle(1, "位置已校准，正在调整航向角...")
-            elif not position_ok and yaw_ok:
-                rospy.loginfo_throttle(1, "航向角已校准，正在调整位置...")
-            
-            # 调试信息
-            #rospy.loginfo_throttle(0.5, 
-            #    f"校准中: 左侧={left_dist:.2f}m (目标:{side_target:.2f}), "
-             #   f"后方={back_dist:.2f}m (目标:{back_target:.2f}), "
-             #   f"航向角={np.degrees(self.current_yaw):.2f}° (目标:0.0°)")
-            
-            rate.sleep()
-        return complete
+
+        side_ok = self.adjust_final_axis(
+            "SIDE",
+            side_angle,
+            side_axis,
+            side_sign,
+            side_target,
+            self.final_adjust_timeout,
+            True)
+
+        if not side_ok:
+            rospy.logwarn(
+                "[FINAL][ADJUST_POSITION][SIDE_FAILED] force_side_on_fail=%s",
+                str(self.final_adjust_force_side_on_fail))
+            if self.final_adjust_force_side_on_fail:
+                self.run_final_axis_motion(
+                    "SIDE",
+                    side_axis,
+                    side_sign,
+                    self.final_force_side_speed,
+                    self.final_force_side_duration)
+                if self.final_force_depth_after_side:
+                    self.run_final_axis_motion(
+                        "DEPTH",
+                        depth_axis,
+                        depth_sign,
+                        self.final_force_depth_speed,
+                        self.final_force_depth_duration)
+            return False
+
+        depth_ok = self.adjust_final_axis(
+            "DEPTH",
+            depth_angle,
+            depth_axis,
+            depth_sign,
+            back_target,
+            self.final_adjust_timeout,
+            False)
+        return side_ok and depth_ok
+
     def stop_movement(self):
         """停止机器人运动"""
         cmd = Twist()
@@ -1662,19 +1731,19 @@ class navigation_demo:
             target[2]
         ]
 
-    def make_detection_prealign_goal(self, target, point=None):
+    def make_detection_prealign_goal(self, target, point=None, use_dynamic_yaw=False):
         """按配置方向生成检测点预对准位姿"""
         goal = self.make_offset_goal(
             target,
             self.detect_prealign_mode,
             self.detect_prealign_distance
         )
-        if point is not None and self.should_capture_detection_at_prealign(point):
+        if point is not None and self.should_capture_detection_at_prealign(point, use_dynamic_yaw):
             goal[2], _ = self.detection_yaw_from_xy(
                 point, goal[0], goal[1], goal[2], "prealign_goal")
         return goal
 
-    def make_detection_prealign_candidates(self, point, target):
+    def make_detection_prealign_candidates(self, point, target, use_dynamic_yaw=False):
         candidates = []
         seen = set()
 
@@ -1687,7 +1756,7 @@ class navigation_demo:
             if distance <= 0.0:
                 return
             goal = self.make_offset_goal(target, mode, distance)
-            if self.should_capture_detection_at_prealign(point):
+            if self.should_capture_detection_at_prealign(point, use_dynamic_yaw):
                 goal[2], _ = self.detection_yaw_from_xy(
                     point, goal[0], goal[1], goal[2], "candidate:%s" % mode)
             key = (round(goal[0], 3), round(goal[1], 3), round(goal[2], 1))
@@ -2235,16 +2304,21 @@ class navigation_demo:
                                    GoalStatus.PREEMPTED)
         return False
 
-    def goto_detection_point(self, point):
+    def goto_detection_point(self, point, use_dynamic_yaw=False):
         """检测点导航：先用同yaw预对准，再进入原拍照点并短闭环修正yaw"""
         target = goals[point]
         prealign_ok = True
         selected_mode = self.detect_prealign_mode
         selected_distance = self.detect_prealign_distance
         capture_at_current_pose = False
+        rospy.loginfo(
+            "[DETECT_NAV][STRATEGY] point=%s dynamic_yaw=%s fixed_yaw=%.1f",
+            str(point), str(use_dynamic_yaw), target[2]
+        )
         if self.detect_prealign_enabled and self.detect_prealign_distance > 0.0:
             prealign_ok = False
-            candidates = self.make_detection_prealign_candidates(point, target)
+            candidates = self.make_detection_prealign_candidates(
+                point, target, use_dynamic_yaw=use_dynamic_yaw)
             costmap = self.get_global_costmap_for_approach()
             for attempt, (mode, prealign_goal, distance) in enumerate(candidates):
                 clear, reason = self.evaluate_detection_prealign_goal(
@@ -2278,12 +2352,13 @@ class navigation_demo:
                     prealign_ok = True
                     selected_mode = mode
                     selected_distance = distance
-                    capture_at_current_pose = self.should_capture_detection_at_prealign(point)
+                    capture_at_current_pose = self.should_capture_detection_at_prealign(
+                        point, use_dynamic_yaw)
                     break
 
             if self.detect_yaw_align_at_prealign and prealign_ok:
                 prealign_yaw = target[2]
-                if capture_at_current_pose:
+                if use_dynamic_yaw and capture_at_current_pose:
                     prealign_yaw, _ = self.detection_yaw_from_current_pose(
                         point, target[2], "prealign_current")
                 self.align_detection_yaw(prealign_yaw)
@@ -2305,9 +2380,10 @@ class navigation_demo:
                     return False
         else:
             final_target = list(target)
-            final_target[2], _ = self.detection_yaw_from_xy(
-                point, final_target[0], final_target[1], final_target[2],
-                "final_goal")
+            if use_dynamic_yaw:
+                final_target[2], _ = self.detection_yaw_from_xy(
+                    point, final_target[0], final_target[1], final_target[2],
+                    "final_goal")
             rospy.loginfo("检测点%s原始拍照目标: %s" % (point, final_target))
             nav_ok = self.goto(final_target, timeout=self.detect_final_timeout)
             if not nav_ok and self.detect_skip_capture_on_nav_fail:
@@ -2315,8 +2391,10 @@ class navigation_demo:
                 return False
 
         if self.detect_yaw_align_at_photo:
-            photo_yaw, _ = self.detection_yaw_from_current_pose(
-                point, target[2], "photo_current")
+            photo_yaw = target[2]
+            if use_dynamic_yaw:
+                photo_yaw, _ = self.detection_yaw_from_current_pose(
+                    point, target[2], "photo_current")
             self.align_detection_yaw(photo_yaw)
         if self.detect_photo_settle_time > 0:
             rospy.sleep(self.detect_photo_settle_time)
@@ -2325,6 +2403,46 @@ class navigation_demo:
     # ---------------- 取消导航 ----------------
     def cancel(self):
         self.move_base.cancel_all_goals()
+        return True
+
+    def normalize_detection_result(self, detect_result):
+        if detect_result is None:
+            return u""
+        if isinstance(detect_result, unicode):
+            return detect_result.strip()
+        return str(detect_result).strip().decode("utf-8", "ignore")
+
+    def is_no_detection_result(self, detect_result):
+        return self.normalize_detection_result(detect_result) == u"无"
+
+    def handle_detection_result(self, point, detect_result, source):
+        """处理一次VLM结果；只有有效任务编号才入队和播报。"""
+        global clue
+        normalized = self.normalize_detection_result(detect_result)
+        if normalized == u"无":
+            rospy.loginfo("[DETECT_RESULT][NONE] point=%s source=%s", str(point), source)
+            return False
+        if not normalized:
+            rospy.logwarn("[DETECT_RESULT][EMPTY] point=%s source=%s raw=%s",
+                          str(point), source, str(detect_result))
+            return False
+
+        try:
+            task_id = int(normalized)
+        except ValueError:
+            rospy.logwarn("检测结果不是有效数字: %s" % detect_result)
+            return False
+
+        if task_id not in VLM_TO_TASK:
+            rospy.logwarn("任务编号超出范围: %s" % task_id)
+            return False
+
+        mapped_id = VLM_TO_TASK[task_id]
+        task_numbers.append(mapped_id)
+        rospy.loginfo("收集到任务编号: %s (原始VLM: %s)" % (mapped_id, task_id))
+        tts_text = u"已检测第%d条线索为%d号" % (clue, task_id)
+        self.tts_client(tts_text)
+        clue += 1
         return True
 
     # ---------------- 单个检测点完整任务逻辑 ----------------
@@ -2340,42 +2458,48 @@ class navigation_demo:
         id = 0
         find_id = 0
         rospy.sleep(0.1)
+        try:
+            rospy.loginfo("导航到检测点 → 目标点索引%s" % point)
+            # 首扫固定使用 goalListYaw，动态YAW只作为“无”后的保底。
+            detect_nav_ok = self.goto_detection_point(point, use_dynamic_yaw=False)
+            if not detect_nav_ok:
+                rospy.logwarn("[DETECT_NAV][MISSION_SKIP] point=%s reason=navigation_failed", str(point))
+                return False
 
-        rospy.loginfo("导航到检测点 → 目标点索引%s" % point)
-        # 步骤1：导航到预设检测点
-        detect_nav_ok = self.goto_detection_point(point)
-        if not detect_nav_ok:
-            rospy.logwarn("[DETECT_NAV][MISSION_SKIP] point=%s reason=navigation_failed", str(point))
+            detect_result = self.call_fruit_detection_service()
+            rospy.loginfo("当前检测点%s固定YAW扫描结果: %s" % (point, detect_result))
+            if self.handle_detection_result(point, detect_result, "fixed_yaw"):
+                return True
+
+            if not self.is_no_detection_result(detect_result):
+                return True
+
+            if not self.should_run_dynamic_yaw_fallback(point):
+                rospy.loginfo(
+                    "[DETECT_YAW][FALLBACK_SKIP] point=%s reason=disabled_or_no_photo_target",
+                    str(point)
+                )
+                return True
+
+            rospy.logwarn(
+                "[DETECT_YAW][FALLBACK_START] point=%s reason=first_scan_none",
+                str(point)
+            )
+            fallback_nav_ok = self.goto_detection_point(point, use_dynamic_yaw=True)
+            if not fallback_nav_ok:
+                rospy.logwarn(
+                    "[DETECT_YAW][FALLBACK_SKIP_CAPTURE] point=%s reason=navigation_failed",
+                    str(point)
+                )
+                return True
+
+            fallback_result = self.call_fruit_detection_service()
+            rospy.loginfo("当前检测点%s动态YAW保底扫描结果: %s" % (point, fallback_result))
+            self.handle_detection_result(point, fallback_result, "dynamic_yaw_fallback")
+            return True
+        finally:
             id = 0
             find_id = 0
-            return False
-
-        # 步骤2：调用视觉检测
-        detect_result = self.call_fruit_detection_service()
-        rospy.loginfo("当前检测点%s结果: %s" % (point, detect_result))
-
-        # 步骤3: 处理识别结果
-        if detect_result != "无":
-            try:
-                # 转换为数字
-                task_id = int(detect_result)
-                if task_id in VLM_TO_TASK:
-                    # 映射 VLM 返回值到任务编号：31→1, 32→2, ..., 51→9
-                    mapped_id = VLM_TO_TASK[task_id]
-                    task_numbers.append(mapped_id)
-                    rospy.loginfo("收集到任务编号: %s (原始VLM: %s)" % (mapped_id, task_id))
-                    # 语音播报：已检测第X条线索为X号（用原始VLM识别编号）
-                    tts_text = u"已检测第%d条线索为%d号" % (clue, task_id)
-                    self.tts_client(tts_text)
-                    clue += 1  # 线索计数+1
-                else:
-                    rospy.logwarn("任务编号超出范围: %s" % task_id)
-            except ValueError:
-                rospy.logwarn("检测结果不是有效数字: %s" % detect_result)
-        # 重置标记
-        id = 0
-        find_id = 0
-        return True
 
     # ---------------- 执行识别 ----------------
     def recognize(self, p):
@@ -2604,9 +2728,9 @@ class navigation_demo:
         else:
             self.target_yaw = final_target[2] / 180.0 * pi
 
-        rospy.loginfo("[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=0.220 back=0.240",
+        rospy.loginfo("[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=0.150 depth=0.240",
                       final_target[2])
-        final_adjust_ok = self.adjust_position(side_target=0.15, back_target=0.240)
+        final_adjust_ok = self.adjust_position(side_target=0.17, back_target=0.20)
         rospy.loginfo("[FINAL][ADJUST_POSITION][DONE] ok=%s", str(final_adjust_ok))
         # 语音播报到达终点
         tts_text = u"已到达终点"

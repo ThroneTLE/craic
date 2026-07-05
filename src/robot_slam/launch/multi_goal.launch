@@ -33,6 +33,14 @@
       <!-- 终点yaw=-180时，原地图左/后墙对应车体右/前激光 -->
       <param name="final_side_laser_direction" value="right"/>
       <param name="final_depth_laser_direction" value="front"/>
+      <param name="final_adjust_timeout" value="9.0"/>
+      <!-- 终点侧向闭环失败时：先向配置的侧向移动1.5s，再向配置的深度方向前进一小段，然后仍播报终点 -->
+      <param name="final_adjust_force_side_on_fail" value="true"/>
+      <param name="final_force_side_duration" value="1.5"/>
+      <param name="final_force_side_speed" value="0.04"/>
+      <param name="final_force_depth_after_side" value="true"/>
+      <param name="final_force_depth_duration" value="1.0"/>
+      <param name="final_force_depth_speed" value="0.04"/>
 
       <!-- 调试/固定任务点模式：true时跳过10-13检测扫描，直接按fixed_task_ids泊车 -->
       <param name="use_fixed_task_positions" value="false"/>
@@ -80,7 +88,7 @@
       <param name="task_nav_plan_fail_window" value="1.0"/>
       <param name="force_escape_after_approach_nav" value="true"/>
       <param name="parking_phase_global_inflation_enabled" value="true"/>
-      <param name="parking_phase_global_inflation_radius" value="0.10"/>
+      <param name="parking_phase_global_inflation_radius" value="0.15"/>
       <param name="cruise_global_inflation_radius" value="0.15"/>
       <param name="global_inflation_layer_name" value="move_base/global_costmap/inflation_layer"/>
       <param name="obstacle_memory_control_enabled" value="true"/>
@@ -143,6 +151,7 @@
       <param name="detect_yaw_align_enabled" value="true"/>
       <!-- 图片/牌子真实map坐标，填了才启用动态朝向。格式: 10:x:y;11:x:y;12:x:y;13:x:y -->
       <param name="detect_dynamic_yaw_enabled" value="true"/>
+      <param name="detect_dynamic_yaw_fallback_on_none" value="true"/>
       <param name="detect_dynamic_yaw_capture_at_prealign" value="true"/>
       <param name="detect_dynamic_yaw_min_distance" value="0.05"/>
       <param name="detect_photo_target_points" value="10:0.00:1.55;11:1.53:3.10;12:3.10:1.70;13:1.48:0.00"/>
