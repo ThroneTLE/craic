@@ -89,6 +89,32 @@
       <param name="task_nav_use_approach_goal" value="true"/>
       <param name="task_nav_approach_offset" value="0.25"/>
       <param name="task_nav_approach_modes" value="back,back_left,left,front_left,front,front_right,right,back_right"/>
+      <param name="task_nav_l_corner_pretry_enabled" value="true"/>
+      <param name="task_nav_l_corner_pretry_task_ids" value="all"/>
+      <param name="task_nav_l_corner_pretry_mode" value="auto_l_opening"/>
+      <param name="task_nav_l_corner_pretry_corner_offsets" value="0.20,0.25,0.30"/>
+      <param name="task_nav_l_corner_pretry_offset" value="0.35"/>
+      <param name="task_nav_l_corner_pretry_timeout" value="4.0"/>
+      <param name="task_nav_l_corner_pretry_accept_dist" value="0.15"/>
+      <param name="task_nav_l_corner_pretry_score_radius" value="0.00"/>
+      <param name="task_nav_l_corner_pretry_require_clear" value="true"/>
+      <param name="task_nav_l_corner_pretry_require_plan" value="true"/>
+      <param name="task_nav_l_corner_pretry_require_costmap" value="true"/>
+      <param name="task_nav_l_corner_detect_side_offset" value="0.24"/>
+      <param name="task_nav_l_corner_detect_side_span" value="0.26"/>
+      <param name="task_nav_l_corner_detect_open_span" value="0.10"/>
+      <param name="task_nav_l_corner_detect_sample_step" value="0.04"/>
+      <param name="task_nav_l_corner_detect_min_blocked_points" value="2"/>
+      <param name="task_nav_l_corner_detect_open_max_blocked_points" value="1"/>
+      <param name="task_nav_l_corner_detect_open_relaxed_max_blocked_points" value="3"/>
+      <param name="task_nav_l_corner_detect_open_blocked_margin" value="2"/>
+      <param name="task_nav_l_corner_detect_unknown_as_blocked" value="true"/>
+      <param name="task_nav_l_corner_use_obstacle_memory_cloud" value="true"/>
+      <param name="task_nav_l_corner_obstacle_memory_topic" value="/scan_obstacle_memory"/>
+      <param name="task_nav_l_corner_obstacle_memory_max_age" value="2.0"/>
+      <param name="task_nav_l_corner_memory_side_half_width" value="0.06"/>
+      <param name="task_nav_l_corner_memory_min_blocked_points" value="3"/>
+      <param name="task_nav_l_corner_memory_open_max_points" value="2"/>
       <param name="task_nav_approach_filter_costmap" value="true"/>
       <param name="task_nav_approach_costmap_topic" value="/move_base/global_costmap/costmap"/>
       <param name="task_nav_approach_costmap_wait" value="1.5"/>

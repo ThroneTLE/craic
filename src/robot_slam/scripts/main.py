@@ -18,7 +18,8 @@ from std_msgs.msg import String, Int32
 from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
-from sensor_msgs.msg import LaserScan, Imu
+from sensor_msgs.msg import LaserScan, Imu, PointCloud2
+import sensor_msgs.point_cloud2 as point_cloud2
 from rosgraph_msgs.msg import Log
 import sys, os, time, json, shutil, subprocess, threading, itertools
 try:
@@ -281,6 +282,70 @@ class navigation_demo:
         self.task_nav_approach_modes = rospy.get_param(
             "~task_nav_approach_modes",
             "back,back_left,left,front_left,front,front_right,right,back_right")
+        self.task_nav_l_corner_pretry_enabled = rospy.get_param(
+            "~task_nav_l_corner_pretry_enabled", True)
+        self.task_nav_l_corner_pretry_task_ids_param = rospy.get_param(
+            "~task_nav_l_corner_pretry_task_ids", "all")
+        self.task_nav_l_corner_pretry_task_ids = self.parse_task_id_list_param(
+            self.task_nav_l_corner_pretry_task_ids_param,
+            "task_nav_l_corner_pretry_task_ids")
+        self.task_nav_l_corner_pretry_mode = rospy.get_param(
+            "~task_nav_l_corner_pretry_mode", "auto_l_opening")
+        self.task_nav_l_corner_pretry_map_dx = rospy.get_param(
+            "~task_nav_l_corner_pretry_map_dx", 0.20)
+        self.task_nav_l_corner_pretry_map_dy = rospy.get_param(
+            "~task_nav_l_corner_pretry_map_dy", 0.20)
+        self.task_nav_l_corner_pretry_corner_offsets_param = rospy.get_param(
+            "~task_nav_l_corner_pretry_corner_offsets", "0.20,0.25,0.30")
+        self.task_nav_l_corner_pretry_corner_offsets = self.parse_float_list_param(
+            self.task_nav_l_corner_pretry_corner_offsets_param,
+            "task_nav_l_corner_pretry_corner_offsets",
+            [0.20, 0.25, 0.30])
+        self.task_nav_l_corner_pretry_offset = rospy.get_param(
+            "~task_nav_l_corner_pretry_offset", 0.35)
+        self.task_nav_l_corner_pretry_timeout = rospy.get_param(
+            "~task_nav_l_corner_pretry_timeout", 4.0)
+        self.task_nav_l_corner_pretry_accept_dist = rospy.get_param(
+            "~task_nav_l_corner_pretry_accept_dist",
+            0.15)
+        self.task_nav_l_corner_pretry_score_radius = rospy.get_param(
+            "~task_nav_l_corner_pretry_score_radius", 0.0)
+        self.task_nav_l_corner_pretry_require_clear = rospy.get_param(
+            "~task_nav_l_corner_pretry_require_clear", True)
+        self.task_nav_l_corner_pretry_require_plan = rospy.get_param(
+            "~task_nav_l_corner_pretry_require_plan", True)
+        self.task_nav_l_corner_pretry_require_costmap = rospy.get_param(
+            "~task_nav_l_corner_pretry_require_costmap", True)
+        self.task_nav_l_corner_detect_side_offset = rospy.get_param(
+            "~task_nav_l_corner_detect_side_offset", 0.24)
+        self.task_nav_l_corner_detect_side_span = rospy.get_param(
+            "~task_nav_l_corner_detect_side_span", 0.26)
+        self.task_nav_l_corner_detect_open_span = rospy.get_param(
+            "~task_nav_l_corner_detect_open_span", 0.10)
+        self.task_nav_l_corner_detect_sample_step = rospy.get_param(
+            "~task_nav_l_corner_detect_sample_step", 0.04)
+        self.task_nav_l_corner_detect_min_blocked_points = int(rospy.get_param(
+            "~task_nav_l_corner_detect_min_blocked_points", 2))
+        self.task_nav_l_corner_detect_open_max_blocked_points = int(rospy.get_param(
+            "~task_nav_l_corner_detect_open_max_blocked_points", 1))
+        self.task_nav_l_corner_detect_open_relaxed_max_blocked_points = int(rospy.get_param(
+            "~task_nav_l_corner_detect_open_relaxed_max_blocked_points", 3))
+        self.task_nav_l_corner_detect_open_blocked_margin = int(rospy.get_param(
+            "~task_nav_l_corner_detect_open_blocked_margin", 2))
+        self.task_nav_l_corner_detect_unknown_as_blocked = rospy.get_param(
+            "~task_nav_l_corner_detect_unknown_as_blocked", True)
+        self.task_nav_l_corner_use_obstacle_memory_cloud = rospy.get_param(
+            "~task_nav_l_corner_use_obstacle_memory_cloud", True)
+        self.task_nav_l_corner_obstacle_memory_topic = rospy.get_param(
+            "~task_nav_l_corner_obstacle_memory_topic", "/scan_obstacle_memory")
+        self.task_nav_l_corner_obstacle_memory_max_age = rospy.get_param(
+            "~task_nav_l_corner_obstacle_memory_max_age", 2.0)
+        self.task_nav_l_corner_memory_side_half_width = rospy.get_param(
+            "~task_nav_l_corner_memory_side_half_width", 0.06)
+        self.task_nav_l_corner_memory_min_blocked_points = int(rospy.get_param(
+            "~task_nav_l_corner_memory_min_blocked_points", 3))
+        self.task_nav_l_corner_memory_open_max_points = int(rospy.get_param(
+            "~task_nav_l_corner_memory_open_max_points", 2))
         self.task_nav_approach_filter_costmap = rospy.get_param("~task_nav_approach_filter_costmap", True)
         self.task_nav_approach_costmap_topic = rospy.get_param(
             "~task_nav_approach_costmap_topic", "/move_base/global_costmap/costmap")
@@ -365,7 +430,15 @@ class navigation_demo:
         self.task_nav_make_plan_client = None
         self.task_nav_teb_client = None
         self.task_nav_teb_nominal_config = None
+        self.l_corner_obstacle_memory_points = []
+        self.l_corner_obstacle_memory_stamp = rospy.Time(0)
         rospy.Subscriber(self.task_nav_approach_costmap_topic, OccupancyGrid, self.global_costmap_callback)
+        if self.task_nav_l_corner_use_obstacle_memory_cloud:
+            rospy.Subscriber(
+                self.task_nav_l_corner_obstacle_memory_topic,
+                PointCloud2,
+                self.l_corner_obstacle_memory_callback,
+                queue_size=1)
         self.task_nav_goal_active = False
         self.task_nav_plan_fail_cancel_requested = False
         self.task_nav_plan_fail_seen = 0
@@ -382,6 +455,27 @@ class navigation_demo:
 
     def global_costmap_callback(self, msg):
         self.global_costmap = msg
+
+    def l_corner_obstacle_memory_callback(self, msg):
+        points = []
+        try:
+            for point in point_cloud2.read_points(
+                    msg, field_names=("x", "y", "z"), skip_nans=True):
+                x = float(point[0])
+                y = float(point[1])
+                if np.isfinite(x) and np.isfinite(y):
+                    points.append((x, y))
+        except Exception as e:
+            rospy.logwarn_throttle(
+                1.0,
+                "[TASK_NAV][L_CORNER_MEMORY_CLOUD_FAILED] topic=%s error=%s",
+                self.task_nav_l_corner_obstacle_memory_topic,
+                str(e))
+            return
+
+        self.l_corner_obstacle_memory_points = points
+        self.l_corner_obstacle_memory_stamp = (
+            msg.header.stamp if msg.header.stamp != rospy.Time(0) else rospy.Time.now())
 
     def rosout_callback(self, msg):
         if (not self.task_nav_plan_fail_cancel_enabled
@@ -681,6 +775,20 @@ class navigation_demo:
                 rospy.logwarn("[DETECT_YAW][BAD_FLOAT] value=%s", item)
         return values
 
+    def parse_float_list_param(self, value, label, default_values):
+        values = []
+        for item in str(value).replace(";", ",").split(","):
+            item = item.strip()
+            if not item:
+                continue
+            try:
+                values.append(float(item))
+            except ValueError:
+                rospy.logwarn("[%s] bad float value=%s", label, item)
+        if not values:
+            return list(default_values)
+        return values
+
     def parse_detection_photo_targets(self):
         """
         解析检测图片真实坐标。
@@ -937,6 +1045,421 @@ class navigation_demo:
 
         goals_out.append(("target", list(target)))
         return goals_out
+
+    def make_task_approach_goal_by_mode(self, target, mode, offset):
+        yaw_rad = target[2] / 180.0 * pi
+        forward_x = np.cos(yaw_rad)
+        forward_y = np.sin(yaw_rad)
+        left_x = -np.sin(yaw_rad)
+        left_y = np.cos(yaw_rad)
+        diag = 1.0 / np.sqrt(2.0)
+        mode_vectors = {
+            "back": (-forward_x, -forward_y),
+            "front": (forward_x, forward_y),
+            "left": (left_x, left_y),
+            "right": (-left_x, -left_y),
+            "back_left": ((-forward_x + left_x) * diag, (-forward_y + left_y) * diag),
+            "back_right": ((-forward_x - left_x) * diag, (-forward_y - left_y) * diag),
+            "front_left": ((forward_x + left_x) * diag, (forward_y + left_y) * diag),
+            "front_right": ((forward_x - left_x) * diag, (forward_y - left_y) * diag),
+        }
+        normalized_mode = str(mode).strip().lower()
+        l_corner_vectors = {
+            "l_opening_upper_right": (1.0, 1.0),
+            "l_opening_ur": (1.0, 1.0),
+            "map_upper_right": (1.0, 1.0),
+            "l_opening_upper_left": (-1.0, 1.0),
+            "l_opening_ul": (-1.0, 1.0),
+            "l_opening_lower_right": (1.0, -1.0),
+            "l_opening_lr": (1.0, -1.0),
+            "l_opening_lower_left": (-1.0, -1.0),
+            "l_opening_ll": (-1.0, -1.0),
+        }
+        if normalized_mode in l_corner_vectors:
+            sx, sy = l_corner_vectors[normalized_mode]
+            return [
+                target[0] + sx * abs(self.task_nav_l_corner_pretry_map_dx),
+                target[1] + sy * abs(self.task_nav_l_corner_pretry_map_dy),
+                target[2]
+            ]
+        if normalized_mode not in mode_vectors:
+            return None
+        vx, vy = mode_vectors[normalized_mode]
+        return [
+            target[0] + vx * offset,
+            target[1] + vy * offset,
+            target[2]
+        ]
+
+    def is_auto_l_corner_mode(self, mode):
+        return str(mode).strip().lower() in [
+            "auto",
+            "auto_l",
+            "auto_l_opening",
+            "detect_l_opening"
+        ]
+
+    def task_l_corner_pretry_enabled_for_task(self, task_id):
+        if not self.task_nav_l_corner_pretry_enabled:
+            return False
+        if self.task_nav_l_corner_pretry_task_ids is None:
+            return True
+        return int(task_id) in self.task_nav_l_corner_pretry_task_ids
+
+    def l_corner_count_side(self, costmap, target, side, span):
+        offset = max(0.01, float(self.task_nav_l_corner_detect_side_offset))
+        span = max(0.01, float(span))
+        step = max(0.01, float(self.task_nav_l_corner_detect_sample_step))
+        sample_count = max(3, int(np.ceil((span * 2.0) / step)) + 1)
+        blocked_count = 0
+        unknown_count = 0
+        valid_count = 0
+        max_cost = 0
+
+        for i in range(sample_count):
+            if sample_count <= 1:
+                t = 0.0
+            else:
+                t = -span + (2.0 * span * float(i) / float(sample_count - 1))
+            if side == "left":
+                x = target[0] - offset
+                y = target[1] + t
+            elif side == "right":
+                x = target[0] + offset
+                y = target[1] + t
+            elif side == "up":
+                x = target[0] + t
+                y = target[1] + offset
+            elif side == "down":
+                x = target[0] + t
+                y = target[1] - offset
+            else:
+                return {
+                    "blocked_count": 0,
+                    "unknown_count": 0,
+                    "valid_count": 0,
+                    "sample_count": 0,
+                    "max_cost": 0,
+                    "reason": "unknown_side"
+                }
+
+            cost, detail = self.costmap_cost_at(costmap, x, y)
+            if cost is None or cost < 0:
+                unknown_count += 1
+                if self.task_nav_l_corner_detect_unknown_as_blocked:
+                    blocked_count += 1
+                    max_cost = max(max_cost, 100)
+                continue
+
+            valid_count += 1
+            max_cost = max(max_cost, cost)
+            if cost > self.task_nav_approach_cost_threshold:
+                blocked_count += 1
+
+        return {
+            "blocked_count": blocked_count,
+            "unknown_count": unknown_count,
+            "valid_count": valid_count,
+            "sample_count": sample_count,
+            "max_cost": max_cost,
+        }
+
+    def l_corner_memory_points_available(self):
+        if not self.task_nav_l_corner_use_obstacle_memory_cloud:
+            return []
+        if not self.l_corner_obstacle_memory_points:
+            return []
+        if self.task_nav_l_corner_obstacle_memory_max_age > 0.0:
+            age = (rospy.Time.now() - self.l_corner_obstacle_memory_stamp).to_sec()
+            if age > self.task_nav_l_corner_obstacle_memory_max_age:
+                return []
+        return self.l_corner_obstacle_memory_points
+
+    def l_corner_count_obstacle_memory_side(self, target, side, span):
+        points = self.l_corner_memory_points_available()
+        if not points:
+            return 0
+
+        offset = max(0.01, float(self.task_nav_l_corner_detect_side_offset))
+        span = max(0.01, float(span))
+        half_width = max(0.01, float(self.task_nav_l_corner_memory_side_half_width))
+        count = 0
+        if side == "left":
+            line_x = target[0] - offset
+            for x, y in points:
+                if abs(x - line_x) <= half_width and abs(y - target[1]) <= span:
+                    count += 1
+        elif side == "right":
+            line_x = target[0] + offset
+            for x, y in points:
+                if abs(x - line_x) <= half_width and abs(y - target[1]) <= span:
+                    count += 1
+        elif side == "up":
+            line_y = target[1] + offset
+            for x, y in points:
+                if abs(y - line_y) <= half_width and abs(x - target[0]) <= span:
+                    count += 1
+        elif side == "down":
+            line_y = target[1] - offset
+            for x, y in points:
+                if abs(y - line_y) <= half_width and abs(x - target[0]) <= span:
+                    count += 1
+        return count
+
+    def l_corner_sample_side(self, costmap, target, side):
+        broad = self.l_corner_count_side(
+            costmap,
+            target,
+            side,
+            self.task_nav_l_corner_detect_side_span)
+        core = self.l_corner_count_side(
+            costmap,
+            target,
+            side,
+            self.task_nav_l_corner_detect_open_span)
+
+        memory_broad_count = self.l_corner_count_obstacle_memory_side(
+            target,
+            side,
+            self.task_nav_l_corner_detect_side_span)
+        memory_core_count = self.l_corner_count_obstacle_memory_side(
+            target,
+            side,
+            self.task_nav_l_corner_detect_open_span)
+        memory_blocked = (
+            memory_broad_count >= self.task_nav_l_corner_memory_min_blocked_points)
+        memory_open = (
+            memory_core_count <= self.task_nav_l_corner_memory_open_max_points)
+
+        blocked = (
+            broad["blocked_count"] >= self.task_nav_l_corner_detect_min_blocked_points
+            or memory_blocked)
+        open_side = (
+            core["blocked_count"] <= self.task_nav_l_corner_detect_open_max_blocked_points
+            and memory_open
+            and (not self.task_nav_l_corner_detect_unknown_as_blocked
+                 or core["unknown_count"] == 0))
+        return {
+            "blocked": blocked,
+            "open": open_side,
+            "blocked_count": broad["blocked_count"],
+            "unknown_count": broad["unknown_count"],
+            "valid_count": broad["valid_count"],
+            "sample_count": broad["sample_count"],
+            "max_cost": broad["max_cost"],
+            "core_blocked_count": core["blocked_count"],
+            "core_unknown_count": core["unknown_count"],
+            "core_valid_count": core["valid_count"],
+            "core_sample_count": core["sample_count"],
+            "core_max_cost": core["max_cost"],
+            "memory_blocked_count": memory_broad_count,
+            "memory_core_count": memory_core_count,
+            "memory_blocked": memory_blocked,
+            "memory_open": memory_open,
+            "reason": "b=%d u=%d v=%d n=%d max=%d core_b=%d core_u=%d core_n=%d core_max=%d mem_b=%d mem_core=%d blocked=%s open=%s" % (
+                broad["blocked_count"], broad["unknown_count"],
+                broad["valid_count"], broad["sample_count"], broad["max_cost"],
+                core["blocked_count"], core["unknown_count"], core["sample_count"],
+                core["max_cost"], memory_broad_count, memory_core_count,
+                str(blocked), str(open_side))
+        }
+
+    def format_l_corner_side_info(self, sides):
+        parts = []
+        for name in ["left", "right", "up", "down"]:
+            info = sides.get(name, {})
+            parts.append("%s:%s" % (name, info.get("reason", "none")))
+        return "; ".join(parts)
+
+    def l_corner_open_against_opposite(self, sides, open_side, opposite_side):
+        info = sides[open_side]
+        opposite = sides[opposite_side]
+        if info["open"]:
+            return True, "strict"
+        if (self.task_nav_l_corner_detect_unknown_as_blocked
+                and info["core_unknown_count"] > 0):
+            return False, "unknown_core=%d" % info["core_unknown_count"]
+
+        core_blocked = max(info["core_blocked_count"], info["memory_core_count"])
+        opposite_core_blocked = max(
+            opposite["core_blocked_count"],
+            opposite["memory_core_count"])
+        broad_blocked = max(info["blocked_count"], info["memory_blocked_count"])
+        opposite_broad_blocked = max(
+            opposite["blocked_count"],
+            opposite["memory_blocked_count"])
+        core_margin = opposite_core_blocked - core_blocked
+        broad_margin = opposite_broad_blocked - broad_blocked
+
+        relaxed_max = self.task_nav_l_corner_detect_open_relaxed_max_blocked_points
+        required_margin = self.task_nav_l_corner_detect_open_blocked_margin
+        if (core_blocked <= relaxed_max
+                and core_margin >= required_margin
+                and broad_margin >= required_margin):
+            return True, "relative core=%d opp_core=%d broad=%d opp_broad=%d" % (
+                core_blocked, opposite_core_blocked,
+                broad_blocked, opposite_broad_blocked)
+
+        return False, "core=%d opp_core=%d broad=%d opp_broad=%d" % (
+            core_blocked, opposite_core_blocked,
+            broad_blocked, opposite_broad_blocked)
+
+    def l_corner_side_blocked_evidence(self, side_info):
+        return max(
+            side_info["blocked_count"],
+            side_info["memory_blocked_count"])
+
+    def detect_l_corner_pretry_candidates(self, idx, task_id, target):
+        costmap = self.get_global_costmap_for_approach()
+        if costmap is None:
+            rospy.logwarn(
+                "[TASK_NAV][L_CORNER_DETECT_SKIP] idx=%d task_id=%d reason=costmap_unavailable",
+                idx + 1, task_id)
+            return []
+
+        sides = {}
+        for side in ["left", "right", "up", "down"]:
+            sides[side] = self.l_corner_sample_side(costmap, target, side)
+
+        corner_defs = [
+            ("upper_right", 1.0, 1.0, ("right", "up"), ("left", "down")),
+            ("upper_left", -1.0, 1.0, ("left", "up"), ("right", "down")),
+            ("lower_right", 1.0, -1.0, ("right", "down"), ("left", "up")),
+            ("lower_left", -1.0, -1.0, ("left", "down"), ("right", "up")),
+        ]
+        opposite_sides = {
+            "left": "right",
+            "right": "left",
+            "up": "down",
+            "down": "up",
+        }
+
+        candidates = []
+        rejected = []
+        for name, sx, sy, open_sides, blocked_sides in corner_defs:
+            open_checks = []
+            for side in open_sides:
+                ok, reason = self.l_corner_open_against_opposite(
+                    sides, side, opposite_sides[side])
+                open_checks.append((side, ok, reason))
+            open_ok = all(item[1] for item in open_checks)
+            blocked_ok = all(sides[s]["blocked"] for s in blocked_sides)
+            score = sum(self.l_corner_side_blocked_evidence(sides[s]) for s in blocked_sides) \
+                - sum(self.l_corner_side_blocked_evidence(sides[s]) for s in open_sides)
+            if not (open_ok and blocked_ok):
+                rejected.append("%s:open=%s blocked=%s score=%d open_detail=%s" % (
+                    name, str(open_ok), str(blocked_ok), score,
+                    ",".join(["%s:%s" % (item[0], item[2]) for item in open_checks])))
+                continue
+
+            for corner_offset in self.task_nav_l_corner_pretry_corner_offsets:
+                nav_target = [
+                    target[0] + sx * corner_offset,
+                    target[1] + sy * corner_offset,
+                    target[2]
+                ]
+                mode = "l_opening_%s" % name
+                reason = "auto open=%s blocked=%s offset=%.2f score=%d" % (
+                    ",".join(open_sides), ",".join(blocked_sides),
+                    corner_offset, score)
+                candidates.append({
+                    "mode": mode,
+                    "nav_target": nav_target,
+                    "score": score,
+                    "offset": corner_offset,
+                    "reason": reason
+                })
+
+        candidates.sort(
+            key=lambda item: (item["score"], item.get("offset", 0.0)),
+            reverse=True)
+        rospy.logwarn(
+            "[TASK_NAV][L_CORNER_DETECT] idx=%d task_id=%d sides={%s} candidates=%s rejected=%s",
+            idx + 1, task_id,
+            self.format_l_corner_side_info(sides),
+            ",".join(["%s@%.2f" % (c["mode"], c.get("offset", 0.0))
+                      for c in candidates]) if candidates else "none",
+            "; ".join(rejected) if rejected else "none")
+        return candidates
+
+    def make_l_corner_pretry_candidates(self, idx, task_id, target):
+        mode = str(self.task_nav_l_corner_pretry_mode).strip().lower()
+        if self.is_auto_l_corner_mode(mode):
+            return self.detect_l_corner_pretry_candidates(idx, task_id, target)
+
+        nav_target = self.make_task_approach_goal_by_mode(
+            target,
+            mode,
+            self.task_nav_l_corner_pretry_offset)
+        if nav_target is None:
+            rospy.logwarn(
+                "[TASK_NAV][L_CORNER_PRETRY_SKIP] idx=%d task_id=%d reason=unknown_mode mode=%s",
+                idx + 1, task_id, mode)
+            return []
+        return [{
+            "mode": mode,
+            "nav_target": nav_target,
+            "score": 0,
+            "reason": "manual"
+        }]
+
+    def evaluate_l_corner_pretry_goal(self, task_id, nav_target, mode):
+        reasons = []
+        costmap = self.global_costmap
+        if costmap is None:
+            if self.task_nav_l_corner_pretry_require_costmap:
+                return False, "costmap_unavailable_required"
+            reasons.append("costmap_unavailable_allow")
+        else:
+            cost, detail = self.costmap_cost_at(costmap, nav_target[0], nav_target[1])
+            if cost is None:
+                if self.task_nav_l_corner_pretry_require_clear:
+                    return False, detail
+                reasons.append("%s allow_probe" % detail)
+            elif cost < 0:
+                if self.task_nav_approach_reject_unknown:
+                    if self.task_nav_l_corner_pretry_require_clear:
+                        return False, "unknown"
+                    reasons.append("unknown allow_probe")
+                else:
+                    reasons.append("unknown_allowed")
+            elif cost > self.task_nav_approach_cost_threshold:
+                reason = "cost=%d>threshold=%d" % (
+                    cost, self.task_nav_approach_cost_threshold)
+                if self.task_nav_l_corner_pretry_require_clear:
+                    return False, reason
+                reasons.append("%s allow_probe" % reason)
+            else:
+                score, score_detail = self.costmap_score_near(
+                    costmap,
+                    nav_target[0],
+                    nav_target[1],
+                    self.task_nav_l_corner_pretry_score_radius)
+                if score is None:
+                    reasons.append("cost=%d score_unavailable=%s" % (cost, score_detail))
+                elif score[0] > self.task_nav_approach_cost_threshold:
+                    reason = "corner_score=max:%d>threshold:%d avg:%.1f unk:%d radius:%.2f" % (
+                        score[0], self.task_nav_approach_cost_threshold,
+                        score[1], score[2],
+                        self.task_nav_l_corner_pretry_score_radius)
+                    if self.task_nav_l_corner_pretry_require_clear:
+                        return False, reason
+                    reasons.append("%s allow_probe" % reason)
+                else:
+                    reasons.append("cost=%d score=max:%d avg:%.1f unk:%d radius:%.2f" % (
+                        cost, score[0], score[1], score[2],
+                        self.task_nav_l_corner_pretry_score_radius))
+
+        plan_mode = "l_corner:%s" % mode
+        if self.task_nav_l_corner_pretry_require_plan:
+            path_clear, path_reason = self.evaluate_detection_prealign_goal(
+                plan_mode, nav_target)
+            if not path_clear:
+                return False, "%s %s" % (" ".join(reasons), path_reason)
+            reasons.append(path_reason)
+        else:
+            reasons.append("plan_check_skipped")
+        return True, " ".join(reasons)
 
     def get_global_costmap_for_approach(self):
         if self.global_costmap is not None:
@@ -1743,6 +2266,84 @@ class navigation_demo:
             ",".join(sorted(failed_approach_modes))
         )
 
+    def try_l_corner_pretry(self, idx, task_id, target):
+        if not self.task_l_corner_pretry_enabled_for_task(task_id):
+            return False, False, False, None, None, None
+
+        candidates = self.make_l_corner_pretry_candidates(idx, task_id, target)
+        if not candidates:
+            rospy.logwarn(
+                "[TASK_NAV][L_CORNER_PRETRY_SKIP] idx=%d task_id=%d reason=no_l_corner_candidate",
+                idx + 1, task_id)
+            return False, False, False, None, None, None
+
+        selected = None
+        for candidate in candidates:
+            mode = candidate["mode"]
+            nav_target = candidate["nav_target"]
+            clear, reason = self.evaluate_l_corner_pretry_goal(
+                task_id, nav_target, mode)
+            rospy.logwarn(
+                "[TASK_NAV][L_CORNER_PRETRY_CHECK] idx=%d task_id=%d mode=%s nav_target=(%.3f,%.3f,%.1f) clear=%s detect=%s reason=%s",
+                idx + 1, task_id, mode,
+                nav_target[0], nav_target[1], nav_target[2],
+                str(clear), candidate.get("reason", ""), reason)
+            if clear:
+                selected = candidate
+                break
+
+        if selected is None:
+            rospy.logwarn(
+                "[TASK_NAV][L_CORNER_PRETRY_SKIP] idx=%d task_id=%d reason=no_clear_planned_l_corner_candidate",
+                idx + 1, task_id)
+            return False, False, False, None, None, None
+
+        mode = selected["mode"]
+        nav_target = selected["nav_target"]
+
+        label = "L_CORNER_PRETRY"
+        nav_mode = "l_corner:%s" % mode
+        nav_start_time = rospy.Time.now()
+        nav_ok = self.goto_task_nav_goal(
+            nav_target,
+            timeout=self.task_nav_l_corner_pretry_timeout,
+            label=label,
+            mode=nav_mode,
+            position_accept_dist=self.task_nav_l_corner_pretry_accept_dist)
+        nav_reached, approach_dist = self.nav_reached_by_state_and_distance(
+            nav_ok,
+            nav_target,
+            self.task_nav_l_corner_pretry_accept_dist)
+        nav_dist = self.distance_to_goal_xy(target)
+        selected_yaw_deg = None
+        if nav_reached:
+            selected_yaw_deg = self.select_task_flexible_yaw(target)
+            yaw_err = self.yaw_error_to_goal(target)
+            rospy.logwarn(
+                "[TASK_NAV][L_CORNER_PRETRY_REACHED] idx=%d task_id=%d mode=%s approach_dist=%s target_dist=%s accept=%.3f yaw_err=%.3f selected_yaw=%.1f",
+                idx + 1, task_id, mode,
+                "%.3f" % approach_dist if approach_dist is not None else "None",
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                self.task_nav_l_corner_pretry_accept_dist,
+                yaw_err,
+                selected_yaw_deg)
+
+        rospy.loginfo(
+            "[TASK_TIME][NAV_ATTEMPT] idx=%d task_id=%d label=%s dt=%.2fs ok=%s target_dist=%s reached=%s state=%s mode=%s selected_yaw=%s",
+            idx + 1, task_id, label,
+            (rospy.Time.now() - nav_start_time).to_sec(),
+            str(nav_ok),
+            "%.3f" % nav_dist if nav_dist is not None else "None",
+            str(nav_reached), str(self.last_move_base_state), nav_mode,
+            "%.1f" % selected_yaw_deg if selected_yaw_deg is not None else "None")
+        if not nav_reached:
+            rospy.logwarn(
+                "[TASK_NAV][L_CORNER_PRETRY_FALLBACK] idx=%d task_id=%d mode=%s target_dist=%s approach_dist=%s",
+                idx + 1, task_id, mode,
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                "%.3f" % approach_dist if approach_dist is not None else "None")
+        return True, nav_ok, nav_reached, nav_dist, nav_mode, selected_yaw_deg
+
     def navigate_task_with_all_approaches(self, idx, task_id, target, last_parking, last_task_id):
         failed_approach_modes = set()
         nav_ok = False
@@ -1751,6 +2352,7 @@ class navigation_demo:
         nav_mode = None
         selected_yaw_deg = None
         escaped_after_abort = False
+        l_corner_pretry_done = False
         attempt = 0
 
         while not rospy.is_shutdown():
@@ -1795,6 +2397,13 @@ class navigation_demo:
                     str(force_escape)
                 )
                 escaped_after_abort = True
+
+            if not l_corner_pretry_done:
+                l_corner_pretry_done = True
+                pretry_used, pretry_ok, pretry_reached, pretry_dist, pretry_mode, pretry_yaw = (
+                    self.try_l_corner_pretry(idx, task_id, target))
+                if pretry_used and pretry_reached:
+                    return pretry_ok, pretry_reached, pretry_dist, pretry_mode, pretry_yaw
 
             if nav_mode is None:
                 break
@@ -3716,6 +4325,37 @@ class navigation_demo:
     # ---------------- 执行识别 ----------------
     def recognize(self, p):
         return self.mission(p)
+
+    def parse_task_id_list_param(self, raw_text, label):
+        parsed_tasks = set()
+        raw_text = str(raw_text).strip()
+        if not raw_text:
+            return parsed_tasks
+        if raw_text.lower() in ["all", "*", "any"]:
+            return None
+
+        for item in raw_text.replace(";", ",").split(","):
+            item = item.strip()
+            if not item:
+                continue
+            if item.lower() in ["all", "*", "any"]:
+                return None
+            try:
+                raw_id = int(item)
+            except ValueError:
+                rospy.logwarn("[%s] task id invalid: %s", label, item)
+                continue
+
+            if 1 <= raw_id <= 9:
+                task_id = raw_id
+            elif raw_id in VLM_TO_TASK:
+                task_id = VLM_TO_TASK[raw_id]
+            else:
+                rospy.logwarn("[%s] task id out of range: %s", label, raw_id)
+                continue
+            parsed_tasks.add(task_id)
+
+        return parsed_tasks
 
     def parse_fixed_task_ids(self):
         """
