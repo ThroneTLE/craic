@@ -229,6 +229,14 @@ class navigation_demo:
         self.final_prealign_mode = rospy.get_param("~final_prealign_mode", "back")
         self.final_prealign_distance = rospy.get_param("~final_prealign_distance", 0.35)
         self.final_prealign_timeout = rospy.get_param("~final_prealign_timeout", self.final_nav_timeout)
+        self.final_doudi_enabled = rospy.get_param("~final_doudi_enabled", True)
+        self.final_doudi_plan_check_enabled = rospy.get_param("~final_doudi_plan_check_enabled", True)
+        self.final_doudi_goal_x = rospy.get_param("~final_doudi_goal_x", 0.25)
+        self.final_doudi_goal_y = rospy.get_param("~final_doudi_goal_y", 2.25)
+        self.final_doudi_goal_yaw = rospy.get_param("~final_doudi_goal_yaw", 90.0)
+        self.final_doudi_timeout = rospy.get_param("~final_doudi_timeout", self.final_prealign_timeout)
+        self.final_doudi_side_laser_direction = rospy.get_param(
+            "~final_doudi_side_laser_direction", "left")
         self.final_align_yaw_before_laser = rospy.get_param("~final_align_yaw_before_laser", True)
         self.final_yaw_align_timeout = rospy.get_param("~final_yaw_align_timeout", 3.0)
         self.final_yaw_tolerance = rospy.get_param("~final_yaw_tolerance", 0.05)
@@ -238,6 +246,8 @@ class navigation_demo:
         self.final_yaw_stable_count = int(rospy.get_param("~final_yaw_stable_count", 3))
         self.final_side_laser_direction = rospy.get_param("~final_side_laser_direction", "left")
         self.final_depth_laser_direction = rospy.get_param("~final_depth_laser_direction", "back")
+        self.final_doudi_depth_laser_direction = rospy.get_param(
+            "~final_doudi_depth_laser_direction", self.final_depth_laser_direction)
         self.final_side_target = rospy.get_param("~final_side_target", 0.17)
         self.final_depth_target = rospy.get_param("~final_depth_target", 0.20)
         self.final_adjust_timeout = rospy.get_param("~final_adjust_timeout", 9.0)
@@ -2839,6 +2849,73 @@ class navigation_demo:
             self.final_prealign_distance
         )
 
+    def make_final_doudi_goal(self):
+        """主终点预对齐点不可规划时使用的终点兜底位姿。"""
+        return [
+            float(self.final_doudi_goal_x),
+            float(self.final_doudi_goal_y),
+            float(self.final_doudi_goal_yaw)
+        ]
+
+    def final_nav_make_plan_ok(self, nav_target, label):
+        if not self.final_doudi_plan_check_enabled:
+            return None, "plan_check_disabled"
+        if not self.wait_for_make_plan_idle("final:%s" % label):
+            return None, "move_base_active_for_make_plan"
+
+        client = self.get_task_make_plan_client()
+        if client is None:
+            return None, "make_plan_service_unavailable"
+
+        start = self.current_map_pose_for_plan()
+        if start is None:
+            return None, "no_start_pose"
+
+        request = GetPlanRequest()
+        request.start = start
+        request.start.header.stamp = rospy.Time.now()
+        request.goal = self.task_goal_pose_for_plan(nav_target)
+        request.tolerance = 0.0
+        try:
+            response = client(request)
+        except Exception as e:
+            self.task_nav_make_plan_client = None
+            return None, "make_plan_failed:%s" % str(e)
+
+        poses = response.plan.poses
+        if len(poses) < 2:
+            dx = nav_target[0] - start.pose.position.x
+            dy = nav_target[1] - start.pose.position.y
+            dist = np.sqrt(dx * dx + dy * dy)
+            if dist <= 0.12:
+                reason = "already_close points=%d dist=%.3f" % (len(poses), dist)
+                rospy.loginfo(
+                    "[FINAL][PLAN_CHECK][OK] label=%s target=(%.3f,%.3f,%.1f) %s",
+                    label, nav_target[0], nav_target[1], nav_target[2], reason)
+                return True, reason
+            reason = "no_plan points=%d dist=%.3f" % (len(poses), dist)
+            rospy.logwarn(
+                "[FINAL][PLAN_CHECK][NO_PLAN] label=%s target=(%.3f,%.3f,%.1f) %s",
+                label, nav_target[0], nav_target[1], nav_target[2], reason)
+            return False, reason
+
+        reason = "path_ok points=%d" % len(poses)
+        rospy.loginfo(
+            "[FINAL][PLAN_CHECK][OK] label=%s target=(%.3f,%.3f,%.1f) %s",
+            label, nav_target[0], nav_target[1], nav_target[2], reason)
+        return True, reason
+
+    def select_final_doudi_goal(self, reason):
+        goal = self.make_final_doudi_goal()
+        timeout = float(self.final_doudi_timeout)
+        side_direction = str(self.final_doudi_side_laser_direction)
+        depth_direction = str(self.final_doudi_depth_laser_direction)
+        rospy.logwarn(
+            "[FINAL][DOUDI_SELECTED] reason=%s goal=(%.3f, %.3f, %.1f) side_laser=%s depth_laser=%s timeout=%.1fs",
+            reason, goal[0], goal[1], goal[2],
+            side_direction, depth_direction, timeout)
+        return goal, timeout, side_direction, depth_direction
+
     def get_locked_approach_velocity(self, speed, mode=None):
         """根据预对准方向生成保持当前yaw时的base_link速度"""
         mode = str(mode if mode is not None else self.detect_prealign_mode).strip().lower()
@@ -5250,11 +5327,17 @@ class navigation_demo:
 
         # 终点按检测点思路处理：先到安全预对准点，再对齐yaw，最后交给激光闭环贴边。
         final_target = goals[16]
+        final_adjust_target = final_target
         final_nav_goal = final_target
         final_nav_timeout = self.final_nav_timeout
+        final_nav_stage = "TARGET"
+        final_used_doudi = False
+        final_adjust_side_laser_direction = self.final_side_laser_direction
+        final_adjust_depth_laser_direction = self.final_depth_laser_direction
         if self.final_prealign_enabled and self.final_prealign_distance > 0.0:
             final_nav_goal = self.make_final_prealign_goal(final_target)
             final_nav_timeout = self.final_prealign_timeout
+            final_nav_stage = "PREALIGN"
             rospy.loginfo(
                 "[FINAL][PREALIGN_GOAL] mode=%s distance=%.3f target=(%.3f, %.3f, %.1f) goal=(%.3f, %.3f, %.1f)",
                 self.final_prealign_mode,
@@ -5263,24 +5346,82 @@ class navigation_demo:
                 final_nav_goal[0], final_nav_goal[1], final_nav_goal[2]
             )
 
+        primary_final_nav_goal = list(final_nav_goal)
+        if self.final_doudi_enabled:
+            primary_plan_ok, primary_plan_reason = self.final_nav_make_plan_ok(
+                primary_final_nav_goal,
+                "primary")
+            if primary_plan_ok is False:
+                final_nav_goal, final_nav_timeout, final_adjust_side_laser_direction, \
+                    final_adjust_depth_laser_direction = self.select_final_doudi_goal(
+                        "primary_plan_failed:%s" % primary_plan_reason)
+                final_adjust_target = final_nav_goal
+                final_nav_stage = "DOUDI"
+                final_used_doudi = True
+            elif primary_plan_ok is None:
+                rospy.logwarn(
+                    "[FINAL][DOUDI_CHECK][SKIP] label=primary reason=%s, keep primary goal",
+                    primary_plan_reason)
+
         final_nav_start = rospy.Time.now()
         final_nav_ok = self.goto(final_nav_goal, timeout=final_nav_timeout)
-        rospy.loginfo("[FINAL][NAV_TO_PREALIGN] dt=%.2fs ok=%s timeout=%.1fs",
+        rospy.loginfo("[FINAL][NAV_TO_%s] dt=%.2fs ok=%s timeout=%.1fs goal=(%.3f, %.3f, %.1f)",
+                      final_nav_stage,
                       (rospy.Time.now() - final_nav_start).to_sec(),
-                      str(final_nav_ok), final_nav_timeout)
+                      str(final_nav_ok), final_nav_timeout,
+                      final_nav_goal[0], final_nav_goal[1], final_nav_goal[2])
+
+        if (not final_nav_ok) and (not final_used_doudi) and self.final_doudi_enabled:
+            primary_plan_ok, primary_plan_reason = self.final_nav_make_plan_ok(
+                primary_final_nav_goal,
+                "primary_after_nav_fail")
+            if primary_plan_ok is False:
+                final_nav_goal, final_nav_timeout, final_adjust_side_laser_direction, \
+                    final_adjust_depth_laser_direction = self.select_final_doudi_goal(
+                        "primary_after_nav_fail:%s" % primary_plan_reason)
+                final_adjust_target = final_nav_goal
+                final_nav_stage = "DOUDI"
+                final_used_doudi = True
+                final_nav_start = rospy.Time.now()
+                final_nav_ok = self.goto(final_nav_goal, timeout=final_nav_timeout)
+                rospy.loginfo(
+                    "[FINAL][NAV_TO_%s] dt=%.2fs ok=%s timeout=%.1fs goal=(%.3f, %.3f, %.1f)",
+                    final_nav_stage,
+                    (rospy.Time.now() - final_nav_start).to_sec(),
+                    str(final_nav_ok), final_nav_timeout,
+                    final_nav_goal[0], final_nav_goal[1], final_nav_goal[2])
+            elif primary_plan_ok is None:
+                rospy.logwarn(
+                    "[FINAL][DOUDI_CHECK][SKIP] label=primary_after_nav_fail reason=%s, not a confirmed no-plan",
+                    primary_plan_reason)
+            else:
+                rospy.loginfo(
+                    "[FINAL][DOUDI_CHECK][KEEP_PRIMARY] primary_after_nav_fail reason=%s",
+                    primary_plan_reason)
 
         final_yaw_ok = True
         if self.final_align_yaw_before_laser:
-            final_yaw_ok = self.align_final_yaw(final_target[2])
+            final_yaw_ok = self.align_final_yaw(final_adjust_target[2])
             rospy.loginfo("[FINAL][YAW_ALIGN][DONE] ok=%s", str(final_yaw_ok))
         else:
-            self.target_yaw = final_target[2] / 180.0 * pi
+            self.target_yaw = final_adjust_target[2] / 180.0 * pi
 
-        rospy.loginfo("[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=%.3f depth=%.3f",
-                      final_target[2], self.final_side_target, self.final_depth_target)
-        final_adjust_ok = self.adjust_position(
-            side_target=self.final_side_target,
-            back_target=self.final_depth_target)
+        rospy.loginfo(
+            "[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=%.3f depth=%.3f side_laser=%s depth_laser=%s doudi=%s",
+            final_adjust_target[2], self.final_side_target, self.final_depth_target,
+            final_adjust_side_laser_direction, final_adjust_depth_laser_direction,
+            str(final_used_doudi))
+        old_side_laser_direction = self.final_side_laser_direction
+        old_depth_laser_direction = self.final_depth_laser_direction
+        try:
+            self.final_side_laser_direction = final_adjust_side_laser_direction
+            self.final_depth_laser_direction = final_adjust_depth_laser_direction
+            final_adjust_ok = self.adjust_position(
+                side_target=self.final_side_target,
+                back_target=self.final_depth_target)
+        finally:
+            self.final_side_laser_direction = old_side_laser_direction
+            self.final_depth_laser_direction = old_depth_laser_direction
         rospy.loginfo("[FINAL][ADJUST_POSITION][DONE] ok=%s", str(final_adjust_ok))
         final_allow_depth_timeout_tts = (
             self.final_arrival_tts_on_depth_timeout

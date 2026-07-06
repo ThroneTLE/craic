@@ -23,6 +23,15 @@
       <param name="final_prealign_mode" value="back"/>
       <param name="final_prealign_distance" value="0.35"/>
       <param name="final_prealign_timeout" value="18.0"/>
+      <!-- 终点兜底：只有 (0.85, 3.10) 主预对齐点明确无法规划时，才切到该点 -->
+      <param name="final_doudi_enabled" value="true"/>
+      <param name="final_doudi_plan_check_enabled" value="true"/>
+      <param name="final_doudi_goal_x" value="0.25"/>
+      <param name="final_doudi_goal_y" value="2.25"/>
+      <param name="final_doudi_goal_yaw" value="95.0"/>
+      <param name="final_doudi_timeout" value="18.0"/>
+      <param name="final_doudi_side_laser_direction" value="left"/>
+      <param name="final_doudi_depth_laser_direction" value="front"/>
       <param name="final_align_yaw_before_laser" value="true"/>
       <param name="final_yaw_align_timeout" value="8.0"/>
       <param name="final_yaw_tolerance" value="0.05"/>
