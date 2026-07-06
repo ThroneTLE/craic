@@ -105,10 +105,12 @@
       <param name="task_nav_l_corner_pretry_offset" value="0.35"/>
       <param name="task_nav_l_corner_pretry_timeout" value="4.0"/>
       <param name="task_nav_l_corner_pretry_accept_dist" value="0.15"/>
+      <param name="task_nav_l_corner_pretry_max_attempts" value="3"/>
       <param name="task_nav_l_corner_pretry_score_radius" value="0.00"/>
       <param name="task_nav_l_corner_pretry_require_clear" value="true"/>
       <param name="task_nav_l_corner_pretry_require_plan" value="true"/>
       <param name="task_nav_l_corner_pretry_require_costmap" value="true"/>
+      <param name="task_nav_l_corner_pretry_allow_memory_only" value="true"/>
       <param name="task_nav_l_corner_detect_side_offset" value="0.24"/>
       <param name="task_nav_l_corner_detect_side_span" value="0.26"/>
       <param name="task_nav_l_corner_detect_open_span" value="0.10"/>
@@ -124,6 +126,10 @@
       <param name="task_nav_l_corner_memory_side_half_width" value="0.06"/>
       <param name="task_nav_l_corner_memory_min_blocked_points" value="3"/>
       <param name="task_nav_l_corner_memory_open_max_points" value="2"/>
+      <param name="task_nav_l_corner_near_rescan_enabled" value="true"/>
+      <param name="task_nav_l_corner_near_rescan_target_dist" value="0.45"/>
+      <param name="task_nav_l_corner_near_rescan_yaw_err" value="1.0"/>
+      <param name="task_nav_l_corner_near_rescan_settle_time" value="0.30"/>
       <param name="task_nav_approach_filter_costmap" value="true"/>
       <param name="task_nav_approach_costmap_topic" value="/move_base/global_costmap/costmap"/>
       <param name="task_nav_approach_costmap_wait" value="1.5"/>

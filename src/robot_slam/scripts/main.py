@@ -318,6 +318,8 @@ class navigation_demo:
         self.task_nav_l_corner_pretry_accept_dist = rospy.get_param(
             "~task_nav_l_corner_pretry_accept_dist",
             0.15)
+        self.task_nav_l_corner_pretry_max_attempts = int(rospy.get_param(
+            "~task_nav_l_corner_pretry_max_attempts", 3))
         self.task_nav_l_corner_pretry_score_radius = rospy.get_param(
             "~task_nav_l_corner_pretry_score_radius", 0.0)
         self.task_nav_l_corner_pretry_require_clear = rospy.get_param(
@@ -326,6 +328,8 @@ class navigation_demo:
             "~task_nav_l_corner_pretry_require_plan", True)
         self.task_nav_l_corner_pretry_require_costmap = rospy.get_param(
             "~task_nav_l_corner_pretry_require_costmap", True)
+        self.task_nav_l_corner_pretry_allow_memory_only = rospy.get_param(
+            "~task_nav_l_corner_pretry_allow_memory_only", True)
         self.task_nav_l_corner_detect_side_offset = rospy.get_param(
             "~task_nav_l_corner_detect_side_offset", 0.24)
         self.task_nav_l_corner_detect_side_span = rospy.get_param(
@@ -356,6 +360,14 @@ class navigation_demo:
             "~task_nav_l_corner_memory_min_blocked_points", 3))
         self.task_nav_l_corner_memory_open_max_points = int(rospy.get_param(
             "~task_nav_l_corner_memory_open_max_points", 2))
+        self.task_nav_l_corner_near_rescan_enabled = rospy.get_param(
+            "~task_nav_l_corner_near_rescan_enabled", True)
+        self.task_nav_l_corner_near_rescan_target_dist = rospy.get_param(
+            "~task_nav_l_corner_near_rescan_target_dist", 0.45)
+        self.task_nav_l_corner_near_rescan_yaw_err = rospy.get_param(
+            "~task_nav_l_corner_near_rescan_yaw_err", 1.0)
+        self.task_nav_l_corner_near_rescan_settle_time = rospy.get_param(
+            "~task_nav_l_corner_near_rescan_settle_time", 0.30)
         self.task_nav_approach_filter_costmap = rospy.get_param("~task_nav_approach_filter_costmap", True)
         self.task_nav_approach_costmap_topic = rospy.get_param(
             "~task_nav_approach_costmap_topic", "/move_base/global_costmap/costmap")
@@ -1001,6 +1013,10 @@ class navigation_demo:
         target_yaw = target[2] / 180.0 * pi
         return self.normalize_angle(target_yaw - self.current_yaw)
 
+    def yaw_error_to_yaw_deg(self, yaw_deg):
+        target_yaw = yaw_deg / 180.0 * pi
+        return self.normalize_angle(target_yaw - self.current_yaw)
+
     def make_task_approach_goals(self, target, log_candidates=True):
         """生成给 move_base 使用的多个墙外预到达点，泊车仍使用原目标点。"""
         if self.task_nav_approach_offset <= 0.0:
@@ -1121,6 +1137,14 @@ class navigation_demo:
         span = max(0.01, float(span))
         step = max(0.01, float(self.task_nav_l_corner_detect_sample_step))
         sample_count = max(3, int(np.ceil((span * 2.0) / step)) + 1)
+        if costmap is None:
+            return {
+                "blocked_count": 0,
+                "unknown_count": 0,
+                "valid_count": 0,
+                "sample_count": sample_count,
+                "max_cost": 0,
+            }
         blocked_count = 0
         unknown_count = 0
         valid_count = 0
@@ -1321,9 +1345,10 @@ class navigation_demo:
 
     def detect_l_corner_pretry_candidates(self, idx, task_id, target):
         costmap = self.get_global_costmap_for_approach()
-        if costmap is None:
+        memory_points = self.l_corner_memory_points_available()
+        if costmap is None and not memory_points:
             rospy.logwarn(
-                "[TASK_NAV][L_CORNER_DETECT_SKIP] idx=%d task_id=%d reason=costmap_unavailable",
+                "[TASK_NAV][L_CORNER_DETECT_SKIP] idx=%d task_id=%d reason=costmap_unavailable_memory_unavailable",
                 idx + 1, task_id)
             return []
 
@@ -1380,12 +1405,62 @@ class navigation_demo:
                     "reason": reason
                 })
 
+        t_defs = [
+            ("up", ("left", "right", "down"), [
+                ("upper_right", 1.0, 1.0),
+                ("upper_left", -1.0, 1.0),
+            ]),
+            ("down", ("left", "right", "up"), [
+                ("lower_right", 1.0, -1.0),
+                ("lower_left", -1.0, -1.0),
+            ]),
+            ("right", ("left", "up", "down"), [
+                ("upper_right", 1.0, 1.0),
+                ("lower_right", 1.0, -1.0),
+            ]),
+            ("left", ("right", "up", "down"), [
+                ("upper_left", -1.0, 1.0),
+                ("lower_left", -1.0, -1.0),
+            ]),
+        ]
+        for open_side, blocked_sides, corner_modes in t_defs:
+            open_ok, open_reason = self.l_corner_open_against_opposite(
+                sides, open_side, opposite_sides[open_side])
+            blocked_ok = all(sides[s]["blocked"] for s in blocked_sides)
+            score = sum(self.l_corner_side_blocked_evidence(sides[s]) for s in blocked_sides) \
+                - self.l_corner_side_blocked_evidence(sides[open_side])
+            if not (open_ok and blocked_ok):
+                rejected.append("t_%s:open=%s blocked=%s score=%d open_detail=%s" % (
+                    open_side, str(open_ok), str(blocked_ok), score, open_reason))
+                continue
+
+            for corner_name, sx, sy in corner_modes:
+                for corner_offset in self.task_nav_l_corner_pretry_corner_offsets:
+                    nav_target = [
+                        target[0] + sx * corner_offset,
+                        target[1] + sy * corner_offset,
+                        target[2]
+                    ]
+                    mode = "t_opening_%s_%s" % (open_side, corner_name)
+                    reason = "auto_t open=%s blocked=%s offset=%.2f score=%d" % (
+                        open_side, ",".join(blocked_sides),
+                        corner_offset, score)
+                    candidates.append({
+                        "mode": mode,
+                        "nav_target": nav_target,
+                        "score": score,
+                        "offset": corner_offset,
+                        "reason": reason
+                    })
+
         candidates.sort(
             key=lambda item: (item["score"], item.get("offset", 0.0)),
             reverse=True)
         rospy.logwarn(
-            "[TASK_NAV][L_CORNER_DETECT] idx=%d task_id=%d sides={%s} candidates=%s rejected=%s",
+            "[TASK_NAV][L_CORNER_DETECT] idx=%d task_id=%d source=%s memory_points=%d sides={%s} candidates=%s rejected=%s",
             idx + 1, task_id,
+            "costmap+memory" if costmap is not None else "memory_only",
+            len(memory_points),
             self.format_l_corner_side_info(sides),
             ",".join(["%s@%.2f" % (c["mode"], c.get("offset", 0.0))
                       for c in candidates]) if candidates else "none",
@@ -1417,9 +1492,15 @@ class navigation_demo:
         reasons = []
         costmap = self.global_costmap
         if costmap is None:
-            if self.task_nav_l_corner_pretry_require_costmap:
+            memory_points = self.l_corner_memory_points_available()
+            if (self.task_nav_l_corner_pretry_require_costmap
+                    and (not self.task_nav_l_corner_pretry_allow_memory_only
+                         or not memory_points)):
                 return False, "costmap_unavailable_required"
-            reasons.append("costmap_unavailable_allow")
+            if memory_points:
+                reasons.append("costmap_unavailable_memory_only points=%d" % len(memory_points))
+            else:
+                reasons.append("costmap_unavailable_allow")
         else:
             cost, detail = self.costmap_cost_at(costmap, nav_target[0], nav_target[1])
             if cost is None:
@@ -2276,7 +2357,48 @@ class navigation_demo:
             ",".join(sorted(failed_approach_modes))
         )
 
-    def try_l_corner_pretry(self, idx, task_id, target):
+    def should_l_corner_near_rescan_before_parking(
+            self, idx, task_id, target, nav_dist, nav_mode, selected_yaw_deg):
+        if not self.task_nav_l_corner_near_rescan_enabled:
+            return False, "disabled"
+        if not self.task_l_corner_pretry_enabled_for_task(task_id):
+            return False, "task_disabled"
+        if nav_mode is None or nav_mode == "target":
+            return False, "mode=%s" % str(nav_mode)
+        if str(nav_mode).startswith("l_corner:"):
+            return False, "already_l_corner"
+
+        selected_yaw = selected_yaw_deg if selected_yaw_deg is not None else target[2]
+        parking_yaw_err = self.yaw_error_to_yaw_deg(selected_yaw)
+        original_yaw_err = self.yaw_error_to_goal(target)
+        dist_bad = (
+            nav_dist is not None
+            and nav_dist > self.task_nav_l_corner_near_rescan_target_dist)
+        yaw_bad = abs(parking_yaw_err) > self.task_nav_l_corner_near_rescan_yaw_err
+        if not (dist_bad or yaw_bad):
+            return False, (
+                "target_dist=%s<=%.3f parking_yaw_err=%.3f<=%.3f original_yaw_err=%.3f mode=%s" % (
+                    "%.3f" % nav_dist if nav_dist is not None else "None",
+                    self.task_nav_l_corner_near_rescan_target_dist,
+                    parking_yaw_err,
+                    self.task_nav_l_corner_near_rescan_yaw_err,
+                    original_yaw_err,
+                    str(nav_mode)))
+
+        return True, (
+            "target_dist=%s dist_bad=%s threshold=%.3f parking_yaw_err=%.3f yaw_bad=%s threshold=%.3f original_yaw_err=%.3f mode=%s selected_yaw=%.1f" % (
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                str(dist_bad),
+                self.task_nav_l_corner_near_rescan_target_dist,
+                parking_yaw_err,
+                str(yaw_bad),
+                self.task_nav_l_corner_near_rescan_yaw_err,
+                original_yaw_err,
+                str(nav_mode),
+                selected_yaw))
+
+    def try_l_corner_pretry(self, idx, task_id, target,
+                             label="L_CORNER_PRETRY", trigger_reason="retry"):
         if not self.task_l_corner_pretry_enabled_for_task(task_id):
             return False, False, False, None, None, None
 
@@ -2287,72 +2409,98 @@ class navigation_demo:
                 idx + 1, task_id)
             return False, False, False, None, None, None
 
-        selected = None
+        max_attempts = max(1, int(self.task_nav_l_corner_pretry_max_attempts))
+        attempt_count = 0
+        last_nav_ok = False
+        last_nav_reached = False
+        last_nav_dist = self.distance_to_goal_xy(target)
+        last_nav_mode = None
+        last_selected_yaw = None
+
         for candidate in candidates:
+            if attempt_count >= max_attempts:
+                rospy.logwarn(
+                    "[TASK_NAV][%s_LIMIT] idx=%d task_id=%d max_attempts=%d trigger=%s",
+                    label, idx + 1, task_id, max_attempts, trigger_reason)
+                break
             mode = candidate["mode"]
             nav_target = candidate["nav_target"]
             clear, reason = self.evaluate_l_corner_pretry_goal(
                 task_id, nav_target, mode)
             rospy.logwarn(
-                "[TASK_NAV][L_CORNER_PRETRY_CHECK] idx=%d task_id=%d mode=%s nav_target=(%.3f,%.3f,%.1f) clear=%s detect=%s reason=%s",
-                idx + 1, task_id, mode,
+                "[TASK_NAV][%s_CHECK] idx=%d task_id=%d candidate=%d/%d mode=%s nav_target=(%.3f,%.3f,%.1f) clear=%s detect=%s reason=%s trigger=%s",
+                label, idx + 1, task_id, attempt_count + 1, max_attempts, mode,
                 nav_target[0], nav_target[1], nav_target[2],
-                str(clear), candidate.get("reason", ""), reason)
-            if clear:
-                selected = candidate
-                break
+                str(clear), candidate.get("reason", ""), reason, trigger_reason)
+            if not clear:
+                continue
 
-        if selected is None:
+            attempt_count += 1
+            nav_label = label if attempt_count == 1 else "%s_%d" % (label, attempt_count)
+            nav_mode = "l_corner:%s" % mode
+            nav_start_time = rospy.Time.now()
+            nav_ok = self.goto_task_nav_goal(
+                nav_target,
+                timeout=self.task_nav_l_corner_pretry_timeout,
+                label=nav_label,
+                mode=nav_mode,
+                position_accept_dist=self.task_nav_l_corner_pretry_accept_dist)
+            nav_reached, approach_dist = self.nav_reached_by_state_and_distance(
+                nav_ok,
+                nav_target,
+                self.task_nav_l_corner_pretry_accept_dist)
+            nav_dist = self.distance_to_goal_xy(target)
+            selected_yaw_deg = None
+            if nav_reached:
+                selected_yaw_deg = self.select_task_flexible_yaw(target)
+                yaw_err = self.yaw_error_to_yaw_deg(selected_yaw_deg)
+                rospy.logwarn(
+                    "[TASK_NAV][%s_REACHED] idx=%d task_id=%d mode=%s attempt=%d approach_dist=%s target_dist=%s accept=%.3f yaw_err=%.3f selected_yaw=%.1f trigger=%s",
+                    label, idx + 1, task_id, mode, attempt_count,
+                    "%.3f" % approach_dist if approach_dist is not None else "None",
+                    "%.3f" % nav_dist if nav_dist is not None else "None",
+                    self.task_nav_l_corner_pretry_accept_dist,
+                    yaw_err,
+                    selected_yaw_deg,
+                    trigger_reason)
+
+            rospy.loginfo(
+                "[TASK_TIME][NAV_ATTEMPT] idx=%d task_id=%d label=%s dt=%.2fs ok=%s target_dist=%s reached=%s state=%s mode=%s selected_yaw=%s",
+                idx + 1, task_id, nav_label,
+                (rospy.Time.now() - nav_start_time).to_sec(),
+                str(nav_ok),
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                str(nav_reached), str(self.last_move_base_state), nav_mode,
+                "%.1f" % selected_yaw_deg if selected_yaw_deg is not None else "None")
+
+            last_nav_ok = nav_ok
+            last_nav_reached = nav_reached
+            last_nav_dist = nav_dist
+            last_nav_mode = nav_mode
+            last_selected_yaw = selected_yaw_deg
+
+            if nav_reached:
+                return True, nav_ok, nav_reached, nav_dist, nav_mode, selected_yaw_deg
+
             rospy.logwarn(
-                "[TASK_NAV][L_CORNER_PRETRY_SKIP] idx=%d task_id=%d reason=no_clear_planned_l_corner_candidate",
-                idx + 1, task_id)
+                "[TASK_NAV][%s_CANDIDATE_FALLBACK] idx=%d task_id=%d mode=%s attempt=%d target_dist=%s approach_dist=%s trigger=%s",
+                label, idx + 1, task_id, mode, attempt_count,
+                "%.3f" % nav_dist if nav_dist is not None else "None",
+                "%.3f" % approach_dist if approach_dist is not None else "None",
+                trigger_reason)
+
+        if attempt_count <= 0:
+            rospy.logwarn(
+                "[TASK_NAV][%s_SKIP] idx=%d task_id=%d reason=no_clear_planned_l_corner_candidate trigger=%s",
+                label, idx + 1, task_id, trigger_reason)
             return False, False, False, None, None, None
 
-        mode = selected["mode"]
-        nav_target = selected["nav_target"]
-
-        label = "L_CORNER_PRETRY"
-        nav_mode = "l_corner:%s" % mode
-        nav_start_time = rospy.Time.now()
-        nav_ok = self.goto_task_nav_goal(
-            nav_target,
-            timeout=self.task_nav_l_corner_pretry_timeout,
-            label=label,
-            mode=nav_mode,
-            position_accept_dist=self.task_nav_l_corner_pretry_accept_dist)
-        nav_reached, approach_dist = self.nav_reached_by_state_and_distance(
-            nav_ok,
-            nav_target,
-            self.task_nav_l_corner_pretry_accept_dist)
-        nav_dist = self.distance_to_goal_xy(target)
-        selected_yaw_deg = None
-        if nav_reached:
-            selected_yaw_deg = self.select_task_flexible_yaw(target)
-            yaw_err = self.yaw_error_to_goal(target)
-            rospy.logwarn(
-                "[TASK_NAV][L_CORNER_PRETRY_REACHED] idx=%d task_id=%d mode=%s approach_dist=%s target_dist=%s accept=%.3f yaw_err=%.3f selected_yaw=%.1f",
-                idx + 1, task_id, mode,
-                "%.3f" % approach_dist if approach_dist is not None else "None",
-                "%.3f" % nav_dist if nav_dist is not None else "None",
-                self.task_nav_l_corner_pretry_accept_dist,
-                yaw_err,
-                selected_yaw_deg)
-
-        rospy.loginfo(
-            "[TASK_TIME][NAV_ATTEMPT] idx=%d task_id=%d label=%s dt=%.2fs ok=%s target_dist=%s reached=%s state=%s mode=%s selected_yaw=%s",
-            idx + 1, task_id, label,
-            (rospy.Time.now() - nav_start_time).to_sec(),
-            str(nav_ok),
-            "%.3f" % nav_dist if nav_dist is not None else "None",
-            str(nav_reached), str(self.last_move_base_state), nav_mode,
-            "%.1f" % selected_yaw_deg if selected_yaw_deg is not None else "None")
-        if not nav_reached:
-            rospy.logwarn(
-                "[TASK_NAV][L_CORNER_PRETRY_FALLBACK] idx=%d task_id=%d mode=%s target_dist=%s approach_dist=%s",
-                idx + 1, task_id, mode,
-                "%.3f" % nav_dist if nav_dist is not None else "None",
-                "%.3f" % approach_dist if approach_dist is not None else "None")
-        return True, nav_ok, nav_reached, nav_dist, nav_mode, selected_yaw_deg
+        rospy.logwarn(
+            "[TASK_NAV][%s_FALLBACK] idx=%d task_id=%d attempts=%d target_dist=%s mode=%s trigger=%s",
+            label, idx + 1, task_id, attempt_count,
+            "%.3f" % last_nav_dist if last_nav_dist is not None else "None",
+            str(last_nav_mode), trigger_reason)
+        return True, last_nav_ok, last_nav_reached, last_nav_dist, last_nav_mode, last_selected_yaw
 
     def navigate_task_with_all_approaches(self, idx, task_id, target, last_parking, last_task_id):
         failed_approach_modes = set()
@@ -2363,6 +2511,7 @@ class navigation_demo:
         selected_yaw_deg = None
         escaped_after_abort = False
         l_corner_pretry_done = False
+        l_corner_near_rescan_done = False
         attempt = 0
 
         while not rospy.is_shutdown():
@@ -2383,6 +2532,41 @@ class navigation_demo:
             )
 
             if nav_reached:
+                if not l_corner_near_rescan_done:
+                    near_rescan_needed, near_rescan_reason = (
+                        self.should_l_corner_near_rescan_before_parking(
+                            idx, task_id, target, nav_dist, nav_mode, selected_yaw_deg))
+                    if near_rescan_needed:
+                        l_corner_near_rescan_done = True
+                        l_corner_pretry_done = True
+                        rospy.logwarn(
+                            "[TASK_NAV][L_T_NEAR_RESCAN_TRIGGER] idx=%d task_id=%d reason=%s",
+                            idx + 1, task_id, near_rescan_reason)
+                        settle_time = max(
+                            0.0,
+                            float(self.task_nav_l_corner_near_rescan_settle_time))
+                        if settle_time > 0.0:
+                            rospy.logwarn(
+                                "[TASK_NAV][L_T_NEAR_RESCAN_SETTLE] idx=%d task_id=%d wait=%.2fs",
+                                idx + 1, task_id, settle_time)
+                            rospy.sleep(settle_time)
+                        pretry_used, pretry_ok, pretry_reached, pretry_dist, pretry_mode, pretry_yaw = (
+                            self.try_l_corner_pretry(
+                                idx, task_id, target,
+                                label="L_T_NEAR_RESCAN",
+                                trigger_reason=near_rescan_reason))
+                        if pretry_used and pretry_reached:
+                            return pretry_ok, pretry_reached, pretry_dist, pretry_mode, pretry_yaw
+                        rospy.logwarn(
+                            "[TASK_NAV][L_T_NEAR_RESCAN_FALLBACK_RETRY] idx=%d task_id=%d used=%s ok=%s reached=%s target_dist=%s mode=%s",
+                            idx + 1, task_id,
+                            str(pretry_used), str(pretry_ok), str(pretry_reached),
+                            "%.3f" % pretry_dist if pretry_dist is not None else "None",
+                            str(pretry_mode))
+                        self.mark_failed_approach_mode(
+                            idx, task_id, nav_mode, failed_approach_modes)
+                        nav_reached = False
+                        continue
                 break
 
             self.mark_failed_approach_mode(idx, task_id, nav_mode, failed_approach_modes)
