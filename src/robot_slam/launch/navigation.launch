@@ -3,6 +3,9 @@
 
   <arg name="map_name" default="my_lab.yaml" />
   <arg name="localization" default="amcl" />  <!-- amcl | cartographer -->
+  <arg name="initial_pose_x" default="0.0" />
+  <arg name="initial_pose_y" default="0.0" />
+  <arg name="initial_pose_a" default="0.0" />
 
   <!-- 1. 加载静态地图（AMCL 用） -->
   <node name="map_server"
@@ -17,6 +20,9 @@
            unless="$(eval arg('localization') == 'cartographer')">
     <arg name="scan_topic" value="/scan_filtered"/>
     <arg name="use_map_topic" value="false"/>
+    <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
+    <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
+    <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
   </include>
 
   <!-- 2b. Cartographer 纯定位 -->

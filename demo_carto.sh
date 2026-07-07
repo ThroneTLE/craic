@@ -1,4 +1,4 @@
-### Cartographer 重定位 + abot ###
+### 固定起点 AMCL 定位 + abot ###
 LOG_DIR=~/EIU0US/log
 ARCHIVE_DIR=${LOG_DIR}/archive
 ARCHIVE_KEEP=10
@@ -17,7 +17,7 @@ ls -1t "${ARCHIVE_DIR}"/parking_timeline_*.html 2>/dev/null | tail -n +$((ARCHIV
 
 gnome-terminal --window -e 'bash -c "roscore; exec bash"' \
 --tab -e 'bash -c "sleep 3; source ~/EIU0US/devel/setup.bash; roslaunch abot_bringup robot_with_imu.launch; exec bash"' \
---tab -e 'bash -c "sleep 4; source ~/EIU0US/devel/setup.bash; roslaunch robot_slam navigation.launch localization:=cartographer; exec bash"' \
+--tab -e 'bash -c "sleep 4; source ~/EIU0US/devel/setup.bash; roslaunch robot_slam navigation.launch localization:=amcl initial_pose_x:=0.0 initial_pose_y:=0.0 initial_pose_a:=0.0; exec bash"' \
 --tab -e 'bash -c "sleep 4; source ~/EIU0US/devel/setup.bash; roslaunch usb_cam usb_cam-test.launch ; exec bash"' \
 --tab -e 'bash -c "sleep 4; source ~/EIU0US/devel/setup.bash; roslaunch abot_vlm vlm_node.launch; exec bash"' \
 --tab -e 'bash -c "sleep 4; source ~/EIU0US/devel/setup.bash; roslaunch robot_slam multi_goal.launch; exec bash"' \

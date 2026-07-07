@@ -40,21 +40,27 @@ TRAJECTORY_BUILDER_2D.motion_filter.max_distance_meters = 0.1
 TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = 0.017
 TRAJECTORY_BUILDER_2D.use_imu_data = false
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.15
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = 0.4
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 5.
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 5e-2
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.08
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(5.)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 20.
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 2e-1
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 50.
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 400.
 
--- 大幅降低里程计权重（激光2000倍于odom）
-POSE_GRAPH.optimization_problem.odometry_translation_weight = 5e1
-POSE_GRAPH.optimization_problem.odometry_rotation_weight = 5e1
+-- 固定起点下优先相信连续运动预测，避免激光在相似位置间大跳匹配。
+POSE_GRAPH.optimization_problem.odometry_translation_weight = 1e3
+POSE_GRAPH.optimization_problem.odometry_rotation_weight = 1e3
 POSE_GRAPH.optimization_problem.local_slam_pose_translation_weight = 1e5
 POSE_GRAPH.optimization_problem.local_slam_pose_rotation_weight = 1e5
 
 POSE_GRAPH.optimization_problem.huber_scale = 1e2
 POSE_GRAPH.optimize_every_n_nodes = 15
-POSE_GRAPH.constraint_builder.min_score = 0.50
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.70
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.5
+POSE_GRAPH.constraint_builder.max_constraint_distance = 1.5
+POSE_GRAPH.constraint_builder.min_score = 0.72
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.90
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.2
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 1.0
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(5.)
+POSE_GRAPH.global_constraint_search_after_n_seconds = 1e9
 
 return options

@@ -2,6 +2,9 @@
 
   <arg name="use_map_topic" default="false"/>
   <arg name="scan_topic" default="/scan_filtered"/>
+  <arg name="initial_pose_x" default="0.0"/>
+  <arg name="initial_pose_y" default="0.0"/>
+  <arg name="initial_pose_a" default="0.0"/>
 
   <node pkg="amcl"
         type="amcl"
@@ -16,6 +19,15 @@
 
     <!-- 地图来源 -->
     <param name="use_map_topic" value="$(arg use_map_topic)"/>
+
+    <!-- 固定起点：base_link +X 对齐 map +X，base_link +Y 对齐 map +Y -->
+    <param name="initial_pose_x" value="$(arg initial_pose_x)"/>
+    <param name="initial_pose_y" value="$(arg initial_pose_y)"/>
+    <param name="initial_pose_a" value="$(arg initial_pose_a)"/>
+    <param name="initial_cov_xx" value="0.0025"/>
+    <param name="initial_cov_yy" value="0.0025"/>
+    <param name="initial_cov_aa" value="0.0004"/>
+    <param name="save_pose_rate" value="-1.0"/>
 
     <!-- 全向底盘模型 -->
     <param name="odom_model_type" value="omni"/>

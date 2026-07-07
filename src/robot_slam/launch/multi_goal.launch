@@ -132,7 +132,7 @@
       <param name="task_nav_l_corner_near_rescan_settle_time" value="0.30"/>
       <param name="task_nav_approach_filter_costmap" value="true"/>
       <param name="task_nav_approach_costmap_topic" value="/move_base/global_costmap/costmap"/>
-      <param name="task_nav_approach_costmap_wait" value="1.5"/>
+      <param name="task_nav_approach_costmap_wait" value="0.2"/>
       <param name="task_nav_approach_cost_threshold" value="98"/>
       <param name="task_nav_approach_reject_unknown" value="true"/>
       <param name="task_nav_approach_fallback_to_target" value="false"/>
@@ -171,13 +171,19 @@
       <param name="obstacle_memory_clear_service" value="/move_base/global_costmap/obstacle_memory_layer/clear"/>
       <param name="obstacle_memory_set_enabled_service" value="/move_base/global_costmap/obstacle_memory_layer/set_enabled"/>
       <param name="obstacle_memory_service_wait" value="0.5"/>
+      <!-- 终点回航前清理运行时障碍层状态，再等一帧global costmap后做primary/doudi规划判断 -->
+      <param name="final_clear_costmaps_enabled" value="true"/>
+      <param name="final_clear_costmaps_service" value="/move_base/clear_costmaps"/>
+      <param name="final_clear_costmaps_wait" value="0.7"/>
+      <param name="final_global_costmap_update_wait" value="1.5"/>
+      <param name="final_costmap_settle_time" value="0.2"/>
       <param name="start_escape_turn_enabled" value="true"/>
       <param name="start_escape_turn_speed" value="0.18"/>
       <param name="start_escape_turn_duration" value="1.0"/>
       <!-- 定位保护：大跳时刹车并重发当前move_base目标，不shutdown、不退出比赛流程 -->
       <param name="localization_guard_enabled" value="true"/>
-      <param name="localization_guard_start_x" value="0.50"/>
-      <param name="localization_guard_start_y" value="-0.30"/>
+      <param name="localization_guard_start_x" value="0.0"/>
+      <param name="localization_guard_start_y" value="0.0"/>
       <param name="localization_guard_start_radius" value="0.75"/>
       <param name="localization_guard_start_wait" value="3.0"/>
       <param name="localization_guard_max_jump" value="0.60"/>
@@ -186,6 +192,11 @@
       <param name="localization_guard_recover_timeout" value="2.0"/>
       <param name="localization_guard_stable_time" value="0.6"/>
       <param name="localization_guard_zero_cmd_count" value="4"/>
+      <!-- 起点离场保护：起步阶段检测到定位大跳时，不接受跳到远处后的“稳定”位姿 -->
+      <param name="localization_guard_start_exit_enabled" value="false"/>
+      <param name="localization_guard_start_exit_radius" value="1.00"/>
+      <param name="localization_guard_start_exit_duration" value="20.0"/>
+      <param name="localization_guard_start_exit_recover_timeout" value="8.0"/>
 
       <!-- 相对格子泊车：按目标格子局部坐标检测四边障碍并选择入口 -->
       <param name="relative_parking_mode" value="true"/>
@@ -270,7 +281,7 @@
       <param name="detect_ocr_async_join_timeout" value="0.05"/>
       <param name="tts_async_enabled" value="true"/>
       <param name="tts_async_queue_size" value="32"/>
-      <param name="task_arrival_nav_delay_after_tts_start" value="1.5"/>
+      <param name="task_arrival_nav_delay_after_tts_start" value="0.0"/>
       <param name="task_arrival_tts_start_wait_timeout" value="5.0"/>
       <param name="startup_audio_stabilize_wait" value="5.0"/>
       <param name="startup_audio_notice_before" value="3.0"/>
