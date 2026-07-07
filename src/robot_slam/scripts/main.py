@@ -229,11 +229,25 @@ class navigation_demo:
         self.final_prealign_mode = rospy.get_param("~final_prealign_mode", "back")
         self.final_prealign_distance = rospy.get_param("~final_prealign_distance", 0.35)
         self.final_prealign_timeout = rospy.get_param("~final_prealign_timeout", self.final_nav_timeout)
+        self.final_approach_enabled = rospy.get_param("~final_approach_enabled", True)
+        self.final_approach_offset = rospy.get_param(
+            "~final_approach_offset", self.final_prealign_distance)
+        self.final_approach_modes = rospy.get_param(
+            "~final_approach_modes",
+            "back,back_left,left,front_left,front,front_right,right,back_right")
+        self.final_approach_timeout = rospy.get_param(
+            "~final_approach_timeout", self.final_prealign_timeout)
+        self.final_approach_followup_timeout = rospy.get_param(
+            "~final_approach_followup_timeout", 7.0)
+        self.final_approach_accept_dist = rospy.get_param("~final_approach_accept_dist", 0.30)
+        self.final_approach_transition_accept_dist = rospy.get_param(
+            "~final_approach_transition_accept_dist", 0.25)
         self.final_doudi_enabled = rospy.get_param("~final_doudi_enabled", True)
         self.final_doudi_plan_check_enabled = rospy.get_param("~final_doudi_plan_check_enabled", True)
         self.final_doudi_goal_x = rospy.get_param("~final_doudi_goal_x", 0.25)
         self.final_doudi_goal_y = rospy.get_param("~final_doudi_goal_y", 2.25)
         self.final_doudi_goal_yaw = rospy.get_param("~final_doudi_goal_yaw", 90.0)
+        self.final_doudi_extra_goals = rospy.get_param("~final_doudi_extra_goals", "")
         self.final_doudi_timeout = rospy.get_param("~final_doudi_timeout", self.final_prealign_timeout)
         self.final_doudi_side_laser_direction = rospy.get_param(
             "~final_doudi_side_laser_direction", "left")
@@ -271,6 +285,8 @@ class navigation_demo:
         self.final_depth_yaw_kp = rospy.get_param("~final_depth_yaw_kp", self.kp_angular)
         self.final_arrival_tts_on_depth_timeout = rospy.get_param(
             "~final_arrival_tts_on_depth_timeout", True)
+        self.final_arrival_tts_on_nav_timeout = rospy.get_param(
+            "~final_arrival_tts_on_nav_timeout", True)
         self.final_depth_hold_timed_out_after_cmd = False
         self.final_depth_hold_last_state = None
         self.final_adjust_force_side_on_fail = rospy.get_param("~final_adjust_force_side_on_fail", True)
@@ -810,6 +826,38 @@ class navigation_demo:
         if not values:
             return list(default_values)
         return values
+
+    def parse_pose_goal_list_param(self, value, label):
+        goals_out = []
+        if value is None:
+            return goals_out
+        if isinstance(value, (list, tuple)):
+            raw_items = value
+        else:
+            raw_items = str(value).replace("\n", ";").split(";")
+
+        for item in raw_items:
+            if isinstance(item, (list, tuple)):
+                parts = item
+                item_text = ",".join([str(p) for p in parts])
+            else:
+                item_text = str(item).strip()
+                if not item_text:
+                    continue
+                parts = [part.strip() for part in item_text.replace(":", ",").split(",")
+                         if part.strip()]
+            if len(parts) < 3:
+                rospy.logwarn("[%s][BAD_GOAL] item=%s", label, item_text)
+                continue
+            try:
+                goals_out.append([
+                    float(parts[0]),
+                    float(parts[1]),
+                    float(parts[2])
+                ])
+            except (TypeError, ValueError):
+                rospy.logwarn("[%s][BAD_GOAL_FLOAT] item=%s", label, item_text)
+        return goals_out
 
     def parse_detection_photo_targets(self):
         """
@@ -3041,6 +3089,241 @@ class navigation_demo:
             float(self.final_doudi_goal_yaw)
         ]
 
+    def make_final_doudi_goals(self):
+        goals_out = []
+        seen = set()
+
+        def add_goal(goal, label):
+            key = (round(float(goal[0]), 3), round(float(goal[1]), 3), round(float(goal[2]), 1))
+            if key in seen:
+                rospy.logwarn("[FINAL][DOUDI_DUPLICATE_SKIP] label=%s goal=%s", label, str(goal))
+                return
+            seen.add(key)
+            goals_out.append([float(goal[0]), float(goal[1]), float(goal[2])])
+
+        add_goal(self.make_final_doudi_goal(), "primary")
+        extra_goals = self.parse_pose_goal_list_param(
+            self.final_doudi_extra_goals, "FINAL_DOUDI_EXTRA")
+        for idx, goal in enumerate(extra_goals):
+            add_goal(goal, "extra_%d" % (idx + 1))
+        return goals_out
+
+    def make_final_approach_goals(self, target):
+        if not self.final_approach_enabled or self.final_approach_offset <= 0.0:
+            return []
+        goals_out = []
+        seen = set()
+        modes = [
+            m.strip().lower()
+            for m in str(self.final_approach_modes).split(",")
+            if m.strip()
+        ]
+        for mode in modes:
+            approach = self.make_task_approach_goal_by_mode(
+                target, mode, self.final_approach_offset)
+            if approach is None:
+                rospy.logwarn("[FINAL][APPROACH_MODE_UNKNOWN] mode=%s", mode)
+                continue
+            key = (round(approach[0], 3), round(approach[1], 3), round(approach[2], 1))
+            if key in seen:
+                continue
+            seen.add(key)
+            goals_out.append((mode, approach))
+            rospy.loginfo(
+                "[FINAL][APPROACH_CANDIDATE] mode=%s target=(%.3f,%.3f,%.1f) approach=(%.3f,%.3f,%.1f) offset=%.3f",
+                mode, target[0], target[1], target[2],
+                approach[0], approach[1], approach[2],
+                self.final_approach_offset)
+        return goals_out
+
+    def evaluate_final_approach_goal(self, mode, nav_target, costmap=None, costmap_checked=False):
+        if not self.task_nav_approach_filter_costmap:
+            path_clear, path_reason, path_info = self.evaluate_task_plan_quality(
+                "final:%s" % mode, nav_target)
+            return path_clear, "filter_disabled %s" % path_reason, (0, 0.0, 0), path_info
+
+        if not costmap_checked:
+            costmap = self.get_global_costmap_for_approach()
+        if costmap is None:
+            path_clear, path_reason, path_info = self.evaluate_task_plan_quality(
+                "final:%s" % mode, nav_target)
+            return path_clear, "no_costmap_allow %s" % path_reason, (0, 0.0, 0), path_info
+
+        cost, detail = self.costmap_cost_at(costmap, nav_target[0], nav_target[1])
+        if cost is None:
+            return False, detail, (999, 999.0, 999), None
+        if cost < 0:
+            if self.task_nav_approach_reject_unknown:
+                return False, "unknown", (999, 999.0, 999), None
+            path_clear, path_reason, path_info = self.evaluate_task_plan_quality(
+                "final:%s" % mode, nav_target)
+            return path_clear, "unknown_allowed %s" % path_reason, (100, 100.0, 1), path_info
+        if cost > self.task_nav_approach_cost_threshold:
+            return False, "cost=%d>threshold=%d" % (
+                cost, self.task_nav_approach_cost_threshold), (cost, float(cost), 0), None
+
+        score, detail = self.costmap_score_near(
+            costmap, nav_target[0], nav_target[1],
+            self.task_nav_approach_score_radius)
+        if score is None:
+            score = (cost, float(cost), 0)
+            score_text = "score_unavailable=%s" % detail
+        else:
+            score_text = "score=max:%d avg:%.1f unk:%d radius:%.2f" % (
+                score[0], score[1], score[2], self.task_nav_approach_score_radius)
+        path_clear, path_reason, path_info = self.evaluate_task_plan_quality(
+            "final:%s" % mode, nav_target)
+        return path_clear, "cost=%d %s %s" % (cost, score_text, path_reason), score, path_info
+
+    def select_final_approach_goal(self, target, trigger_reason):
+        candidates = self.make_final_approach_goals(target)
+        if not candidates:
+            rospy.logwarn(
+                "[FINAL][APPROACH_NO_CANDIDATES] reason=%s target=%s",
+                trigger_reason, str(target))
+            return None, None, None
+
+        clear_candidates = []
+        transition_candidates = []
+        costmap = None
+        costmap_checked = False
+        if self.task_nav_approach_filter_costmap:
+            costmap = self.get_global_costmap_for_approach()
+            costmap_checked = True
+
+        for mode, nav_target in candidates:
+            clear, reason, score, path_info = self.evaluate_final_approach_goal(
+                mode, nav_target, costmap=costmap, costmap_checked=costmap_checked)
+            rospy.loginfo(
+                "[FINAL][APPROACH_CHECK] mode=%s nav_target=(%.3f,%.3f,%.1f) clear=%s reason=%s trigger=%s",
+                mode, nav_target[0], nav_target[1], nav_target[2],
+                str(clear), reason, trigger_reason)
+            if clear:
+                clear_candidates.append((score, mode, nav_target, reason))
+            elif (self.task_nav_transition_enabled
+                  and path_info is not None
+                  and path_info.get("transition_goal") is not None):
+                transition_goal = path_info.get("transition_goal")
+                transition_clear, transition_reason, transition_score = self.is_transition_goal_clear(
+                    transition_goal, costmap)
+                rospy.logwarn(
+                    "[FINAL][APPROACH_TRANSITION_CHECK] mode=%s transition=(%.3f,%.3f,%.1f) clear=%s reason=%s original_reason=%s trigger=%s",
+                    mode,
+                    transition_goal[0], transition_goal[1], transition_goal[2],
+                    str(transition_clear), transition_reason, reason, trigger_reason)
+                if transition_clear:
+                    transition_candidates.append((
+                        transition_score,
+                        path_info.get("max_angle_deg", 0.0),
+                        mode,
+                        nav_target,
+                        transition_goal,
+                        reason
+                    ))
+
+        if clear_candidates:
+            clear_candidates.sort(key=lambda item: (item[0][2], item[0][0], item[0][1]))
+            score, mode, nav_target, reason = clear_candidates[0]
+            rospy.logwarn(
+                "[FINAL][APPROACH_SELECTED] reason=%s mode=%s nav_target=(%.3f,%.3f,%.1f) score=max:%d avg:%.1f unk:%d detail=%s timeout=%.1fs",
+                trigger_reason, mode,
+                nav_target[0], nav_target[1], nav_target[2],
+                score[0], score[1], score[2], reason,
+                self.final_approach_timeout)
+            return mode, nav_target, None
+
+        if transition_candidates:
+            transition_candidates.sort(
+                key=lambda item: (item[0][2], item[0][0], item[0][1], item[1]))
+            score, angle_deg, mode, nav_target, transition_goal, reason = transition_candidates[0]
+            rospy.logwarn(
+                "[FINAL][APPROACH_TRANSITION_SELECTED] reason=%s mode=%s transition=(%.3f,%.3f,%.1f) followup=(%.3f,%.3f,%.1f) angle=%.1f score=max:%d avg:%.1f unk:%d detail=%s timeout=%.1fs",
+                trigger_reason, mode,
+                transition_goal[0], transition_goal[1], transition_goal[2],
+                nav_target[0], nav_target[1], nav_target[2],
+                angle_deg, score[0], score[1], score[2], reason,
+                self.final_approach_timeout)
+            return "transition:%s" % mode, transition_goal, (mode, nav_target)
+
+        rospy.logwarn(
+            "[FINAL][APPROACH_NO_CLEAR] reason=%s target=%s",
+            trigger_reason, str(target))
+        return None, None, None
+
+    def final_approach_stage_name(self, mode):
+        return "APPROACH_%s" % str(mode).upper().replace(":", "_")
+
+    def goto_final_approach(self, target, trigger_reason, label):
+        mode, nav_target, followup = self.select_final_approach_goal(
+            target, trigger_reason)
+        if nav_target is None:
+            return False, False, None, None
+
+        rospy.logwarn(
+            "[FINAL][APPROACH_TRY] label=%s reason=%s mode=%s nav_target=(%.3f,%.3f,%.1f)",
+            label, trigger_reason, mode,
+            nav_target[0], nav_target[1], nav_target[2])
+        if str(mode).startswith("transition:"):
+            accept_dist = self.final_approach_transition_accept_dist
+        else:
+            accept_dist = self.final_approach_accept_dist
+
+        nav_ok = self.goto_task_nav_goal(
+            nav_target,
+            timeout=self.final_approach_timeout,
+            label=label,
+            mode="final:%s" % mode,
+            position_accept_dist=accept_dist)
+        nav_reached, approach_dist = self.nav_reached_by_state_and_distance(
+            nav_ok, nav_target, accept_dist)
+
+        if followup is not None:
+            followup_mode, followup_target = followup
+            followup_accept = self.final_approach_accept_dist
+            if nav_reached:
+                rospy.logwarn(
+                    "[FINAL][APPROACH_TRANSITION_FOLLOWUP] label=%s transition_mode=%s followup_mode=%s followup_target=(%.3f,%.3f,%.1f)",
+                    label, mode, followup_mode,
+                    followup_target[0], followup_target[1], followup_target[2])
+                nav_ok = self.goto_task_nav_goal(
+                    followup_target,
+                    timeout=self.final_approach_followup_timeout,
+                    label=label + "_FOLLOWUP",
+                    mode="final:%s" % followup_mode,
+                    position_accept_dist=followup_accept,
+                    slow_mode=self.task_nav_teb_slow_fallback_enabled)
+                nav_reached, approach_dist = self.nav_reached_by_state_and_distance(
+                    nav_ok, followup_target, followup_accept)
+                mode = followup_mode
+                nav_target = followup_target
+                accept_dist = followup_accept
+            elif self.task_nav_teb_slow_fallback_enabled:
+                rospy.logwarn(
+                    "[FINAL][APPROACH_TRANSITION_FAILED_SLOW_TEB] label=%s transition_mode=%s followup_mode=%s followup_target=(%.3f,%.3f,%.1f)",
+                    label, mode, followup_mode,
+                    followup_target[0], followup_target[1], followup_target[2])
+                nav_ok = self.goto_task_nav_goal(
+                    followup_target,
+                    timeout=self.final_approach_followup_timeout,
+                    label=label + "_SLOW",
+                    mode="final:slow:%s" % followup_mode,
+                    position_accept_dist=followup_accept,
+                    slow_mode=True)
+                nav_reached, approach_dist = self.nav_reached_by_state_and_distance(
+                    nav_ok, followup_target, followup_accept)
+                mode = followup_mode
+                nav_target = followup_target
+                accept_dist = followup_accept
+
+        target_dist = self.distance_to_goal_xy(target)
+        rospy.loginfo(
+            "[FINAL][APPROACH_DONE] label=%s mode=%s ok=%s reached=%s target_dist=%s approach_dist=%s accept=%.3f state=%s",
+            label, mode, str(nav_ok), str(nav_reached),
+            "%.3f" % target_dist if target_dist is not None else "None",
+            "%.3f" % approach_dist if approach_dist is not None else "None",
+            accept_dist, str(self.last_move_base_state))
+        return nav_ok, True, nav_target, mode
+
     def final_nav_make_plan_ok(self, nav_target, label):
         if not self.final_doudi_plan_check_enabled:
             return None, "plan_check_disabled"
@@ -3089,14 +3372,25 @@ class navigation_demo:
             label, nav_target[0], nav_target[1], nav_target[2], reason)
         return True, reason
 
-    def select_final_doudi_goal(self, reason):
-        goal = self.make_final_doudi_goal()
+    def final_doudi_stage_name(self, index):
+        if index <= 0:
+            return "DOUDI"
+        return "DOUDI_%d" % (index + 1)
+
+    def select_final_doudi_goal(self, reason, index=0, goal=None):
+        if goal is None:
+            goals_out = self.make_final_doudi_goals()
+            if not goals_out:
+                return None, None, None, None
+            index = max(0, min(int(index), len(goals_out) - 1))
+            goal = goals_out[index]
         timeout = float(self.final_doudi_timeout)
         side_direction = str(self.final_doudi_side_laser_direction)
         depth_direction = str(self.final_doudi_depth_laser_direction)
+        stage = self.final_doudi_stage_name(index)
         rospy.logwarn(
-            "[FINAL][DOUDI_SELECTED] reason=%s goal=(%.3f, %.3f, %.1f) side_laser=%s depth_laser=%s timeout=%.1fs",
-            reason, goal[0], goal[1], goal[2],
+            "[FINAL][DOUDI_SELECTED] stage=%s reason=%s goal=(%.3f, %.3f, %.1f) side_laser=%s depth_laser=%s timeout=%.1fs",
+            stage, reason, goal[0], goal[1], goal[2],
             side_direction, depth_direction, timeout)
         return goal, timeout, side_direction, depth_direction
 
@@ -5516,8 +5810,80 @@ class navigation_demo:
         final_nav_timeout = self.final_nav_timeout
         final_nav_stage = "TARGET"
         final_used_doudi = False
+        final_used_approach = False
+        final_nav_timeout_state = {
+            "timed_out": False,
+            "stage": None,
+            "elapsed": 0.0,
+            "timeout": 0.0,
+            "goal": None,
+        }
         final_adjust_side_laser_direction = self.final_side_laser_direction
         final_adjust_depth_laser_direction = self.final_depth_laser_direction
+
+        def run_final_nav(stage, goal, timeout):
+            nav_start = rospy.Time.now()
+            nav_ok = self.goto(goal, timeout=timeout)
+            nav_elapsed = (rospy.Time.now() - nav_start).to_sec()
+            rospy.loginfo(
+                "[FINAL][NAV_TO_%s] dt=%.2fs ok=%s timeout=%.1fs goal=(%.3f, %.3f, %.1f)",
+                stage,
+                nav_elapsed,
+                str(nav_ok),
+                timeout,
+                goal[0],
+                goal[1],
+                goal[2])
+            if (not nav_ok) and nav_elapsed >= float(timeout):
+                final_nav_timeout_state["timed_out"] = True
+                final_nav_timeout_state["stage"] = stage
+                final_nav_timeout_state["elapsed"] = nav_elapsed
+                final_nav_timeout_state["timeout"] = float(timeout)
+                final_nav_timeout_state["goal"] = list(goal)
+                rospy.logwarn(
+                    "[FINAL][NAV_TIMEOUT_FOR_TTS] stage=%s elapsed=%.2fs timeout=%.1fs goal=(%.3f, %.3f, %.1f)",
+                    stage,
+                    nav_elapsed,
+                    timeout,
+                    goal[0],
+                    goal[1],
+                    goal[2])
+            return nav_ok
+
+        def run_final_approach_nav(label, target, reason):
+            nav_start = rospy.Time.now()
+            nav_ok, approach_used, approach_goal, approach_mode = self.goto_final_approach(
+                target, reason, label)
+            if not approach_used:
+                return False, False, None, None
+            nav_elapsed = (rospy.Time.now() - nav_start).to_sec()
+            stage = self.final_approach_stage_name(approach_mode)
+            timeout = float(self.final_approach_timeout)
+            rospy.loginfo(
+                "[FINAL][NAV_TO_%s] dt=%.2fs ok=%s timeout=%.1fs goal=(%.3f, %.3f, %.1f)",
+                stage,
+                nav_elapsed,
+                str(nav_ok),
+                timeout,
+                approach_goal[0],
+                approach_goal[1],
+                approach_goal[2])
+            if (not nav_ok) and nav_elapsed >= timeout:
+                final_nav_timeout_state["timed_out"] = True
+                final_nav_timeout_state["stage"] = stage
+                final_nav_timeout_state["elapsed"] = nav_elapsed
+                final_nav_timeout_state["timeout"] = timeout
+                final_nav_timeout_state["goal"] = list(approach_goal)
+                rospy.logwarn(
+                    "[FINAL][NAV_TIMEOUT_FOR_TTS] stage=%s elapsed=%.2fs timeout=%.1fs goal=(%.3f, %.3f, %.1f)",
+                    stage,
+                    nav_elapsed,
+                    timeout,
+                    approach_goal[0],
+                    approach_goal[1],
+                    approach_goal[2])
+            return nav_ok, True, list(approach_goal), stage
+
         if self.final_prealign_enabled and self.final_prealign_distance > 0.0:
             final_nav_goal = self.make_final_prealign_goal(final_target)
             final_nav_timeout = self.final_prealign_timeout
@@ -5530,58 +5896,110 @@ class navigation_demo:
                 final_nav_goal[0], final_nav_goal[1], final_nav_goal[2]
             )
 
+        final_nav_ok = False
         primary_final_nav_goal = list(final_nav_goal)
-        if self.final_doudi_enabled:
+        primary_plan_reason = "not_checked"
+        if self.final_doudi_enabled or self.final_approach_enabled:
             primary_plan_ok, primary_plan_reason = self.final_nav_make_plan_ok(
                 primary_final_nav_goal,
                 "primary")
             if primary_plan_ok is False:
-                final_nav_goal, final_nav_timeout, final_adjust_side_laser_direction, \
-                    final_adjust_depth_laser_direction = self.select_final_doudi_goal(
-                        "primary_plan_failed:%s" % primary_plan_reason)
-                final_adjust_target = final_nav_goal
-                final_nav_stage = "DOUDI"
-                final_used_doudi = True
+                rospy.logwarn(
+                    "[FINAL][PRIMARY_PLAN_FAILED][DIRECT_TRY_FIRST] reason=%s goal=(%.3f, %.3f, %.1f)",
+                    primary_plan_reason,
+                    primary_final_nav_goal[0], primary_final_nav_goal[1], primary_final_nav_goal[2])
             elif primary_plan_ok is None:
                 rospy.logwarn(
-                    "[FINAL][DOUDI_CHECK][SKIP] label=primary reason=%s, keep primary goal",
+                    "[FINAL][PRIMARY_PLAN_CHECK][SKIP] reason=%s, keep direct primary try",
                     primary_plan_reason)
 
-        final_nav_start = rospy.Time.now()
-        final_nav_ok = self.goto(final_nav_goal, timeout=final_nav_timeout)
-        rospy.loginfo("[FINAL][NAV_TO_%s] dt=%.2fs ok=%s timeout=%.1fs goal=(%.3f, %.3f, %.1f)",
-                      final_nav_stage,
-                      (rospy.Time.now() - final_nav_start).to_sec(),
-                      str(final_nav_ok), final_nav_timeout,
-                      final_nav_goal[0], final_nav_goal[1], final_nav_goal[2])
+        final_nav_ok = run_final_nav(final_nav_stage, final_nav_goal, final_nav_timeout)
 
-        if (not final_nav_ok) and (not final_used_doudi) and self.final_doudi_enabled:
-            primary_plan_ok, primary_plan_reason = self.final_nav_make_plan_ok(
-                primary_final_nav_goal,
-                "primary_after_nav_fail")
-            if primary_plan_ok is False:
-                final_nav_goal, final_nav_timeout, final_adjust_side_laser_direction, \
-                    final_adjust_depth_laser_direction = self.select_final_doudi_goal(
-                        "primary_after_nav_fail:%s" % primary_plan_reason)
-                final_adjust_target = final_nav_goal
-                final_nav_stage = "DOUDI"
+        failed_doudi_targets = []
+        if (not final_nav_ok) and self.final_doudi_enabled:
+            doudi_goals = self.make_final_doudi_goals()
+            if not doudi_goals:
+                rospy.logwarn("[FINAL][DOUDI_NO_CANDIDATES] primary_failed_stage=%s", final_nav_stage)
+            for doudi_index, doudi_candidate in enumerate(doudi_goals):
+                doudi_stage = self.final_doudi_stage_name(doudi_index)
+                doudi_goal, doudi_timeout, doudi_side_laser, doudi_depth_laser = \
+                    self.select_final_doudi_goal(
+                        "primary_nav_failed:%s primary_plan=%s" % (
+                            str(final_nav_stage), primary_plan_reason),
+                        doudi_index,
+                        doudi_candidate)
+                if doudi_goal is None:
+                    continue
+                final_nav_goal = list(doudi_goal)
+                final_nav_timeout = doudi_timeout
+                final_nav_stage = doudi_stage
+                final_adjust_target = list(doudi_goal)
+                final_adjust_side_laser_direction = doudi_side_laser
+                final_adjust_depth_laser_direction = doudi_depth_laser
                 final_used_doudi = True
-                final_nav_start = rospy.Time.now()
-                final_nav_ok = self.goto(final_nav_goal, timeout=final_nav_timeout)
-                rospy.loginfo(
-                    "[FINAL][NAV_TO_%s] dt=%.2fs ok=%s timeout=%.1fs goal=(%.3f, %.3f, %.1f)",
-                    final_nav_stage,
-                    (rospy.Time.now() - final_nav_start).to_sec(),
-                    str(final_nav_ok), final_nav_timeout,
-                    final_nav_goal[0], final_nav_goal[1], final_nav_goal[2])
-            elif primary_plan_ok is None:
-                rospy.logwarn(
-                    "[FINAL][DOUDI_CHECK][SKIP] label=primary_after_nav_fail reason=%s, not a confirmed no-plan",
-                    primary_plan_reason)
-            else:
-                rospy.loginfo(
-                    "[FINAL][DOUDI_CHECK][KEEP_PRIMARY] primary_after_nav_fail reason=%s",
-                    primary_plan_reason)
+
+                doudi_plan_ok, doudi_plan_reason = self.final_nav_make_plan_ok(
+                    doudi_goal,
+                    doudi_stage.lower())
+                if doudi_plan_ok is False:
+                    rospy.logwarn(
+                        "[FINAL][DOUDI_PLAN_FAILED][DIRECT_TRY_ANYWAY] stage=%s reason=%s",
+                        doudi_stage, doudi_plan_reason)
+                elif doudi_plan_ok is None:
+                    rospy.logwarn(
+                        "[FINAL][DOUDI_PLAN_CHECK][SKIP] stage=%s reason=%s, keep direct doudi try",
+                        doudi_stage, doudi_plan_reason)
+
+                final_nav_ok = run_final_nav(doudi_stage, doudi_goal, doudi_timeout)
+                if final_nav_ok:
+                    break
+                failed_doudi_targets.append((
+                    doudi_stage,
+                    list(doudi_goal),
+                    doudi_side_laser,
+                    doudi_depth_laser,
+                    doudi_plan_reason
+                ))
+
+        if (not final_nav_ok) and self.final_approach_enabled:
+            approach_requests = [(
+                "FINAL_APPROACH_PRIMARY",
+                list(final_target),
+                "direct_candidates_failed:primary_stage=%s doudi_failed=%d" % (
+                    str(final_nav_stage), len(failed_doudi_targets)),
+                False,
+                self.final_side_laser_direction,
+                self.final_depth_laser_direction
+            )]
+            for doudi_stage, doudi_goal, doudi_side_laser, doudi_depth_laser, doudi_reason in failed_doudi_targets:
+                approach_requests.append((
+                    "FINAL_APPROACH_%s" % doudi_stage,
+                    list(doudi_goal),
+                    "direct_doudi_failed:%s:%s" % (doudi_stage, doudi_reason),
+                    True,
+                    doudi_side_laser,
+                    doudi_depth_laser
+                ))
+
+            for approach_label, approach_target, approach_reason, approach_is_doudi, \
+                    approach_side_laser, approach_depth_laser in approach_requests:
+                approach_ok, approach_used, approach_goal, approach_stage = run_final_approach_nav(
+                    approach_label,
+                    approach_target,
+                    approach_reason)
+                if not approach_used:
+                    continue
+                final_nav_ok = approach_ok
+                final_nav_goal = approach_goal
+                final_nav_timeout = float(self.final_approach_timeout)
+                final_nav_stage = approach_stage
+                final_used_approach = True
+                final_used_doudi = approach_is_doudi
+                final_adjust_target = list(approach_target)
+                final_adjust_side_laser_direction = approach_side_laser
+                final_adjust_depth_laser_direction = approach_depth_laser
+                if approach_ok:
+                    break
 
         final_yaw_ok = True
         if self.final_align_yaw_before_laser:
@@ -5591,10 +6009,10 @@ class navigation_demo:
             self.target_yaw = final_adjust_target[2] / 180.0 * pi
 
         rospy.loginfo(
-            "[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=%.3f depth=%.3f side_laser=%s depth_laser=%s doudi=%s",
+            "[FINAL][ADJUST_POSITION][START] target_yaw=%.1fdeg side=%.3f depth=%.3f side_laser=%s depth_laser=%s doudi=%s approach=%s",
             final_adjust_target[2], self.final_side_target, self.final_depth_target,
             final_adjust_side_laser_direction, final_adjust_depth_laser_direction,
-            str(final_used_doudi))
+            str(final_used_doudi), str(final_used_approach))
         old_side_laser_direction = self.final_side_laser_direction
         old_depth_laser_direction = self.final_depth_laser_direction
         try:
@@ -5610,6 +6028,9 @@ class navigation_demo:
         final_allow_depth_timeout_tts = (
             self.final_arrival_tts_on_depth_timeout
             and self.final_depth_hold_timed_out_after_cmd)
+        final_allow_nav_timeout_tts = (
+            self.final_arrival_tts_on_nav_timeout
+            and final_nav_timeout_state["timed_out"])
         if final_nav_ok and final_yaw_ok and final_allow_depth_timeout_tts and not final_adjust_ok:
             state = self.final_depth_hold_last_state
             if state is not None:
@@ -5620,9 +6041,19 @@ class navigation_demo:
                     state["yaw_error"])
             else:
                 rospy.logwarn("[FINAL][ARRIVAL_TTS_DEPTH_TIMEOUT_ALLOW] no_valid_laser_state")
-        final_arrival_ok = final_yaw_ok and (
-            final_adjust_ok
-            or (final_nav_ok and final_allow_depth_timeout_tts)
+        if final_allow_nav_timeout_tts and not final_adjust_ok:
+            rospy.logwarn(
+                "[FINAL][ARRIVAL_TTS_NAV_TIMEOUT_ALLOW] stage=%s elapsed=%.2fs timeout=%.1fs yaw_ok=%s adjust_ok=%s",
+                str(final_nav_timeout_state["stage"]),
+                final_nav_timeout_state["elapsed"],
+                final_nav_timeout_state["timeout"],
+                str(final_yaw_ok),
+                str(final_adjust_ok))
+        final_arrival_ok = (
+            (final_yaw_ok and (
+                final_adjust_ok
+                or (final_nav_ok and final_allow_depth_timeout_tts)))
+            or final_allow_nav_timeout_tts
         )
         if final_yaw_ok and final_adjust_ok and not final_nav_ok:
             rospy.logwarn(
@@ -5633,9 +6064,10 @@ class navigation_demo:
             self.tts_client(tts_text)
         else:
             rospy.logwarn(
-                "[FINAL][ARRIVAL_SUPPRESSED] nav_ok=%s yaw_ok=%s adjust_ok=%s depth_timeout_allow=%s, skip arrival TTS",
+                "[FINAL][ARRIVAL_SUPPRESSED] nav_ok=%s yaw_ok=%s adjust_ok=%s depth_timeout_allow=%s nav_timeout_allow=%s, skip arrival TTS",
                 str(final_nav_ok), str(final_yaw_ok), str(final_adjust_ok),
-                str(final_allow_depth_timeout_tts))
+                str(final_allow_depth_timeout_tts),
+                str(final_allow_nav_timeout_tts))
 
     # ---------------- 任务启动回调(空挂，不使用) ----------------
     def start_mission_callback(self, msg):

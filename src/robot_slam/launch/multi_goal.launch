@@ -23,12 +23,21 @@
       <param name="final_prealign_mode" value="back"/>
       <param name="final_prealign_distance" value="0.35"/>
       <param name="final_prealign_timeout" value="18.0"/>
-      <!-- 终点兜底：只有 (0.85, 3.10) 主预对齐点明确无法规划时，才切到该点 -->
+      <!-- 终点主预对齐/兜底点在墙内时，复用任务点 approach 候选先靠近终点附近 -->
+      <param name="final_approach_enabled" value="true"/>
+      <param name="final_approach_offset" value="0.35"/>
+      <param name="final_approach_modes" value="back,back_left,left,front_left,front,front_right,right,back_right"/>
+      <param name="final_approach_timeout" value="18.0"/>
+      <param name="final_approach_followup_timeout" value="7.0"/>
+      <param name="final_approach_accept_dist" value="0.30"/>
+      <param name="final_approach_transition_accept_dist" value="0.25"/>
+      <!-- 终点兜底：主预对齐导航失败后，按主doudi和extra列表顺序尝试，全部失败后再走approach -->
       <param name="final_doudi_enabled" value="true"/>
       <param name="final_doudi_plan_check_enabled" value="true"/>
       <param name="final_doudi_goal_x" value="0.25"/>
       <param name="final_doudi_goal_y" value="2.25"/>
       <param name="final_doudi_goal_yaw" value="95.0"/>
+      <param name="final_doudi_extra_goals" value="0.28,2.45,95;0.5,3.10,95"/>
       <param name="final_doudi_timeout" value="18.0"/>
       <param name="final_doudi_side_laser_direction" value="left"/>
       <param name="final_doudi_depth_laser_direction" value="front"/>
@@ -60,6 +69,8 @@
       <param name="final_depth_yaw_kp" value="0.5"/>
       <!-- 终点深度前进闭环超时但已经执行过前进修正时，仍允许播报到达终点 -->
       <param name="final_arrival_tts_on_depth_timeout" value="true"/>
+      <!-- 终点回去 move_base 超时后仍允许播报到达终点，避免超时路径没有终点播报 -->
+      <param name="final_arrival_tts_on_nav_timeout" value="true"/>
       <!-- 终点侧向闭环失败时：先向配置的侧向移动1.5s，再向配置的深度方向前进一小段 -->
       <param name="final_adjust_force_side_on_fail" value="true"/>
       <param name="final_force_side_duration" value="1.5"/>
@@ -165,7 +176,7 @@
       <param name="force_escape_after_approach_nav" value="true"/>
       <param name="parking_phase_global_inflation_enabled" value="true"/>
       <param name="parking_phase_global_inflation_radius" value="0.15"/>
-      <param name="cruise_global_inflation_radius" value="0.15"/>
+      <param name="cruise_global_inflation_radius" value="0.14"/>
       <param name="global_inflation_layer_name" value="move_base/global_costmap/inflation_layer"/>
       <param name="obstacle_memory_control_enabled" value="true"/>
       <param name="obstacle_memory_clear_service" value="/move_base/global_costmap/obstacle_memory_layer/clear"/>
