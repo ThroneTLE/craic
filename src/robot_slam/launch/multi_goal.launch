@@ -5,7 +5,7 @@
       <!--                                                                        0       1               2            3           4           5             6            7              8              9           10             11           12          13      14       15                 16  -->
       <param name="goalListX" value="   0.5,    1.19,       1.19,      1.19,   1.60,    1.59,      1.60,     2.00,      2.00,      1.99,     0.29,         1.60,       2.92,      1.60,    2.65,   0.97,       0.50"/>
       <param name="goalListY" value="   -0.3,   1.16,       1.54,      1.95,   1.15,   1.55,     1.97,      1.15,       1.55,      1.96,    1.55,          3.0,     1.56,       0.26,    1.6,    -0.88,       3.10"/>
-      <param name="goalListYaw" value="   0,   89.1,       88.2,      88.6,   88.0,   88.7,    89.6,       88.8,       88.8,      90.9,      178.6,        90.2,      1.9,        -95.2,      180,  -180, -180  "/>
+      <param name="goalListYaw" value="   0,   89.1,       88.2,      88.6,   88.0,   88.7,    89.6,       88.8,       88.8,      90.9,      178.6,        90.2,      1.9,        -95.2,      180,  -180, -175  "/>
 
       <!-- 自动停车程序：主程序会按识别顺序调用它 -->
       <param name="auto_parking_launch" value="robot_slam auto_single_point_test.launch"/>
@@ -39,7 +39,7 @@
       <param name="final_yaw_min_vel" value="0.8"/>
       <param name="final_yaw_max_vel" value="3.45"/>
       <param name="final_yaw_stable_count" value="3"/>
-      <!-- 终点yaw=-180时，原地图左/后墙对应车体右/前激光 -->
+      <!-- 终点yaw约-175时，原地图左/后墙仍按车体右/前激光闭环 -->
       <param name="final_side_laser_direction" value="right"/>
       <param name="final_depth_laser_direction" value="front"/>
       <param name="final_side_target" value="0.17"/>
